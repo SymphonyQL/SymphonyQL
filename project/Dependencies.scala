@@ -4,7 +4,7 @@ object Dependencies {
 
   object Versions {
     val scala3Version = "3.3.1"
-    val pekkoVersion  = "1.0.0"
+    val pekkoVersion  = "1.0.2"
     val parboiled     = "2.5.1"
   }
 
