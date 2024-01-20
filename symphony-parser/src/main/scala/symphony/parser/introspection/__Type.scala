@@ -1,14 +1,13 @@
 package symphony
 package parser
-package adt
 package introspection
 
-import Definition.TypeSystemDefinition.TypeDefinition
-import Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.DocumentRenderer
 import symphony.parser.adt.*
+import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition
+import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.adt.Type.*
-import value.Value.StringValue
+import symphony.parser.value.Value.StringValue
 
 final case class __Type(
   kind: __TypeKind,

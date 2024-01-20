@@ -1,10 +1,8 @@
-package symphony
-package parser
-package adt
-package introspection
+package symphony.parser.introspection
 
-import Definition.TypeSystemDefinition.DirectiveLocation
-import Definition.TypeSystemDefinition.DirectiveLocation.*
+import symphony.parser.adt.*
+import symphony.parser.adt.Definition.TypeSystemDefinition.*
+import symphony.parser.adt.Definition.TypeSystemDefinition.DirectiveLocation.*
 
 sealed trait __DirectiveLocation { self =>
 

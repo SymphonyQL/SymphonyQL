@@ -6,7 +6,7 @@ import value.*
 
 final case class Directive(name: String, arguments: Map[String, InputValue] = Map.empty, index: Int = 0)
 
-object Directives {
+object Directive {
 
   def isDeprecated(directives: List[Directive]): Boolean =
     directives.exists(_.name == "deprecated")

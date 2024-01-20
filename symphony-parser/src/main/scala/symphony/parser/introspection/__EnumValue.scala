@@ -1,11 +1,8 @@
-package symphony
-package parser
-package adt
-package introspection
+package symphony.parser.introspection
 
-import Definition.TypeSystemDefinition.TypeDefinition.EnumValueDefinition
-import adt.Directive
-import value.Value.StringValue
+import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.EnumValueDefinition
+import symphony.parser.adt.Directive
+import symphony.parser.value.Value.StringValue
 
 case class __EnumValue(
   name: String,

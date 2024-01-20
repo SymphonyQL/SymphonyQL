@@ -1,9 +1,6 @@
-package symphony
-package parser
-package adt
-package introspection
+package symphony.parser.introspection
 
-import Definition.TypeSystemDefinition.TypeDefinition.InputValueDefinition
+import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.InputValueDefinition
 import symphony.parser.adt.Directive
 import symphony.parser.value.InputValue
 import symphony.parser.value.Value.StringValue

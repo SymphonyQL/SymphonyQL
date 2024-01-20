@@ -1,13 +1,10 @@
-package symphony
-package parser
-package adt
-package introspection
+package symphony.parser.introspection
 
-import Definition.TypeSystemDefinition.TypeDefinition.*
-import adt.Directive
-import value.Value.StringValue
+import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
+import symphony.parser.adt.Directive
+import symphony.parser.value.Value.StringValue
 
-case class __Field(
+final case class __Field(
   name: String,
   description: Option[String],
   args: __DeprecatedArgs => List[__InputValue],
@@ -16,7 +13,7 @@ case class __Field(
   deprecationReason: Option[String] = None,
   directives: Option[List[Directive]] = None
 ) {
-  final override lazy val hashCode: Int = super.hashCode()
+  override lazy val hashCode: Int = super.hashCode()
 
   def toFieldDefinition: FieldDefinition = {
     val allDirectives = (if (isDeprecated)

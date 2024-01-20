@@ -1,4 +1,4 @@
-package symphony.parser.adt.introspection
+package symphony.parser.introspection
 
 final case class __Schema(
   description: Option[String],
