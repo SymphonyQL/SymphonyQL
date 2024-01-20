@@ -3,10 +3,10 @@ import sbt.*
 object Dependencies {
 
   object Versions {
-    val scala3Version = "3.3.1"
-    val `pekko-core-Version`  = "1.0.2"
-    val `pekko-http-Version`  = "1.0.0"
-    val parboiled     = "2.5.1"
+    val scala3Version        = "3.3.1"
+    val `pekko-core-Version` = "1.0.2"
+    val `pekko-http-Version` = "1.0.0"
+    val parboiled            = "2.5.1"
   }
 
   object Deps {
