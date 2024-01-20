@@ -31,10 +31,10 @@ lazy val commonSettings =
     )
   )
 
-lazy val `symphony` = (project in file("."))
+lazy val root = (project in file("."))
   .aggregate(
-    `symphony-core`,
-    `symphony-parser`
+    core,
+    parser
   )
   .settings(
     publish / skip := true,
@@ -42,18 +42,20 @@ lazy val `symphony` = (project in file("."))
     commands ++= Commands.value
   )
 
-lazy val `symphony-parser` = (project in file("symphony-parser"))
+lazy val parser = (project in file("modules/parser"))
   .settings(
     publish / skip := false,
     commonSettings,
+    name := "symphony-parser",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.parser.value
   )
 
-lazy val `symphony-core` = (project in file("symphony-core"))
+lazy val core = (project in file("modules/core"))
   .settings(
     publish / skip := false,
     commonSettings,
+    name := "symphony-core",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.core.value
   )
