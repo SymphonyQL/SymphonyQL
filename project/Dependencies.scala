@@ -4,7 +4,8 @@ object Dependencies {
 
   object Versions {
     val scala3Version = "3.3.1"
-    val pekkoVersion  = "1.0.2"
+    val `pekko-core-Version`  = "1.0.2"
+    val `pekko-http-Version`  = "1.0.0"
     val parboiled     = "2.5.1"
   }
 
@@ -22,9 +23,9 @@ object Dependencies {
     // prepare, analyzer, run, tracing
     val core = sbt.Def.setting {
       Seq(
-        "org.apache.pekko" %% "pekko-http"    % pekkoVersion,
-        "org.apache.pekko" %% "pekko-stream"  % pekkoVersion,
-        "org.apache.pekko" %% "pekko-testkit" % pekkoVersion % Test
+        "org.apache.pekko" %% "pekko-http"    % `pekko-http-Version`,
+        "org.apache.pekko" %% "pekko-stream"  % `pekko-core-Version`,
+        "org.apache.pekko" %% "pekko-testkit" % `pekko-core-Version` % Test
       )
     }
   }
