@@ -7,6 +7,7 @@ object Dependencies {
     val `pekko-core-Version` = "1.0.2"
     val `pekko-http-Version` = "1.0.0"
     val parboiled            = "2.5.1"
+    val scalatest            = "3.2.17"
   }
 
   object Deps {
@@ -16,7 +17,8 @@ object Dependencies {
     // all ADTs definition, each GraphQL type has a companion object to construct DSL.
     val parser = sbt.Def.setting {
       Seq(
-        "org.parboiled" %% "parboiled" % parboiled
+        "org.parboiled" %% "parboiled" % parboiled,
+        "org.scalatest" %% "scalatest" % scalatest % Test
       )
     }
 

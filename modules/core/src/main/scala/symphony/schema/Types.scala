@@ -1,11 +1,9 @@
-package symphony
-package parser
-package schema
+package symphony.schema
 
 import scala.annotation.tailrec
 
-import adt.*
-import introspection.*
+import symphony.parser.adt.*
+import symphony.parser.introspection.*
 
 object Types {
 

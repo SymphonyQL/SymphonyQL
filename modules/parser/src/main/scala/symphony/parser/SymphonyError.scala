@@ -5,7 +5,6 @@ import scala.util.control.NoStackTrace
 import symphony.parser.adt.LocationInfo
 import symphony.parser.value.*
 import symphony.parser.value.ResponseValue.*
-import symphony.parser.value.ResponseValue.ListValue
 import symphony.parser.value.Value.StringValue
 
 sealed trait SymphonyError extends NoStackTrace with Product with Serializable {
@@ -44,6 +43,24 @@ object SymphonyError {
     extensions: Option[ObjectValue] = None
   ) extends SymphonyError {
     override def toString: String = s"ValidationError Error: $msg"
+
+    def toResponseValue: ResponseValue =
+      ObjectValue(
+        List(
+          "message"    -> Some(StringValue(msg)),
+          "locations"  -> locationInfo.map(li => ListValue(List(li.toResponseValue))),
+          "extensions" -> extensions
+        ).collect { case (name, Some(v)) => name -> v }
+      )
+  }
+
+  final case class ArgumentError(
+    msg: String,
+    explanatoryText: String,
+    locationInfo: Option[LocationInfo] = None,
+    extensions: Option[ObjectValue] = None
+  ) extends SymphonyError {
+    override def toString: String = s"ArgumentError Error: $msg"
 
     def toResponseValue: ResponseValue =
       ObjectValue(

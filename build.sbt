@@ -52,6 +52,7 @@ lazy val parser = (project in file("modules/parser"))
   )
 
 lazy val core = (project in file("modules/core"))
+  .dependsOn(parser)
   .settings(
     publish / skip := false,
     commonSettings,
