@@ -4,7 +4,7 @@ package value
 
 import scala.util.control.NonFatal
 
-private[symphony] trait Value extends InputValue with ResponseValue
+private[symphony] trait Value extends InputValue with OutputValue
 
 object Value {
 

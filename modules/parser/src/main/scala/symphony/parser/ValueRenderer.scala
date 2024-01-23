@@ -50,13 +50,13 @@ object ValueRenderer {
     (value: Value.EnumValue, indent: Option[Int], write: StringBuilder) =>
       Renderer.escapedString.unsafeRender(value.value, indent, write)
 
-  lazy val responseValueRenderer: Renderer[ResponseValue] =
-    (value: ResponseValue, indent: Option[Int], write: StringBuilder) =>
+  lazy val outputValueRenderer: Renderer[OutputValue] =
+    (value: OutputValue, indent: Option[Int], write: StringBuilder) =>
       value match {
-        case ResponseValue.ListValue(values) =>
-          responseListValueRenderer.unsafeRender(ResponseValue.ListValue(values), indent, write)
-        case in: ResponseValue.ObjectValue =>
-          responseObjectValueRenderer.unsafeRender(in, indent, write)
+        case OutputValue.ListValue(values) =>
+          outputListValueRenderer.unsafeRender(OutputValue.ListValue(values), indent, write)
+        case in: OutputValue.ObjectValue =>
+          outputObjectValueRenderer.unsafeRender(in, indent, write)
         case StringValue(str) =>
           write += '"'
           Renderer.escapedString.unsafeRender(str, indent, write)
@@ -75,13 +75,13 @@ object ValueRenderer {
         case BigIntNumber(value)       => write append value
       }
 
-  lazy val responseListValueRenderer: Renderer[ResponseValue.ListValue] =
-    Renderer.char('[') ++ responseValueRenderer
+  lazy val outputListValueRenderer: Renderer[OutputValue.ListValue] =
+    Renderer.char('[') ++ outputValueRenderer
       .list(Renderer.char(',') ++ Renderer.spaceOrEmpty)
-      .contramap[ResponseValue.ListValue](_.values) ++ Renderer.char(']')
+      .contramap[OutputValue.ListValue](_.values) ++ Renderer.char(']')
 
-  lazy val responseObjectValueRenderer: Renderer[ResponseValue.ObjectValue] =
-    (value: ResponseValue.ObjectValue, indent: Option[Int], write: StringBuilder) => {
+  lazy val outputObjectValueRenderer: Renderer[OutputValue.ObjectValue] =
+    (value: OutputValue.ObjectValue, indent: Option[Int], write: StringBuilder) => {
       write += '{'
       var first = true
       value.fields.foreach { field =>
@@ -95,7 +95,7 @@ object ValueRenderer {
         write += '"'
         write += ':'
         if (indent.nonEmpty) write += ' '
-        responseValueRenderer.unsafeRender(field._2, indent, write)
+        outputValueRenderer.unsafeRender(field._2, indent, write)
       }
       write += '}'
     }

@@ -4,14 +4,14 @@ import scala.util.control.NoStackTrace
 
 import symphony.parser.adt.LocationInfo
 import symphony.parser.value.*
-import symphony.parser.value.ResponseValue.*
+import symphony.parser.value.OutputValue.*
 import symphony.parser.value.Value.StringValue
 
 sealed trait SymphonyError extends NoStackTrace with Product with Serializable {
   def msg: String
   override def getMessage: String = msg
 
-  def toResponseValue: ResponseValue
+  def toOutputValue: OutputValue
 }
 
 object SymphonyError {
@@ -26,11 +26,11 @@ object SymphonyError {
 
     override def getCause: Throwable = innerThrowable.orNull
 
-    def toResponseValue: ResponseValue =
+    def toOutputValue: OutputValue =
       ObjectValue(
         List(
           "message"    -> Some(StringValue(s"Parsing Error: $msg")),
-          "locations"  -> locationInfo.map(li => ListValue(List(li.toResponseValue))),
+          "locations"  -> locationInfo.map(li => ListValue(List(li.toOutputValue))),
           "extensions" -> extensions
         ).collect { case (name, Some(v)) => name -> v }
       )
@@ -44,11 +44,11 @@ object SymphonyError {
   ) extends SymphonyError {
     override def toString: String = s"ValidationError Error: $msg"
 
-    def toResponseValue: ResponseValue =
+    def toOutputValue: OutputValue =
       ObjectValue(
         List(
           "message"    -> Some(StringValue(msg)),
-          "locations"  -> locationInfo.map(li => ListValue(List(li.toResponseValue))),
+          "locations"  -> locationInfo.map(li => ListValue(List(li.toOutputValue))),
           "extensions" -> extensions
         ).collect { case (name, Some(v)) => name -> v }
       )
@@ -56,17 +56,16 @@ object SymphonyError {
 
   final case class ArgumentError(
     msg: String,
-    explanatoryText: String,
     locationInfo: Option[LocationInfo] = None,
     extensions: Option[ObjectValue] = None
   ) extends SymphonyError {
     override def toString: String = s"ArgumentError Error: $msg"
 
-    def toResponseValue: ResponseValue =
+    def toOutputValue: OutputValue =
       ObjectValue(
         List(
           "message"    -> Some(StringValue(msg)),
-          "locations"  -> locationInfo.map(li => ListValue(List(li.toResponseValue))),
+          "locations"  -> locationInfo.map(li => ListValue(List(li.toOutputValue))),
           "extensions" -> extensions
         ).collect { case (name, Some(v)) => name -> v }
       )
@@ -83,11 +82,11 @@ object SymphonyError {
 
     override def getCause: Throwable = innerThrowable.orNull
 
-    def toResponseValue: ResponseValue =
+    def toOutputValue: OutputValue =
       ObjectValue(
         List(
           "message"    -> Some(StringValue(msg)),
-          "locations"  -> locationInfo.map(li => ListValue(List(li.toResponseValue))),
+          "locations"  -> locationInfo.map(li => ListValue(List(li.toOutputValue))),
           "path"       -> Some(path).collect { case p if p.nonEmpty => ListValue(p) },
           "extensions" -> extensions
         ).collect { case (name, Some(v)) => name -> v }
