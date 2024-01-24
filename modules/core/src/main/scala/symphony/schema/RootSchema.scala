@@ -1,4 +1,4 @@
-package symphony
+package symphony.schema
 
 final class RootSchema private {}
 
