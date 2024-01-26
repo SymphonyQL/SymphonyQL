@@ -2,7 +2,7 @@ import Dependencies.Versions.*
 
 inThisBuild(
   List(
-    scalaVersion           := scala3Version,
+    scalaVersion           := scala3_Version,
     organization           := "symphonyql.org",
     sonatypeCredentialHost := "s01.oss.sonatype.org",
     sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
@@ -21,7 +21,7 @@ inThisBuild(
 
 lazy val commonSettings =
   Seq(
-    scalaVersion := scala3Version,
+    scalaVersion := scala3_Version,
     scalacOptions ++= Seq(
       "-language:dynamics",
       "-explain",
