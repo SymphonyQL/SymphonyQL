@@ -10,7 +10,7 @@ final case class SymphonyResponse[+E](data: OutputValue, errors: List[E], extens
   def toOutputValue: OutputValue =
     ObjectValue(
       List(
-        "data" -> Some(data),
+        "data" -> (if (errors.isEmpty) Some(data) else None),
         "errors" -> (if (errors.nonEmpty)
                        Some(ListValue(errors.map {
                          case e: SymphonyError => e.toOutputValue

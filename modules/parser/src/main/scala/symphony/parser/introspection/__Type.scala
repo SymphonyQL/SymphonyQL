@@ -2,7 +2,6 @@ package symphony
 package parser
 package introspection
 
-import symphony.parser.DocumentRenderer
 import symphony.parser.adt.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
@@ -25,7 +24,7 @@ final case class __Type(
 ) { self =>
   override lazy val hashCode: Int = super.hashCode()
 
-  def |+|(that: __Type): __Type = __Type(
+  def ++(that: __Type): __Type = __Type(
     kind,
     (name ++ that.name).reduceOption((_, b) => b),
     (description ++ that.description).reduceOption((_, b) => b),
@@ -34,7 +33,7 @@ final case class __Type(
     (possibleTypes ++ that.possibleTypes).reduceOption(_ ++ _),
     args => (enumValues(args) ++ that.enumValues(args)).reduceOption(_ ++ _),
     args => (inputFields(args) ++ that.inputFields(args)).reduceOption(_ ++ _),
-    (ofType ++ that.ofType).reduceOption(_ |+| _),
+    (ofType ++ that.ofType).reduceOption(_ ++ _),
     (specifiedBy ++ that.specifiedBy).reduceOption((_, b) => b),
     (directives ++ that.directives).reduceOption(_ ++ _),
     (origin ++ that.origin).reduceOption((_, b) => b)

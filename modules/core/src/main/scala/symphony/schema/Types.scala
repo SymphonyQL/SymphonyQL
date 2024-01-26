@@ -7,9 +7,11 @@ import symphony.parser.introspection.*
 
 object Types {
 
-  /** Creates a new scalar type with the given name.
-   */
-  def makeScalar(
+  def makeList(underlying: __Type): __Type = __Type(__TypeKind.LIST, ofType = Some(underlying))
+
+  def makeNonNull(underlying: __Type): __Type = __Type(__TypeKind.NON_NULL, ofType = Some(underlying))
+
+  def mkScalar(
     name: String,
     description: Option[String] = None,
     specifiedBy: Option[String] = None,
@@ -17,14 +19,14 @@ object Types {
   ): __Type =
     __Type(__TypeKind.SCALAR, Some(name), description, specifiedBy = specifiedBy, directives = directives)
 
-  val boolean: __Type = makeScalar("Boolean")
-  val string: __Type  = makeScalar("String")
-  val int: __Type     = makeScalar("Int")
-  val long: __Type    = makeScalar("Long")
-  val float: __Type   = makeScalar("Float")
-  val double: __Type  = makeScalar("Double")
+  val boolean: __Type = mkScalar("Boolean")
+  val string: __Type  = mkScalar("String")
+  val int: __Type     = mkScalar("Int")
+  val long: __Type    = mkScalar("Long")
+  val float: __Type   = mkScalar("Float")
+  val double: __Type  = mkScalar("Double")
 
-  def makeEnum(
+  def mkEnum(
     name: Option[String],
     description: Option[String],
     values: List[__EnumValue],
@@ -41,7 +43,7 @@ object Types {
       directives = directives
     )
 
-  def makeObject(
+  def mkObject(
     name: Option[String],
     description: Option[String],
     fields: List[__Field],
@@ -60,7 +62,7 @@ object Types {
       origin = origin
     )
 
-  def makeField(
+  def mkField(
     name: String,
     description: Option[String],
     arguments: List[__InputValue],
@@ -81,7 +83,7 @@ object Types {
       directives
     )
 
-  def makeInputObject(
+  def mkInputObject(
     name: Option[String],
     description: Option[String],
     fields: List[__InputValue],
@@ -99,7 +101,7 @@ object Types {
       directives = directives
     )
 
-  def makeUnion(
+  def mkUnion(
     name: Option[String],
     description: Option[String],
     subTypes: List[__Type],
@@ -115,7 +117,7 @@ object Types {
       directives = directives
     )
 
-  def makeInterface(
+  def mkInterface(
     name: Option[String],
     description: Option[String],
     fields: () => List[__Field],
@@ -134,8 +136,6 @@ object Types {
       directives = directives
     )
 
-  /** Returns a map of all the types nested within the given root type.
-   */
   def collectTypes(t: __Type, existingTypes: List[__Type] = Nil): List[__Type] =
     t.kind match {
       case __TypeKind.SCALAR | __TypeKind.ENUM =>
@@ -171,53 +171,6 @@ object Types {
           t.name.fold(types)(_ => if (existingTypes.exists(same(t, _))) types else collectTypes(t, types))
         }
         t.possibleTypes.getOrElse(Nil).foldLeft(list2) { case (types, subtype) => collectTypes(subtype, types) }
-    }
-
-  /** Tries to find a common widened type among a list of fields.
-   *
-   *  @param l
-   *    a list of fields to unify
-   *  @return
-   *    the unified type if one could be found
-   */
-  def unify(l: List[__Field]): Option[__Type] =
-    l.headOption.flatMap { first =>
-      val args = first.allArgs.map(_._type)
-      def _unify(f2: __Field)(t1: __Type) =
-        if (
-          args.length == f2.allArgs.length &&
-          args.zip(f2.allArgs.map(_._type)).forall(v => same(v._1, v._2))
-        )
-          unify(t1, f2._type)
-        else None
-
-      l.drop(1).foldLeft(Option(first._type))((acc, t) => acc.flatMap(_unify(t)))
-    }
-
-  /** Tries to unify two types by widening them to a common supertype.
-   *
-   *  @example
-   *    {{{unify(string, makeNonNull(string)) // => Some(__Type(SCALAR, Some("String")))}}}
-   *  @param t1
-   *    type second type to unify
-   *  @param t2
-   *    the first type to unify
-   *  @return
-   *    the unified type if one could be found
-   */
-  def unify(t1: __Type, t2: __Type): Option[__Type] =
-    if (same(t1, t2)) Option(t1)
-    else
-      (t1.kind, t2.kind) match {
-        case (__TypeKind.NON_NULL, _) => t1.ofType.flatMap(unify(_, t2))
-        case (_, __TypeKind.NON_NULL) => t2.ofType.flatMap(unify(_, t1))
-        case _                        => None
-      }
-
-  def extractCommonDescription(l: List[__Field]): Option[String] =
-    l.map(_.description).distinct match {
-      case desc :: Nil => desc
-      case _           => None
     }
 
   @tailrec

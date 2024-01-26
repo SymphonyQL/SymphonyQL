@@ -34,7 +34,8 @@ lazy val commonSettings =
 lazy val root = (project in file("."))
   .aggregate(
     core,
-    parser
+    parser,
+    server
   )
   .settings(
     publish / skip := true,
@@ -59,4 +60,14 @@ lazy val core = (project in file("modules/core"))
     name := "symphony-core",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.core.value
+  )
+
+lazy val server = (project in file("modules/server"))
+  .dependsOn(parser)
+  .settings(
+    publish / skip := false,
+    commonSettings,
+    name := "symphony-server",
+    commands ++= Commands.value,
+    libraryDependencies ++= Dependencies.Deps.server.value
   )

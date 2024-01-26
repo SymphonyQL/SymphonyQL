@@ -1,3 +1,3 @@
 package symphony
 
-final case class SymphonyContext[A](param: A, env: String = "dev")
+final case class SymphonyContext(env: String = "dev")
