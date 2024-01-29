@@ -255,7 +255,7 @@ object DocumentRenderer extends Renderer[Document] {
     (selection: Selection, indent: Option[Int], builder: StringBuilder) => {
       pad(indent, builder)
       selection match {
-        case Selection.Field(alias, name, arguments, directives, selectionSet, _) =>
+        case Selection.Field(alias, name, arguments, directives, selectionSet) =>
           alias.foreach { a =>
             builder append a
             builder append ':'

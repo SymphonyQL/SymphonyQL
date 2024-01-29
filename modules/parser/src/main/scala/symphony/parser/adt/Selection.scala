@@ -16,8 +16,7 @@ object Selection {
     name: String,
     arguments: Map[String, InputValue],
     directives: List[Directive],
-    selectionSet: List[Selection],
-    index: Int
+    selectionSet: List[Selection]
   ) extends Selection
 
   case class FragmentSpread(name: String, directives: List[Directive]) extends Selection
