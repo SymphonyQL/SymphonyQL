@@ -3,6 +3,7 @@ package parser
 
 import scala.annotation.switch
 
+import Value.IntValue
 import adt.*
 import adt.Definition.ExecutableDefinition.*
 import adt.Definition.TypeSystemDefinition.*
@@ -10,7 +11,6 @@ import introspection.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.DirectiveLocation.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.adt.Type.{ innerType, NamedType }
-import value.InputValue
 
 object DocumentRenderer extends Renderer[Document] {
 

@@ -2,9 +2,8 @@ package symphony
 package parser
 package adt
 
-import value.OutputValue
-import value.OutputValue.ObjectValue
-import value.Value.*
+import OutputValue.ObjectValue
+import Value.*
 
 final case class LocationInfo(column: Int, line: Int) {
 

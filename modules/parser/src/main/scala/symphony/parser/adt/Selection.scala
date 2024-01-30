@@ -3,7 +3,6 @@ package parser
 package adt
 
 import Type.*
-import value.InputValue
 
 sealed trait Selection extends Serializable {
   @transient final override lazy val hashCode: Int = super.hashCode()
@@ -11,7 +10,7 @@ sealed trait Selection extends Serializable {
 
 object Selection {
 
-  case class Field(
+  final case class Field(
     alias: Option[String],
     name: String,
     arguments: Map[String, InputValue],
@@ -19,9 +18,9 @@ object Selection {
     selectionSet: List[Selection]
   ) extends Selection
 
-  case class FragmentSpread(name: String, directives: List[Directive]) extends Selection
+  final case class FragmentSpread(name: String, directives: List[Directive]) extends Selection
 
-  case class InlineFragment(
+  final case class InlineFragment(
     typeCondition: Option[NamedType],
     dirs: List[Directive],
     selectionSet: List[Selection]

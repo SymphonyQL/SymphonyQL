@@ -1,9 +1,9 @@
 package symphony
 
+import symphony.parser.OutputValue
+import symphony.parser.OutputValue.*
 import symphony.parser.SymphonyError
-import symphony.parser.value.OutputValue
-import symphony.parser.value.OutputValue.*
-import symphony.parser.value.Value.StringValue
+import symphony.parser.Value.StringValue
 
 final case class SymphonyResponse[+E](data: OutputValue, errors: List[E], extensions: Option[ObjectValue] = None) {
 

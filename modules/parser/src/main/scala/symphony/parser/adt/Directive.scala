@@ -2,8 +2,6 @@ package symphony
 package parser
 package adt
 
-import value.*
-
 final case class Directive(name: String, arguments: Map[String, InputValue] = Map.empty, index: Int = 0)
 
 object Directive {

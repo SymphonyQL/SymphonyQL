@@ -1,8 +1,8 @@
 package symphony.parser.introspection
 
+import symphony.parser.Value.StringValue
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.adt.Directive
-import symphony.parser.value.Value.StringValue
 
 final case class __Field(
   name: String,

@@ -1,10 +1,82 @@
 package symphony
 package parser
-package value
 
 import scala.util.control.NonFatal
+import scala.util.hashing.MurmurHash3
 
-private[symphony] trait Value extends InputValue with OutputValue
+sealed trait OutputValue extends Serializable
+
+object OutputValue {
+
+  final case class ListValue(values: List[OutputValue]) extends OutputValue {
+    override def toString: String = ValueRenderer.outputListValueRenderer.renderCompact(this)
+  }
+
+  final case class ObjectValue(fields: List[(String, OutputValue)]) extends OutputValue {
+    override def toString: String = ValueRenderer.outputObjectValueRenderer.renderCompact(this)
+
+    @transient override lazy val hashCode: Int = MurmurHash3.unorderedHash(fields)
+
+    override def equals(other: Any): Boolean =
+      other match {
+        case o: ObjectValue => o.hashCode == hashCode
+        case _              => false
+      }
+  }
+}
+
+sealed trait InputValue extends Serializable {
+  self =>
+  def toInputString: String = ValueRenderer.inputValueRenderer.renderCompact(self)
+}
+
+object InputValue {
+
+  final case class ListValue(values: List[InputValue]) extends InputValue {
+    override def toString: String = values.mkString("[", ",", "]")
+
+    override def toInputString: String = ValueRenderer.inputListValueRenderer.render(this)
+  }
+
+  final case class ObjectValue(fields: Map[String, InputValue]) extends InputValue {
+
+    override def toString: String =
+      fields.map { case (name, value) => s""""$name:${value.toString}"""" }.mkString("{", ",", "}")
+
+    override def toInputString: String = ValueRenderer.inputObjectValueRenderer.render(this)
+  }
+
+  final case class VariableValue(name: String) extends InputValue {
+    override def toString: String = s"$$$name"
+  }
+
+}
+
+sealed trait PathValue extends Value
+
+object PathValue {
+  def fromEither(either: Either[String, Int]): PathValue = either.fold(Key.apply, Index.apply)
+
+  object Key {
+    def apply(value: String): PathValue = Value.StringValue(value)
+
+    def unapply(value: PathValue): Option[String] = value match {
+      case Value.StringValue(s) => Some(s)
+      case _                    => None
+    }
+  }
+
+  object Index {
+    def apply(value: Int): PathValue = Value.IntValue.IntNumber(value)
+
+    def unapply(value: PathValue): Option[Int] = value match {
+      case Value.IntValue.IntNumber(i) => Some(i)
+      case _                           => None
+    }
+  }
+}
+
+sealed trait Value extends InputValue with OutputValue
 
 object Value {
 
@@ -51,7 +123,8 @@ object Value {
         else if (size < 19) LongNumber(s.toLong)
         else BigIntNumber(BigInt(s))
       } catch {
-        case NonFatal(_) => BigIntNumber(BigInt(s)) // Should never happen, but we leave it as a fallback
+        // Should never happen, but we leave it as a fallback
+        case NonFatal(_) => BigIntNumber(BigInt(s))
       }
 
     final case class IntNumber(value: Int) extends IntValue with PathValue {

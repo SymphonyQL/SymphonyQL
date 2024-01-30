@@ -7,15 +7,15 @@ import org.parboiled2.*
 import org.parboiled2.support.hlist
 import org.parboiled2.support.hlist.HNil
 
+import symphony.parser.*
+import symphony.parser.InputValue.*
 import symphony.parser.SymphonyError.ParsingError
+import symphony.parser.Value.*
 import symphony.parser.adt.*
 import symphony.parser.adt.Definition.ExecutableDefinition
 import symphony.parser.adt.Definition.ExecutableDefinition.*
 import symphony.parser.adt.Selection.*
 import symphony.parser.adt.Type.*
-import symphony.parser.value.*
-import symphony.parser.value.InputValue.*
-import symphony.parser.value.Value.*
 
 object Parser {
 
@@ -23,10 +23,14 @@ object Parser {
 
   final class GraphQLParser(val input: ParserInput) extends Parser {
 
-    def sourceCharacter: Rule0 = rule { anyOf("\u0009\u000A\u000D\u0020-\uFFFF") }
+    private val charPredicate: CharPredicate = CharPredicate('\u0009', '\u0020' to '\uFFFF') -- "\n\r"
+
+    def sourceCharacter: Rule0 = rule {
+      CharPredicate('\u0009', '\u000A', '\u000D', '\u0020' to '\uFFFF')
+    }
 
     def sourceCharacterWithoutLineTerminator: Rule0 = rule {
-      CharPredicate('\u0009', '\u0020' to '\uFFFF') -- "\n\r"
+      charPredicate
     }
 
     def unicodeBOM: Rule0 = rule { "\uFEFF" }
@@ -49,25 +53,21 @@ object Parser {
       (unicodeBOM | whiteSpace | lineTerminator | comment | comma).*
     }
 
-    def name: Rule1[String] = rule {
-      capture(CharPredicate.Alpha ~ ignored ~ CharPredicate.AlphaNum.*)
-    }
+    def sign: Rule0 = rule { "-" | "+" }
+
+    def negativeSign: Rule0 = rule { "-" }
 
     def booleanValue: Rule1[BooleanValue] = rule {
       "true" ~ push(BooleanValue(true)) | "false" ~ push(BooleanValue(false))
     }
 
-    def negativeSign: Rule0 = rule { "-" }
-
     def integerPart: Rule0 = rule {
-      (negativeSign.? ~ ignored ~ "0") | (negativeSign.? ~ ignored ~ CharPredicate.Digit19 ~ ignored ~ CharPredicate.Digit.*)
+      (negativeSign.? ~ "0") | (negativeSign.? ~ CharPredicate.Digit19 ~ CharPredicate.Digit.*)
     }
 
     def intValue: Rule1[IntValue] = rule {
-      capture(integerPart) ~> ((v: String) => IntValue(v.toLong))
+      capture(integerPart) ~> ((v: String) => IntValue.fromStringUnsafe(v))
     }
-
-    def sign: Rule0 = rule { "-" | "+" }
 
     def exponentIndicator: Rule0 = rule { anyOf("eE") }
 
@@ -82,9 +82,10 @@ object Parser {
         (integerPart ~ ignored ~ fractionalPart) |
           (integerPart ~ ignored ~ exponentPart) |
           (integerPart ~ ignored ~ fractionalPart ~ ignored ~ exponentPart)
-      ) ~> { t => FloatValue(t.toDouble) }
+      ) ~> { t => FloatValue(t) }
     }
 
+    // ========================================String Value===================================================================
     def escapedUnicode: Rule1[String] = rule {
       capture(
         CharPredicate.HexDigit ~ ignored ~
@@ -94,7 +95,7 @@ object Parser {
     }
 
     def escapedCharacter: Rule1[String] = rule {
-      capture(CharPredicate.ApplyMagnet.fromString("\"\\/bfnrt").predicate) ~> { t =>
+      capture(CharPredicate.Empty.++("\"\\\\/bfnrt")) ~> { t =>
         t match
           case "b"   => "\b"
           case "n"   => "\n"
@@ -107,7 +108,7 @@ object Parser {
 
     def stringCharacter: Rule1[String] = rule {
       capture(
-        sourceCharacterWithoutLineTerminator
+        oneOrMore(charPredicate -- '"' -- '\\' -- '\n' -- '\r')
       ) | "\\u" ~ ignored ~ escapedUnicode | "\\" ~ ignored ~ escapedCharacter
     }
 
@@ -116,10 +117,11 @@ object Parser {
     }
 
     def stringValue: Rule1[StringValue] = rule {
-      ("\"\"\"" ~ ((!"\"\"\"") ~ blockStringCharacter).* ~ "\"\"\"") ~> (v =>
-        StringValue(blockStringValue(v.mkString))
-      ) |
-        ("\"" ~ stringCharacter.* ~> (v => StringValue(v.mkString)) ~ "\"")
+      (("\"\"\"" ~ ignored ~ ((!"\"\"\"") ~ blockStringCharacter).* ~> (s =>
+        blockStringValue(s.mkString)
+      ) ~ ignored ~ "\"\"\"") |
+        ("\"" ~ ignored ~ stringCharacter.* ~> (_.mkString) ~ ignored ~ "\""))
+        ~> (v => StringValue(v))
     }
 
     def blockStringValue(rawValue: String): String = {
@@ -144,6 +146,11 @@ object Parser {
       l4.mkString("\n")
     }
 
+    // ========================================Value===================================================================
+    def name: Rule1[String] = rule {
+      capture(CharPredicate.Alpha ~ ignored ~ CharPredicate.AlphaNum.*)
+    }
+
     def nullValue: Rule1[InputValue] = rule {
       str("null") ~> (() => NullValue)
     }
@@ -157,7 +164,7 @@ object Parser {
     }
 
     def objectField: Rule1[(String, InputValue)] = rule {
-      name ~ ":" ~!~ value ~> { (n, v) => n -> v }
+      name ~ ":" ~!~ ignored ~ value ~> { (n, v) => n -> v }
     }
 
     def objectValue: Rule1[ObjectValue] = rule {
@@ -169,18 +176,19 @@ object Parser {
         floatValue | intValue | booleanValue | stringValue | nullValue | enumValue | listValue | objectValue | variable
       }
 
+    // ========================================Definition===================================================================
     def alias: Rule1[String] = rule {
-      name ~ ":"
+      name ~ ":" ~ ignored
     }
 
     def argument: Rule1[(String, InputValue)] = rule {
-      name ~ ":" ~ value ~> { (n, v) =>
+      name ~ ":" ~ ignored ~ value ~> { (n, v) =>
         n -> v
       }
     }
 
     def arguments: Rule1[Map[String, InputValue]] = rule {
-      "(" ~!~ argument.*.separatedBy(ignored) ~ ")" ~> (_.toMap)
+      "(" ~!~ ignored ~ argument.*.separatedBy(ignored) ~ ignored ~ ")" ~> (_.toMap)
     }
 
     def directive: Rule1[Directive] = rule("@" ~ name ~ arguments ~> { (name, arguments) =>
@@ -195,7 +203,7 @@ object Parser {
       "{" ~!~ ignored ~ selection.*.separatedBy(ignored) ~ ignored ~ "}" ~> { x => x.toList }
     }
 
-    def namedType: Rule1[NamedType] = rule { name ~ !"null" ~> (NamedType(_, nonNull = false)) }
+    def namedType: Rule1[NamedType] = rule { name ~ !(str("null") ~ EOI) ~> (NamedType(_, nonNull = false)) }
 
     def listType: Rule1[ListType] = rule {
       "[" ~ type_ ~ "]" ~> (t => ListType(t, nonNull = false))
@@ -217,41 +225,43 @@ object Parser {
     }
 
     def variableDefinition: Rule1[VariableDefinition] = rule {
-      variable ~ ":" ~!~ type_ ~ defaultValue.? ~ directives.? ~> { (v, t, default, dirs) =>
-        VariableDefinition(v.name, t, default, dirs.toList.flatten)
+      variable ~ ":" ~ ignored ~!~ type_ ~ ignored ~ defaultValue.? ~ ignored ~ directives.? ~> {
+        (v, t, default, dirs) =>
+          VariableDefinition(v.name, t, default, dirs.toList.flatten)
       }
     }
 
     def defaultValue: Rule1[InputValue] = rule { "=" ~!~ value }
 
     def field: Rule1[Field] = rule {
-      alias.? ~ name ~ arguments.? ~ directives.? ~ ignored ~ selectionSet.? ~> { (alias, name, args, dirs, sels) =>
-        Field(
-          alias,
-          name,
-          args.getOrElse(Map()),
-          dirs.getOrElse(Nil),
-          sels.getOrElse(Nil)
-        )
+      alias.? ~ ignored ~ name ~ ignored ~ arguments.? ~ ignored ~ directives.? ~ ignored ~ selectionSet.? ~> {
+        (alias, name, args, dirs, sels) =>
+          Field(
+            alias,
+            name,
+            args.getOrElse(Map()),
+            dirs.getOrElse(Nil),
+            sels.getOrElse(Nil)
+          )
       }
     }
 
     def fragmentName: Rule1[String] = rule {
-      name ~ !"on"
+      name ~ !(str("on") ~ EOI)
     }
 
     def fragmentSpread: Rule1[FragmentSpread] = rule {
-      "..." ~ fragmentName ~ directives.? ~> { (name, dirs) =>
+      "..." ~ fragmentName ~ ignored ~ directives.? ~> { (name, dirs) =>
         FragmentSpread(name, dirs.toList.flatten)
       }
     }
 
     def typeCondition: Rule1[NamedType] = rule {
-      "on" ~!~ namedType
+      "on" ~ ignored ~!~ namedType
     }
 
     def inlineFragment: Rule1[InlineFragment] = rule {
-      "..." ~ typeCondition.? ~ directives.? ~ selectionSet ~> { (typeCondition, dirs, sel) =>
+      "..." ~ typeCondition.? ~ ignored ~ directives.? ~ ignored ~ selectionSet ~> { (typeCondition, dirs, sel) =>
         InlineFragment(typeCondition, dirs.toList.flatten, sel)
       }
     }
@@ -274,13 +284,16 @@ object Parser {
     }
 
     def fragmentDefinition: Rule1[FragmentDefinition] = rule {
-      "fragment" ~!~ fragmentName ~ typeCondition ~ directives ~ selectionSet ~> { (name, typeCondition, dirs, sel) =>
-        FragmentDefinition(name, typeCondition, dirs, sel)
+      "fragment" ~!~ ignored ~ fragmentName ~ ignored ~ typeCondition ~ ignored ~ directives ~ ignored ~ selectionSet ~> {
+        (name, typeCondition, dirs, sel) =>
+          FragmentDefinition(name, typeCondition, dirs, sel)
       }
     }
 
+    // ========================================Definition Set===================================================================
     def executableDefinition: Rule1[ExecutableDefinition] = rule { operationDefinition | fragmentDefinition }
 
+    // TODO typeSystemDefinition
     def definition: Rule1[ExecutableDefinition] = executableDefinition
 
     def document: Rule1[ParsedDocument] = rule {
@@ -290,6 +303,7 @@ object Parser {
     }
   }
 
+  // ========================================Parser API===================================================================
   def parseQuery(query: String): Either[ParsingError, Document] = {
     val input  = ParserInput(query)
     val parser = new GraphQLParser(input)

@@ -15,7 +15,7 @@ trait SourceMapper extends Serializable {
 }
 
 object SourceMapper {
-  lazy val empty: SourceMapper = EmptySourceMapper
+  val empty: SourceMapper = EmptySourceMapper
 
   def apply(source: String): SourceMapper = DefaultSourceMapper(source)
 

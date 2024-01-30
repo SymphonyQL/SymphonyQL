@@ -1,6 +1,6 @@
 package symphony
 
-import symphony.parser.value.InputValue
+import symphony.parser.InputValue
 
 final case class SymphonyRequest(
   query: Option[String] = None,

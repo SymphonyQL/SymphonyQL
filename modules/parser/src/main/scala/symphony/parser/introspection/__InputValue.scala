@@ -1,9 +1,9 @@
 package symphony.parser.introspection
 
+import symphony.parser.InputValue
+import symphony.parser.Value.StringValue
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.InputValueDefinition
 import symphony.parser.adt.Directive
-import symphony.parser.value.InputValue
-import symphony.parser.value.Value.StringValue
 
 final case class __InputValue(
   name: String,

@@ -1,10 +1,10 @@
 package symphony.schema
 
+import symphony.parser.OutputValue
+import symphony.parser.OutputValue.*
+import symphony.parser.Value.*
 import symphony.parser.adt.Directive
 import symphony.parser.introspection.*
-import symphony.parser.value.OutputValue
-import symphony.parser.value.OutputValue.*
-import symphony.parser.value.Value.*
 import symphony.schema.ExecutionPlan.*
 
 trait Schema[T] { self =>

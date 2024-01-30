@@ -9,7 +9,6 @@ import symphony.parser.*
 import symphony.parser.SymphonyError.ExecutionError
 import symphony.parser.adt.Definition.TypeSystemDefinition.*
 import symphony.parser.adt.Document
-import symphony.parser.value.*
 import symphony.schema.*
 import symphony.schema.ExecutionPlan.ObjectDataPlan
 

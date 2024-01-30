@@ -1,7 +1,7 @@
 package symphony.schema
 
-import symphony.parser.value.OutputValue
-import symphony.parser.value.Value.NullValue
+import symphony.parser.OutputValue
+import symphony.parser.Value.NullValue
 
 trait ExecutionPlan
 

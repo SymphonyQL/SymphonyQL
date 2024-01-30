@@ -2,8 +2,8 @@ package symphony
 package schema
 package builder
 
-import symphony.parser.value.OutputValue
-import symphony.parser.value.Value.NullValue
+import symphony.parser.OutputValue
+import symphony.parser.Value.NullValue
 
 object ScalarBuilder {
   def builder[A](): ScalarBuilder[A] = new ScalarBuilder[A]
