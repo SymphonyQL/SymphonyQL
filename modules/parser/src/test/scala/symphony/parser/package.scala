@@ -28,7 +28,7 @@ def simpleQueryWithFragment(
     sourceMapper
   )
 
-def simpleField(
+def mkSimpleField(
   name: String,
   alias: Option[String] = None,
   arguments: Map[String, InputValue] = Map(),

@@ -10,14 +10,49 @@ import symphony.parser.Value.*
 import symphony.parser.adt.*
 import symphony.parser.adt.Definition.ExecutableDefinition.*
 import symphony.parser.adt.Definition.ExecutableDefinition.OperationDefinition
-import symphony.parser.adt.OperationType.Query
+import symphony.parser.adt.OperationType.{ Mutation, Query }
 import symphony.parser.adt.Selection.*
 import symphony.parser.adt.Selection.Field
 import symphony.parser.adt.Type.*
 
 class ParserSpec extends AnyFunSpec with Matchers {
 
-  describe("A Simple ParserSpec") {
+  describe("Simple Mutation") {
+    it("simple query with args") {
+      val query = """mutation {
+                    |  likeStory(storyID: 12345) {
+                    |    story {
+                    |      likeCount
+                    |    }
+                    |  }
+                    |}""".stripMargin
+
+      val doc = Parser.parseQuery(query)
+      doc.toOption.orNull shouldEqual Document(
+        List(
+          OperationDefinition(
+            Mutation,
+            None,
+            Nil,
+            Nil,
+            List(
+              mkSimpleField(
+                "likeStory",
+                arguments = Map("storyID" -> IntValue(12345)),
+                selectionSet = List(
+                  mkSimpleField("story", selectionSet = List(mkSimpleField("likeCount")))
+                )
+              )
+            )
+          )
+        ),
+        SourceMapper(query)
+      )
+    }
+
+  }
+
+  describe("Simple Query") {
     it("simple query with fields") {
       val query =
         """{
@@ -33,16 +68,32 @@ class ParserSpec extends AnyFunSpec with Matchers {
       val doc = Parser.parseQuery(query)
       doc.toOption.orNull shouldEqual simpleQuery(
         selectionSet = List(
-          simpleField(
+          mkSimpleField(
             "hero",
             selectionSet = List(
-              simpleField("name"),
-              simpleField("friends", selectionSet = List(simpleField("name")))
+              mkSimpleField("name"),
+              mkSimpleField("friends", selectionSet = List(mkSimpleField("name")))
             )
           )
         ),
         sourceMapper = SourceMapper(query)
       )
+    }
+
+    it("valid query") {
+      val query =
+        """{
+          |  hero {
+          |    name
+          |    # Queries can have comments!
+          |    friends {
+          |      name
+          |    }
+          |  }
+          |}""".stripMargin
+
+      val doc = Parser.check(query)
+      doc shouldEqual None
     }
 
     it("simple arguments") {
@@ -58,12 +109,12 @@ class ParserSpec extends AnyFunSpec with Matchers {
       doc.toOption.orNull shouldEqual
         simpleQuery(
           selectionSet = List(
-            simpleField(
+            mkSimpleField(
               "human",
               arguments = Map("id" -> StringValue("1000")),
               selectionSet = List(
-                simpleField("name"),
-                simpleField("height", arguments = Map("unit" -> EnumValue("FOOT")))
+                mkSimpleField("name"),
+                mkSimpleField("height", arguments = Map("unit" -> EnumValue("FOOT")))
               ),
               directives = List.empty
             )
@@ -84,10 +135,10 @@ class ParserSpec extends AnyFunSpec with Matchers {
       doc.toOption.orNull shouldEqual
         simpleQuery(
           selectionSet = List(
-            simpleField(
+            mkSimpleField(
               "human",
               arguments = Map("id" -> StringValue("1000\\")),
-              selectionSet = List(simpleField("name"))
+              selectionSet = List(mkSimpleField("name"))
             )
           ),
           sourceMapper = SourceMapper(query)
@@ -108,17 +159,17 @@ class ParserSpec extends AnyFunSpec with Matchers {
       doc.toOption.orNull shouldEqual
         simpleQuery(
           selectionSet = List(
-            simpleField(
+            mkSimpleField(
               "hero",
               alias = Some("empireHero"),
               arguments = Map("episode" -> EnumValue("EMPIRE")),
-              selectionSet = List(simpleField("name"))
+              selectionSet = List(mkSimpleField("name"))
             ),
-            simpleField(
+            mkSimpleField(
               "hero",
               alias = Some("jediHero"),
               arguments = Map("episode" -> EnumValue("JEDI")),
-              selectionSet = List(simpleField("name"))
+              selectionSet = List(mkSimpleField("name"))
             )
           ),
           sourceMapper = SourceMapper(query)
@@ -139,7 +190,7 @@ class ParserSpec extends AnyFunSpec with Matchers {
       doc.toOption.orNull shouldEqual
         simpleQuery(
           selectionSet = List(
-            simpleField(
+            mkSimpleField(
               "human",
               arguments = Map(
                 "id"    -> StringValue("1000"),
@@ -151,7 +202,7 @@ class ParserSpec extends AnyFunSpec with Matchers {
                 "list"  -> ListValue(List(IntValue(1), IntValue(2), IntValue(3))),
                 "obj"   -> ObjectValue(Map("name" -> StringValue("name")))
               ),
-              selectionSet = List(simpleField("name"))
+              selectionSet = List(mkSimpleField("name"))
             )
           ),
           sourceMapper = SourceMapper(query)
@@ -165,11 +216,82 @@ class ParserSpec extends AnyFunSpec with Matchers {
       doc.toOption.orNull shouldEqual
         simpleQuery(
           selectionSet = List(
-            simpleField(
+            mkSimpleField(
               "sendEmail",
               arguments = Map("message" -> StringValue("Hello,\n  World!\n\nYours,\n  GraphQL. "))
             )
           ),
+          sourceMapper = SourceMapper(query)
+        )
+    }
+
+    it("variables") {
+      val query = """query getProfile($devicePicSize: Int = 60) {
+                    |  user(id: 4) {
+                    |    id
+                    |    name
+                    |    profilePic(size: $devicePicSize)
+                    |  }
+                    |}""".stripMargin
+      val doc = Parser.parseQuery(query)
+      doc.toOption.orNull shouldEqual
+        simpleQuery(
+          name = Some("getProfile"),
+          variableDefinitions = List(
+            VariableDefinition("devicePicSize", NamedType("Int", nonNull = false), Some(IntValue(60)), Nil)
+          ),
+          selectionSet = List(
+            mkSimpleField(
+              "user",
+              arguments = Map("id" -> IntValue(4)),
+              selectionSet = List(
+                mkSimpleField("id"),
+                mkSimpleField("name"),
+                mkSimpleField("profilePic", arguments = Map("size" -> VariableValue("devicePicSize")))
+              )
+            )
+          ),
+          sourceMapper = SourceMapper(query)
+        )
+    }
+
+    it("directives") {
+      val query = """query myQuery($someTest: Boolean) {
+                    |  experimentalField @skip(if: $someTest)
+                    |}""".stripMargin
+      val doc = Parser.parseQuery(query)
+      doc.toOption.orNull shouldEqual
+        simpleQuery(
+          name = Some("myQuery"),
+          variableDefinitions = List(VariableDefinition("someTest", NamedType("Boolean", nonNull = false), None, Nil)),
+          selectionSet = List(
+            mkSimpleField(
+              "experimentalField",
+              directives = List(Directive("skip", Map("if" -> VariableValue("someTest"))))
+            )
+          ),
+          sourceMapper = SourceMapper(query)
+        )
+    }
+
+    it("list and non-null types") {
+      val query =
+        """query getProfile($devicePicSize: [Int!]!) {
+          |  nothing
+          |}""".stripMargin
+      val doc = Parser.parseQuery(query)
+      doc.toOption.orNull shouldEqual
+        simpleQuery(
+          name = Some("getProfile"),
+          variableDefinitions = List(
+            VariableDefinition(
+              "devicePicSize",
+              ListType(NamedType("Int", nonNull = true), nonNull = true),
+              None,
+              Nil
+            )
+          ),
+          selectionSet = List(mkSimpleField("nothing")),
           sourceMapper = SourceMapper(query)
         )
     }
@@ -201,16 +323,16 @@ class ParserSpec extends AnyFunSpec with Matchers {
       doc.toOption.orNull shouldEqual simpleQueryWithFragment(
         Some("withFragments"),
         selectionSet = List(
-          simpleField(
+          mkSimpleField(
             "user",
             arguments = Map("id" -> IntValue(4)),
             selectionSet = List(
-              simpleField(
+              mkSimpleField(
                 "friends",
                 arguments = Map("first" -> IntValue(10)),
                 selectionSet = List(FragmentSpread("friendFields", Nil))
               ),
-              simpleField(
+              mkSimpleField(
                 "mutualFriends",
                 arguments = Map("first" -> IntValue(10)),
                 selectionSet = List(FragmentSpread("friendFields", Nil))
@@ -223,14 +345,101 @@ class ParserSpec extends AnyFunSpec with Matchers {
           NamedType("User", nonNull = false),
           Nil,
           List(
-            simpleField("id"),
-            simpleField("name"),
-            simpleField("profilePic", arguments = Map("size" -> IntValue(50)))
+            mkSimpleField("id"),
+            mkSimpleField("name"),
+            mkSimpleField("profilePic", arguments = Map("size" -> IntValue(50)))
           )
         ),
         sourceMapper = SourceMapper(query)
       )
 
     }
+
+    it("inline fragments") {
+      val query = """query inlineFragmentTyping {
+                    |  profiles(handles: ["a", "b"]) {
+                    |    handle
+                    |    ... on User {
+                    |      friends {
+                    |        count
+                    |      }
+                    |    }
+                    |    ... on Page {
+                    |      likers {
+                    |        count
+                    |      }
+                    |    }
+                    |  }
+                    |}""".stripMargin
+      val doc = Parser.parseQuery(query)
+      doc.toOption.orNull shouldEqual
+        simpleQuery(
+          name = Some("inlineFragmentTyping"),
+          selectionSet = List(
+            mkSimpleField(
+              "profiles",
+              arguments = Map("handles" -> ListValue(List(StringValue("a"), StringValue("b")))),
+              selectionSet = List(
+                mkSimpleField("handle"),
+                InlineFragment(
+                  Some(NamedType("User", nonNull = false)),
+                  Nil,
+                  List(
+                    mkSimpleField("friends", selectionSet = List(mkSimpleField("count")))
+                  )
+                ),
+                InlineFragment(
+                  Some(NamedType("Page", nonNull = false)),
+                  Nil,
+                  List(mkSimpleField("likers", selectionSet = List(mkSimpleField("count"))))
+                )
+              )
+            )
+          ),
+          sourceMapper = SourceMapper(query)
+        )
+    }
+
+    it("inline fragments with directives") {
+      val query = """query inlineFragmentNoType($expandedInfo: Boolean) {
+                    |  user(handle: "abc") {
+                    |    id
+                    |    name
+                    |    ... @include(if: $expandedInfo) {
+                    |      firstName
+                    |      lastName
+                    |      birthday
+                    |    }
+                    |  }
+                    |}""".stripMargin
+      val doc = Parser.parseQuery(query)
+      doc.toOption.orNull shouldEqual
+        simpleQuery(
+          name = Some("inlineFragmentNoType"),
+          variableDefinitions =
+            List(VariableDefinition("expandedInfo", NamedType("Boolean", nonNull = false), None, Nil)),
+          selectionSet = List(
+            mkSimpleField(
+              "user",
+              arguments = Map("handle" -> StringValue("abc")),
+              selectionSet = List(
+                mkSimpleField("id"),
+                mkSimpleField("name"),
+                InlineFragment(
+                  None,
+                  List(Directive("include", Map("if" -> VariableValue("expandedInfo")))),
+                  List(
+                    mkSimpleField("firstName"),
+                    mkSimpleField("lastName"),
+                    mkSimpleField("birthday")
+                  )
+                )
+              )
+            )
+          ),
+          sourceMapper = SourceMapper(query)
+        )
+    }
+
   }
 }

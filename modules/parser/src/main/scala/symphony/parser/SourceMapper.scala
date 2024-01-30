@@ -19,7 +19,7 @@ object SourceMapper {
 
   def apply(source: String): SourceMapper = DefaultSourceMapper(source)
 
-  def LookupLineNumber(data: String): Array[Int] = {
+  def lookupLineNumber(data: String): Array[Int] = {
     val lineStarts = ArrayBuffer[Int](0)
     var i          = 0
     var col        = 1
@@ -50,7 +50,7 @@ object SourceMapper {
   }
 
   private final case class DefaultSourceMapper(source: String) extends SourceMapper {
-    private lazy val lineNumberLookup = LookupLineNumber(source)
+    private lazy val lineNumberLookup = lookupLineNumber(source)
 
     def getLocation(index: Int): LocationInfo = {
       val line = lineNumberLookup.indexWhere(_ > index) match {

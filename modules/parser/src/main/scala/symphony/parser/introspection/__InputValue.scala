@@ -1,6 +1,6 @@
 package symphony.parser.introspection
 
-import symphony.parser.InputValue
+import symphony.parser.{ InputValue, Parser }
 import symphony.parser.Value.StringValue
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.InputValueDefinition
 import symphony.parser.adt.Directive
@@ -16,7 +16,7 @@ final case class __InputValue(
 ) {
 
   def toInputValueDefinition: InputValueDefinition = {
-    val default = defaultValue.flatMap(v => Option.empty[InputValue]) // TODO parser v
+    val default = defaultValue.flatMap(v => Parser.parseInputValue(v).toOption)
     val allDirectives = (if (isDeprecated)
                            List(
                              Directive(
