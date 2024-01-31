@@ -1,6 +1,6 @@
 package symphony.parser.introspection
 
-import symphony.parser.{ SymphonyQLInputValue, SymphonyQLParser }
+import symphony.parser.SymphonyQLParser
 import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.InputValueDefinition
 import symphony.parser.adt.Directive

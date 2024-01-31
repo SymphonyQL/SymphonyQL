@@ -2,6 +2,8 @@ package symphony
 package parser
 package introspection
 
+import scala.annotation.targetName
+
 import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition
@@ -24,6 +26,7 @@ final case class __Type(
 ) { self =>
   override lazy val hashCode: Int = super.hashCode()
 
+  @targetName("add")
   def ++(that: __Type): __Type = __Type(
     kind,
     (name ++ that.name).reduceOption((_, b) => b),

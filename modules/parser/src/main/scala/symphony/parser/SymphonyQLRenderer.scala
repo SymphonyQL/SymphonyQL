@@ -1,6 +1,6 @@
 package symphony.parser
 
-import scala.annotation.switch
+import scala.annotation.{ switch, targetName }
 
 /** The inverse of a `Parser` over some type A. A renderer can be used to render a value of type A to a string in either
  *  a regular or compact format.
@@ -24,6 +24,7 @@ trait SymphonyQLRenderer[-A] { self =>
 
   /** Combines this renderer with another renderer sequentially. Semantically equivalent to `this andThen that`
    */
+  @targetName("add")
   def ++[A1 <: A](that: SymphonyQLRenderer[A1]): SymphonyQLRenderer[A1] = self match {
     case SymphonyQLRenderer.Combined(renderers) => SymphonyQLRenderer.Combined(renderers :+ that)
     case _                                      => SymphonyQLRenderer.Combined(List(self, that))

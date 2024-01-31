@@ -154,13 +154,13 @@ object Schema {
         }
     }
 
-  def mkSourceSchema[A](ev: Schema[A]): Schema[Source[A, NotUsed]] =
+  def mkSourceSchema[A](schema: Schema[A]): Schema[Source[A, NotUsed]] =
     new Schema[Source[A, NotUsed]] {
-      override def optional: Boolean = ev.optional
-      override def toType: __Type    = ev.toType
+      override def optional: Boolean = schema.optional
+      override def toType: __Type    = schema.toType
 
       override def resolve(value: Source[A, NotUsed]): Stage =
-        SourceStage(value.map(ev.resolve).mapError {
+        SourceStage(value.map(schema.resolve).mapError {
           case e: ExecutionError => e
           case other =>
             ExecutionError("Caught error during execution of effect-ful field", innerThrowable = Some(other))

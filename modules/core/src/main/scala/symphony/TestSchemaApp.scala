@@ -23,7 +23,7 @@ object TestSchemaApp extends App {
   // SchemaDerivationGen[UserQueryResolver].gen
   val graphql: SymphonyQL = SymphonyQL
     .builder()
-    .addRootSchema(
+    .rootResolver(
       SymphonyQLResolver(
         UserQueryResolver(_ => UserOutput("a1", "b1"), _ => List(UserOutput("a2", "b2"))) -> querySchema,
         UserMutationResolver((_, _) => UserOutput("aaaa", "bbbb"))                        -> mutationSchema

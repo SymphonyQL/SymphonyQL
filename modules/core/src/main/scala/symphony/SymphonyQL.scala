@@ -59,22 +59,22 @@ object SymphonyQL {
   def builder(): SymphonyQLBuilder = new SymphonyQLBuilder
 
   final class SymphonyQLBuilder {
-    private var rootSchemaBuilder: Option[SymphonyQLSchema] = None
+    private var rootSchema: Option[SymphonyQLSchema] = None
 
-    def addRootSchema[Q, M, S](
-      root: SymphonyQLResolver[Q, M, S]
+    def rootResolver[Q, M, S](
+      rootResolver: SymphonyQLResolver[Q, M, S]
     ): this.type = {
-      rootSchemaBuilder = rootSchemaBuilder.map(
+      rootSchema = rootSchema.map(
         _ ++ SymphonyQLSchema(
-          root.queryResolver.map(r => Operation(r._2.toType, r._2.resolve(r._1))),
-          root.mutationResolver.map(r => Operation(r._2.toType, r._2.resolve(r._1))),
-          root.subscriptionResolver.map(r => Operation(r._2.toType, r._2.resolve(r._1)))
+          rootResolver.queryResolver.map(r => Operation(r._2.toType, r._2.resolve(r._1))),
+          rootResolver.mutationResolver.map(r => Operation(r._2.toType, r._2.resolve(r._1))),
+          rootResolver.subscriptionResolver.map(r => Operation(r._2.toType, r._2.resolve(r._1)))
         )
       )
       this
     }
 
-    def build() = new SymphonyQL(rootSchemaBuilder.getOrElse(SymphonyQLSchema(None, None, None)))
+    def build() = new SymphonyQL(rootSchema.getOrElse(SymphonyQLSchema(None, None, None)))
   }
 
 }
