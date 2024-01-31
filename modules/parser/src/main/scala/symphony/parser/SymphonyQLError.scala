@@ -3,30 +3,30 @@ package symphony.parser
 import scala.util.control.NoStackTrace
 
 import symphony.parser.*
-import symphony.parser.OutputValue.*
-import symphony.parser.Value.StringValue
+import symphony.parser.SymphonyQLOutputValue.*
+import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.LocationInfo
 
-sealed trait SymphonyError extends NoStackTrace with Product with Serializable {
+sealed trait SymphonyQLError extends NoStackTrace with Product with Serializable {
   def msg: String
   override def getMessage: String = msg
 
-  def toOutputValue: OutputValue
+  def toOutputValue: SymphonyQLOutputValue
 }
 
-object SymphonyError {
+object SymphonyQLError {
 
   final case class ParsingError(
     msg: String,
     locationInfo: Option[LocationInfo] = None,
     innerThrowable: Option[Throwable] = None,
     extensions: Option[ObjectValue] = None
-  ) extends SymphonyError {
+  ) extends SymphonyQLError {
     override def toString: String = s"Parsing Error: $msg ${innerThrowable.fold("")(_.toString)}"
 
     override def getCause: Throwable = innerThrowable.orNull
 
-    def toOutputValue: OutputValue =
+    def toOutputValue: SymphonyQLOutputValue =
       ObjectValue(
         List(
           "message"    -> Some(StringValue(s"Parsing Error: $msg")),
@@ -41,10 +41,10 @@ object SymphonyError {
     explanatoryText: String,
     locationInfo: Option[LocationInfo] = None,
     extensions: Option[ObjectValue] = None
-  ) extends SymphonyError {
+  ) extends SymphonyQLError {
     override def toString: String = s"ValidationError Error: $msg"
 
-    def toOutputValue: OutputValue =
+    def toOutputValue: SymphonyQLOutputValue =
       ObjectValue(
         List(
           "message"    -> Some(StringValue(msg)),
@@ -58,10 +58,10 @@ object SymphonyError {
     msg: String,
     locationInfo: Option[LocationInfo] = None,
     extensions: Option[ObjectValue] = None
-  ) extends SymphonyError {
+  ) extends SymphonyQLError {
     override def toString: String = s"ArgumentError Error: $msg"
 
-    def toOutputValue: OutputValue =
+    def toOutputValue: SymphonyQLOutputValue =
       ObjectValue(
         List(
           "message"    -> Some(StringValue(msg)),
@@ -73,16 +73,16 @@ object SymphonyError {
 
   final case class ExecutionError(
     msg: String,
-    path: List[PathValue] = Nil,
+    path: List[SymphonyQLPathValue] = Nil,
     locationInfo: Option[LocationInfo] = None,
     innerThrowable: Option[Throwable] = None,
     extensions: Option[ObjectValue] = None
-  ) extends SymphonyError {
+  ) extends SymphonyQLError {
     override def toString: String = s"Execution Error: $msg ${innerThrowable.fold("")(_.toString)}"
 
     override def getCause: Throwable = innerThrowable.orNull
 
-    def toOutputValue: OutputValue =
+    def toOutputValue: SymphonyQLOutputValue =
       ObjectValue(
         List(
           "message"    -> Some(StringValue(msg)),

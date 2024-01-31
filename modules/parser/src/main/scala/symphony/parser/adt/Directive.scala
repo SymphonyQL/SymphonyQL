@@ -2,7 +2,7 @@ package symphony
 package parser
 package adt
 
-final case class Directive(name: String, arguments: Map[String, InputValue] = Map.empty, index: Int = 0)
+final case class Directive(name: String, arguments: Map[String, SymphonyQLInputValue] = Map.empty, index: Int = 0)
 
 object Directive {
 
@@ -15,8 +15,8 @@ object Directive {
         f.arguments
           .get("reason")
           .flatMap(_ match {
-            case Value.StringValue(value) => Some(value)
-            case _                        => None
+            case SymphonyQLValue.StringValue(value) => Some(value)
+            case _                                  => None
           })
     }.flatten
 }

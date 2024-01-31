@@ -1,6 +1,6 @@
 package symphony
 
-import symphony.parser.Value.StringValue
+import symphony.parser.SymphonyQLValue.StringValue
 import symphony.schema.*
 import symphony.schema.builder.*
 
@@ -47,11 +47,9 @@ object TestSchema {
     .builder[UserOutput]()
     .name("UserOutput")
     .fieldWithArgs(
-      builder => builder.name("id").schema(Schema.string).build() -> ((a: UserOutput) => ExecutionPlan.NullPlan),
+      builder => builder.name("id").schema(Schema.string).build() -> ((a: UserOutput) => Stage.NullStage),
       builder =>
-        builder.name("username").isOptional(true).schema(Schema.string).build() -> ((a: UserOutput) =>
-          ExecutionPlan.NullPlan
-        )
+        builder.name("username").isOptional(true).schema(Schema.string).build() -> ((a: UserOutput) => Stage.NullStage)
     )
     .build()
 
@@ -66,61 +64,56 @@ object TestSchema {
   val querySchema: Schema[UserQueryResolver] = ObjectBuilder
     .builder[UserQueryResolver]()
     .name("UserQueryResolver")
-    .fieldWithArgs(builder =>
-      builder
-        .name("getUsers")
-        .schema(outputSchema)
-        .args(
-          "user" -> queryInputSchema
-        )
-        .build() ->
-        ((a: UserQueryResolver) =>
-          ExecutionPlan.ObjectDataPlan( // TODO implement ExecutionPlan
-            "UserQueryResolver",
-            Map(
-              "getUsers" -> ExecutionPlan.ObjectDataPlan(
-                "UserOutput",
-                Map(
-                  "id"       -> ExecutionPlan.PureDataPlan(StringValue("id")),
-                  "username" -> ExecutionPlan.PureDataPlan(StringValue("symphony"))
+    .fieldWithArgs(
+      builder =>
+        builder
+          .name("getUsers")
+          .schema(outputSchema)
+          .args(
+            "user" -> queryInputSchema
+          )
+          .build() ->
+          ((a: UserQueryResolver) =>
+            Stage.ObjectStage( // TODO implement ExecutionStage
+              "UserQueryResolver",
+              Map(
+                "getUsers" -> Stage.ObjectStage(
+                  "UserOutput",
+                  Map(
+                    "id"       -> Stage.PureStage(StringValue("id")),
+                    "username" -> Stage.PureStage(StringValue("symphony"))
+                  )
                 )
               )
             )
+          ),
+      builder =>
+        builder
+          .name("batchGetUsers")
+          .schema(Schema.mkList(outputSchema))
+          .args(
+            "users" -> Schema.mkList(queryInputSchema)
           )
-        )
-    )
-    .build()
-
-  val batchQuerySchema: Schema[UserBatchQueryResolver] = ObjectBuilder
-    .builder[UserBatchQueryResolver]()
-    .name("UserBatchQueryResolver")
-    .fieldWithArgs(builder =>
-      builder
-        .name("batchGetUsers")
-        .schema(Schema.mkList(outputSchema))
-        .args(
-          "users" -> Schema.mkList(queryInputSchema)
-        )
-        .build() ->
-        ((a: UserBatchQueryResolver) =>
-          ExecutionPlan.ObjectDataPlan(
-            "UserBatchQueryResolver",
-            Map(
-              "batchGetUsers" ->
-                ExecutionPlan.ListDataPlan(
-                  List(
-                    ExecutionPlan.ObjectDataPlan(
-                      "UserOutput",
-                      Map(
-                        "id"       -> ExecutionPlan.PureDataPlan(StringValue("id")),
-                        "username" -> ExecutionPlan.PureDataPlan(StringValue("symphony"))
+          .build() ->
+          ((a: UserQueryResolver) =>
+            Stage.ObjectStage(
+              "UserQueryResolver",
+              Map(
+                "batchGetUsers" ->
+                  Stage.ListStage(
+                    List(
+                      Stage.ObjectStage(
+                        "UserOutput",
+                        Map(
+                          "id"       -> Stage.PureStage(StringValue("id")),
+                          "username" -> Stage.PureStage(StringValue("symphony"))
+                        )
                       )
                     )
                   )
-                )
+              )
             )
           )
-        )
     )
     .build()
 
@@ -145,14 +138,14 @@ object TestSchema {
         )
         .build() ->
         ((a: UserMutationResolver) =>
-          ExecutionPlan.ObjectDataPlan(
+          Stage.ObjectStage(
             "UserMutationResolver",
             Map(
-              "updateUser" -> ExecutionPlan.ObjectDataPlan(
+              "updateUser" -> Stage.ObjectStage(
                 "UserOutput",
                 Map(
-                  "id"       -> ExecutionPlan.PureDataPlan(StringValue("id")),
-                  "username" -> ExecutionPlan.PureDataPlan(StringValue("symphony"))
+                  "id"       -> Stage.PureStage(StringValue("id")),
+                  "username" -> Stage.PureStage(StringValue("symphony"))
                 )
               )
             )

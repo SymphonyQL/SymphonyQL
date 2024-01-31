@@ -2,18 +2,18 @@ package symphony
 package schema
 package builder
 
-import symphony.parser.OutputValue
-import symphony.parser.Value.NullValue
+import symphony.parser.SymphonyQLOutputValue
+import symphony.parser.SymphonyQLValue.NullValue
 
 object ScalarBuilder {
   def builder[A](): ScalarBuilder[A] = new ScalarBuilder[A]
 }
 
 final class ScalarBuilder[A] {
-  private var name: String                = _
-  private var description: Option[String] = None
-  private var toOutput: A => OutputValue  = _ => NullValue
-  private var isOptional: Boolean         = false
+  private var name: String                         = _
+  private var description: Option[String]          = None
+  private var toOutput: A => SymphonyQLOutputValue = _ => NullValue
+  private var isOptional: Boolean                  = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -25,7 +25,7 @@ final class ScalarBuilder[A] {
     this
   }
 
-  def toOutput(toOutput: A => OutputValue): this.type = {
+  def toOutput(toOutput: A => SymphonyQLOutputValue): this.type = {
     this.toOutput = toOutput
     this
   }

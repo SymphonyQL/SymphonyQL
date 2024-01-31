@@ -6,25 +6,19 @@ import scala.util.*
 import org.parboiled2.*
 import org.parboiled2.Rule.*
 
-import parsers.*
 import symphony.parser.*
-import symphony.parser.InputValue.*
-import symphony.parser.SymphonyError.ParsingError
-import symphony.parser.Value.*
+import symphony.parser.SymphonyQLError.ParsingError
 import symphony.parser.adt.*
-import symphony.parser.adt.Definition.ExecutableDefinition
-import symphony.parser.adt.Definition.ExecutableDefinition.*
-import symphony.parser.adt.Selection.*
-import symphony.parser.adt.Type.*
+import symphony.parser.parsers.*
 
-object Parser {
+object SymphonyQLParser {
 
   def documentParser(input: ParserInput): DefinitionParser = new DefinitionParser(input)
 
   // ========================================Parser API===================================================================
   def parseQuery(query: String): Either[ParsingError, Document] = {
     val input  = ParserInput(query)
-    val parser = Parser.documentParser(input)
+    val parser = SymphonyQLParser.documentParser(input)
     parser.document.run() match
       case Failure(exception) =>
         exception.printStackTrace()
@@ -34,15 +28,15 @@ object Parser {
 
   def check(query: String): Option[String] = {
     val input  = ParserInput(query)
-    val parser = Parser.documentParser(input)
+    val parser = SymphonyQLParser.documentParser(input)
     parser.document.run() match
       case Failure(exception) => Some(exception.getMessage)
       case Success(_)         => None
   }
 
-  def parseInputValue(query: String): Either[ParsingError, InputValue] = {
+  def parseInputValue(query: String): Either[ParsingError, SymphonyQLInputValue] = {
     val input  = ParserInput(query)
-    val parser = Parser.documentParser(input)
+    val parser = SymphonyQLParser.documentParser(input)
     parser.value.run() match
       case Failure(exception) => Left(ParsingError(s"InputValue parsing error", innerThrowable = Some(exception)))
       case Success(value)     => Right(value)

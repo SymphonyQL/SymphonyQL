@@ -10,11 +10,11 @@ object ObjectBuilder {
 }
 
 final class ObjectBuilder[A] private {
-  private var name: String                                                              = _
-  private var description: Option[String]                                               = None
-  private var fieldWithArgs: List[FieldWithArgBuilder => (__Field, A => ExecutionPlan)] = List.empty
-  private var directives: List[Directive]                                               = List.empty
-  private var isOptional: Boolean                                                       = false
+  private var name: String                                                      = _
+  private var description: Option[String]                                       = None
+  private var fieldWithArgs: List[FieldWithArgBuilder => (__Field, A => Stage)] = List.empty
+  private var directives: List[Directive]                                       = List.empty
+  private var isOptional: Boolean                                               = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -26,7 +26,7 @@ final class ObjectBuilder[A] private {
     this
   }
 
-  def fieldWithArgs(fields: (FieldWithArgBuilder => (__Field, A => ExecutionPlan))*): this.type = {
+  def fieldWithArgs(fields: (FieldWithArgBuilder => (__Field, A => Stage))*): this.type = {
     this.fieldWithArgs = fields.toList
     this
   }

@@ -2,12 +2,12 @@ package symphony
 package parser
 package adt
 
-import OutputValue.ObjectValue
-import Value.*
+import SymphonyQLOutputValue.ObjectValue
+import SymphonyQLValue.*
 
 final case class LocationInfo(column: Int, line: Int) {
 
-  def toOutputValue: OutputValue =
+  def toOutputValue: SymphonyQLOutputValue =
     ObjectValue(List("line" -> IntValue(line), "column" -> IntValue(column)))
 }
 

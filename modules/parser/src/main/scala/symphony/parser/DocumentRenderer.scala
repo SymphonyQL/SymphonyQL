@@ -3,7 +3,6 @@ package parser
 
 import scala.annotation.switch
 
-import Value.IntValue
 import adt.*
 import adt.Definition.ExecutableDefinition.*
 import adt.Definition.TypeSystemDefinition.*
@@ -12,9 +11,9 @@ import symphony.parser.adt.Definition.TypeSystemDefinition.DirectiveLocation.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.adt.Type.{ innerType, NamedType }
 
-object DocumentRenderer extends Renderer[Document] {
+object DocumentRenderer extends SymphonyQLRenderer[Document] {
 
-  def renderTypeName(t: __Type): String = {
+  def renderType(t: __Type): String = {
     val builder = new StringBuilder
     __typeNameRenderer.unsafeRender(t, None, builder)
     builder.toString()
@@ -52,7 +51,7 @@ object DocumentRenderer extends Renderer[Document] {
 
   }
 
-  override protected[symphony] def unsafeRender(value: Document, indent: Option[Int], write: StringBuilder): Unit = {
+  override def unsafeRender(value: Document, indent: Option[Int], write: StringBuilder): Unit = {
     val sizeEstimate = value.sourceMapper.size.getOrElse {
       val numDefs = value.definitions.length
       numDefs * 16
@@ -61,17 +60,17 @@ object DocumentRenderer extends Renderer[Document] {
     documentRenderer.unsafeRender(value, indent, write)
   }
 
-  private[symphony] lazy val directiveDefinitionsRenderer: Renderer[List[DirectiveDefinition]] =
-    directiveDefinitionRenderer.list(Renderer.newlineOrSpace)
+  lazy val directiveDefinitionsRenderer: SymphonyQLRenderer[List[DirectiveDefinition]] =
+    directiveDefinitionRenderer.list(SymphonyQLRenderer.newlineOrSpace)
 
-  private[symphony] lazy val typesRenderer: Renderer[List[__Type]] =
+  lazy val typesRenderer: SymphonyQLRenderer[List[__Type]] =
     typeDefinitionsRenderer.contramap(_.flatMap(_.toTypeDefinition))
 
-  private[symphony] lazy val directivesRenderer: Renderer[List[Directive]] =
-    directiveRenderer.list(Renderer.spaceOrEmpty, omitFirst = false).contramap(_.sortBy(_.name))
+  lazy val directivesRenderer: SymphonyQLRenderer[List[Directive]] =
+    directiveRenderer.list(SymphonyQLRenderer.spaceOrEmpty, omitFirst = false).contramap(_.sortBy(_.name))
 
-  private[symphony] lazy val descriptionRenderer: Renderer[Option[String]] =
-    new Renderer[Option[String]] {
+  lazy val descriptionRenderer: SymphonyQLRenderer[Option[String]] =
+    new SymphonyQLRenderer[Option[String]] {
       private val tripleQuote = "\"\"\""
 
       override def unsafeRender(description: Option[String], indent: Option[Int], writer: StringBuilder): Unit =
@@ -101,26 +100,27 @@ object DocumentRenderer extends Renderer[Document] {
           case value =>
             pad(indent, writer)
             writer append '"'
-            Renderer.escapedString.unsafeRender(value, indent, writer)
+            SymphonyQLRenderer.escapedString.unsafeRender(value, indent, writer)
             writer append '"'
             newlineOrSpace(indent, writer)
         }
     }
 
-  private lazy val documentRenderer: Renderer[Document] = Renderer.combine(
+  private lazy val documentRenderer: SymphonyQLRenderer[Document] = SymphonyQLRenderer.combine(
     (directiveDefinitionsRenderer ++
-      (Renderer.newlineOrSpace ++ Renderer.newlineOrEmpty).when[List[DirectiveDefinition]](_.nonEmpty))
+      (SymphonyQLRenderer.newlineOrSpace ++ SymphonyQLRenderer.newlineOrEmpty)
+        .when[List[DirectiveDefinition]](_.nonEmpty))
       .contramap(_.directiveDefinitions),
     schemaRenderer.optional.contramap(_.schemaDefinition),
     operationDefinitionRenderer
-      .list(Renderer.newlineOrSpace ++ Renderer.newlineOrEmpty)
+      .list(SymphonyQLRenderer.newlineOrSpace ++ SymphonyQLRenderer.newlineOrEmpty)
       .contramap(_.operationDefinitions),
     typeDefinitionsRenderer.contramap(_.typeDefinitions),
     fragmentRenderer.list.contramap(_.fragmentDefinitions)
   )
 
-  private lazy val __typeNameRenderer: Renderer[__Type] = (value: __Type, indent: Option[Int], write: StringBuilder) =>
-    {
+  private lazy val __typeNameRenderer: SymphonyQLRenderer[__Type] =
+    (value: __Type, indent: Option[Int], write: StringBuilder) => {
       def loop(typ: Option[__Type]): Unit = typ match {
         case Some(t) =>
           t.kind match {
@@ -141,13 +141,15 @@ object DocumentRenderer extends Renderer[Document] {
       loop(Some(value))
     }
 
-  private lazy val directiveDefinitionRenderer: Renderer[DirectiveDefinition] =
-    new Renderer[DirectiveDefinition] {
-      private val inputRenderer = inputValueDefinitionRenderer.list(Renderer.comma ++ Renderer.spaceOrEmpty)
+  private lazy val directiveDefinitionRenderer: SymphonyQLRenderer[DirectiveDefinition] =
+    new SymphonyQLRenderer[DirectiveDefinition] {
 
-      private val locationsRenderer: Renderer[Set[DirectiveLocation]] =
+      private val inputRenderer =
+        inputValueDefinitionRenderer.list(SymphonyQLRenderer.comma ++ SymphonyQLRenderer.spaceOrEmpty)
+
+      private val locationsRenderer: SymphonyQLRenderer[Set[DirectiveLocation]] =
         locationRenderer
-          .list(Renderer.spaceOrEmpty ++ Renderer.char('|') ++ Renderer.spaceOrEmpty)
+          .list(SymphonyQLRenderer.spaceOrEmpty ++ SymphonyQLRenderer.char('|') ++ SymphonyQLRenderer.spaceOrEmpty)
           .contramap(_.toList.sorted)
 
       override def unsafeRender(value: DirectiveDefinition, indent: Option[Int], writer: StringBuilder): Unit =
@@ -166,7 +168,7 @@ object DocumentRenderer extends Renderer[Document] {
             locationsRenderer.unsafeRender(locations, indent, writer)
         }
 
-      private[symphony] lazy val locationRenderer: Renderer[DirectiveLocation] =
+      lazy val locationRenderer: SymphonyQLRenderer[DirectiveLocation] =
         (location: DirectiveLocation, indent: Option[Int], writer: StringBuilder) =>
           location match {
             case ExecutableDirectiveLocation.QUERY                  => writer append "QUERY"
@@ -192,7 +194,7 @@ object DocumentRenderer extends Renderer[Document] {
 
     }
 
-  private lazy val operationDefinitionRenderer: Renderer[OperationDefinition] =
+  private lazy val operationDefinitionRenderer: SymphonyQLRenderer[OperationDefinition] =
     (definition: OperationDefinition, indent: Option[Int], writer: StringBuilder) =>
       definition match {
         case OperationDefinition(operationType, name, variableDefinitions, directives, selectionSet) =>
@@ -206,7 +208,7 @@ object DocumentRenderer extends Renderer[Document] {
           selectionsRenderer.unsafeRender(selectionSet, indent, writer)
       }
 
-  private lazy val operationTypeRenderer: Renderer[OperationType] =
+  private lazy val operationTypeRenderer: SymphonyQLRenderer[OperationType] =
     (operationType: OperationType, indent: Option[Int], writer: StringBuilder) =>
       operationType match {
         case OperationType.Query        => writer append "query"
@@ -214,9 +216,9 @@ object DocumentRenderer extends Renderer[Document] {
         case OperationType.Subscription => writer append "subscription"
       }
 
-  private lazy val variableDefinitionsRenderer: Renderer[List[VariableDefinition]] =
-    new Renderer[List[VariableDefinition]] {
-      private val inner = variableDefinition.list(Renderer.comma ++ Renderer.spaceOrEmpty)
+  private lazy val variableDefinitionsRenderer: SymphonyQLRenderer[List[VariableDefinition]] =
+    new SymphonyQLRenderer[List[VariableDefinition]] {
+      private val inner = variableDefinition.list(SymphonyQLRenderer.comma ++ SymphonyQLRenderer.spaceOrEmpty)
 
       override def unsafeRender(value: List[VariableDefinition], indent: Option[Int], writer: StringBuilder): Unit =
         if (value.nonEmpty) {
@@ -226,7 +228,7 @@ object DocumentRenderer extends Renderer[Document] {
         }
     }
 
-  private lazy val variableDefinition: Renderer[VariableDefinition] =
+  private lazy val variableDefinition: SymphonyQLRenderer[VariableDefinition] =
     (definition: VariableDefinition, indent: Option[Int], writer: StringBuilder) => {
       writer append '$'
       writer append definition.name
@@ -236,8 +238,8 @@ object DocumentRenderer extends Renderer[Document] {
       defaultValueRenderer.unsafeRender(definition.defaultValue, indent, writer)
     }
 
-  private lazy val selectionsRenderer: Renderer[List[Selection]] = new Renderer[List[Selection]] {
-    private val inner = selectionRenderer.list(Renderer.newlineOrSpace)
+  private lazy val selectionsRenderer: SymphonyQLRenderer[List[Selection]] = new SymphonyQLRenderer[List[Selection]] {
+    private val inner = selectionRenderer.list(SymphonyQLRenderer.newlineOrSpace)
 
     override def unsafeRender(selections: List[Selection], indent: Option[Int], writer: StringBuilder): Unit =
       if (selections.nonEmpty) {
@@ -251,7 +253,7 @@ object DocumentRenderer extends Renderer[Document] {
       }
   }
 
-  private lazy val selectionRenderer: Renderer[Selection] =
+  private lazy val selectionRenderer: SymphonyQLRenderer[Selection] =
     (selection: Selection, indent: Option[Int], builder: StringBuilder) => {
       pad(indent, builder)
       selection match {
@@ -283,18 +285,22 @@ object DocumentRenderer extends Renderer[Document] {
       }
     }
 
-  private lazy val inputArgumentsRenderer: Renderer[Map[String, InputValue]] =
-    new Renderer[Map[String, InputValue]] {
+  private lazy val inputArgumentsRenderer: SymphonyQLRenderer[Map[String, SymphonyQLInputValue]] =
+    new SymphonyQLRenderer[Map[String, SymphonyQLInputValue]] {
 
       private val inner =
-        Renderer.map(
-          Renderer.string,
+        SymphonyQLRenderer.map(
+          SymphonyQLRenderer.string,
           ValueRenderer.inputValueRenderer,
-          Renderer.comma ++ Renderer.spaceOrEmpty,
-          Renderer.char(':') ++ Renderer.spaceOrEmpty
+          SymphonyQLRenderer.comma ++ SymphonyQLRenderer.spaceOrEmpty,
+          SymphonyQLRenderer.char(':') ++ SymphonyQLRenderer.spaceOrEmpty
         )
 
-      override def unsafeRender(arguments: Map[String, InputValue], indent: Option[Int], writer: StringBuilder): Unit =
+      override def unsafeRender(
+        arguments: Map[String, SymphonyQLInputValue],
+        indent: Option[Int],
+        writer: StringBuilder
+      ): Unit =
         if (arguments.nonEmpty) {
           writer append '('
           inner.unsafeRender(arguments, indent, writer)
@@ -302,7 +308,7 @@ object DocumentRenderer extends Renderer[Document] {
         }
     }
 
-  private lazy val schemaRenderer: Renderer[SchemaDefinition] =
+  private lazy val schemaRenderer: SymphonyQLRenderer[SchemaDefinition] =
     (definition: SchemaDefinition, indent: Option[Int], writer: StringBuilder) =>
       definition match {
         case SchemaDefinition(directives, query, mutation, subscription, description) =>
@@ -340,10 +346,10 @@ object DocumentRenderer extends Renderer[Document] {
           }
       }
 
-  private lazy val typeDefinitionsRenderer: Renderer[List[TypeDefinition]] =
+  private lazy val typeDefinitionsRenderer: SymphonyQLRenderer[List[TypeDefinition]] =
     typeDefinitionRenderer.list.contramap(_.sorted)
 
-  private lazy val typeDefinitionRenderer: Renderer[TypeDefinition] =
+  private lazy val typeDefinitionRenderer: SymphonyQLRenderer[TypeDefinition] =
     (definition: TypeDefinition, indent: Option[Int], writer: StringBuilder) =>
       definition match {
         case typ: TypeDefinition.ObjectTypeDefinition =>
@@ -360,7 +366,7 @@ object DocumentRenderer extends Renderer[Document] {
           scalarRenderer.unsafeRender(typ, indent, writer)
       }
 
-  private lazy val fragmentRenderer: Renderer[FragmentDefinition] =
+  private lazy val fragmentRenderer: SymphonyQLRenderer[FragmentDefinition] =
     (value: FragmentDefinition, indent: Option[Int], writer: StringBuilder) =>
       value match {
         case FragmentDefinition(name, typeCondition, directives, selectionSet) =>
@@ -374,28 +380,31 @@ object DocumentRenderer extends Renderer[Document] {
           selectionsRenderer.unsafeRender(selectionSet, indent, writer)
       }
 
-  private lazy val unionRenderer: Renderer[UnionTypeDefinition] = new Renderer[UnionTypeDefinition] {
+  private lazy val unionRenderer: SymphonyQLRenderer[UnionTypeDefinition] =
+    new SymphonyQLRenderer[UnionTypeDefinition] {
 
-    private val memberRenderer =
-      Renderer.string.list(Renderer.spaceOrEmpty ++ Renderer.char('|') ++ Renderer.spaceOrEmpty)
+      private val memberRenderer =
+        SymphonyQLRenderer.string.list(
+          SymphonyQLRenderer.spaceOrEmpty ++ SymphonyQLRenderer.char('|') ++ SymphonyQLRenderer.spaceOrEmpty
+        )
 
-    override def unsafeRender(value: UnionTypeDefinition, indent: Option[Int], writer: StringBuilder): Unit =
-      value match {
-        case UnionTypeDefinition(description, name, directives, members) =>
-          newlineOrSpace(indent, writer)
-          newlineOrEmpty(indent, writer)
-          descriptionRenderer.unsafeRender(description, indent, writer)
-          writer append "union "
-          writer append name
-          directivesRenderer.unsafeRender(directives, indent, writer)
-          spaceOrEmpty(indent, writer)
-          writer append '='
-          spaceOrEmpty(indent, writer)
-          memberRenderer.unsafeRender(members, indent, writer)
-      }
-  }
+      override def unsafeRender(value: UnionTypeDefinition, indent: Option[Int], writer: StringBuilder): Unit =
+        value match {
+          case UnionTypeDefinition(description, name, directives, members) =>
+            newlineOrSpace(indent, writer)
+            newlineOrEmpty(indent, writer)
+            descriptionRenderer.unsafeRender(description, indent, writer)
+            writer append "union "
+            writer append name
+            directivesRenderer.unsafeRender(directives, indent, writer)
+            spaceOrEmpty(indent, writer)
+            writer append '='
+            spaceOrEmpty(indent, writer)
+            memberRenderer.unsafeRender(members, indent, writer)
+        }
+    }
 
-  private lazy val scalarRenderer: Renderer[ScalarTypeDefinition] =
+  private lazy val scalarRenderer: SymphonyQLRenderer[ScalarTypeDefinition] =
     (value: ScalarTypeDefinition, indent: Option[Int], write: StringBuilder) =>
       value match {
         case ScalarTypeDefinition(description, name, directives) =>
@@ -408,8 +417,8 @@ object DocumentRenderer extends Renderer[Document] {
           }
       }
 
-  private lazy val enumRenderer: Renderer[EnumTypeDefinition] = new Renderer[EnumTypeDefinition] {
-    private val memberRenderer = enumValueDefinitionRenderer.list(Renderer.newlineOrComma)
+  private lazy val enumRenderer: SymphonyQLRenderer[EnumTypeDefinition] = new SymphonyQLRenderer[EnumTypeDefinition] {
+    private val memberRenderer = enumValueDefinitionRenderer.list(SymphonyQLRenderer.newlineOrComma)
 
     override def unsafeRender(value: EnumTypeDefinition, indent: Option[Int], writer: StringBuilder): Unit =
       value match {
@@ -429,7 +438,7 @@ object DocumentRenderer extends Renderer[Document] {
       }
   }
 
-  private lazy val enumValueDefinitionRenderer: Renderer[EnumValueDefinition] =
+  private lazy val enumValueDefinitionRenderer: SymphonyQLRenderer[EnumValueDefinition] =
     (value: EnumValueDefinition, indent: Option[Int], writer: StringBuilder) =>
       value match {
         case EnumValueDefinition(description, name, directives) =>
@@ -439,9 +448,9 @@ object DocumentRenderer extends Renderer[Document] {
           directivesRenderer.unsafeRender(directives, indent, writer)
       }
 
-  private lazy val inputObjectTypeDefinition: Renderer[InputObjectTypeDefinition] =
-    new Renderer[InputObjectTypeDefinition] {
-      private val fieldsRenderer = inputValueDefinitionRenderer.list(Renderer.newlineOrSpace)
+  private lazy val inputObjectTypeDefinition: SymphonyQLRenderer[InputObjectTypeDefinition] =
+    new SymphonyQLRenderer[InputObjectTypeDefinition] {
+      private val fieldsRenderer = inputValueDefinitionRenderer.list(SymphonyQLRenderer.newlineOrSpace)
 
       override def unsafeRender(value: InputObjectTypeDefinition, indent: Option[Int], writer: StringBuilder): Unit =
         value match {
@@ -461,7 +470,7 @@ object DocumentRenderer extends Renderer[Document] {
         }
     }
 
-  private lazy val inputValueDefinitionRenderer: Renderer[InputValueDefinition] =
+  private lazy val inputValueDefinitionRenderer: SymphonyQLRenderer[InputValueDefinition] =
     (definition: InputValueDefinition, indent: Option[Int], builder: StringBuilder) =>
       definition match {
         case InputValueDefinition(description, name, valueType, defaultValue, directives) =>
@@ -475,7 +484,7 @@ object DocumentRenderer extends Renderer[Document] {
           directivesRenderer.unsafeRender(directives, indent, builder)
       }
 
-  private lazy val objectTypeDefinitionRenderer: Renderer[ObjectTypeDefinition] =
+  private lazy val objectTypeDefinitionRenderer: SymphonyQLRenderer[ObjectTypeDefinition] =
     (value: ObjectTypeDefinition, indent: Option[Int], writer: StringBuilder) =>
       unsafeRenderObjectLike(
         "type",
@@ -488,7 +497,7 @@ object DocumentRenderer extends Renderer[Document] {
         writer
       )
 
-  private lazy val interfaceTypeDefinitionRenderer: Renderer[InterfaceTypeDefinition] =
+  private lazy val interfaceTypeDefinitionRenderer: SymphonyQLRenderer[InterfaceTypeDefinition] =
     (value: InterfaceTypeDefinition, indent: Option[Int], writer: StringBuilder) =>
       unsafeRenderObjectLike(
         "interface",
@@ -538,17 +547,17 @@ object DocumentRenderer extends Renderer[Document] {
     }
   }
 
-  private lazy val directiveRenderer: Renderer[Directive] =
+  private lazy val directiveRenderer: SymphonyQLRenderer[Directive] =
     (d: Directive, indent: Option[Int], writer: StringBuilder) => {
       writer append '@'
       writer append d.name
       inputArgumentsRenderer.unsafeRender(d.arguments, indent, writer)
     }
 
-  private lazy val fieldDefinitionsRenderer: Renderer[List[FieldDefinition]] =
-    fieldDefinitionRenderer.list(Renderer.newlineOrSpace)
+  private lazy val fieldDefinitionsRenderer: SymphonyQLRenderer[List[FieldDefinition]] =
+    fieldDefinitionRenderer.list(SymphonyQLRenderer.newlineOrSpace)
 
-  private lazy val fieldDefinitionRenderer: Renderer[FieldDefinition] =
+  private lazy val fieldDefinitionRenderer: SymphonyQLRenderer[FieldDefinition] =
     (definition: FieldDefinition, indent: Option[Int], writer: StringBuilder) =>
       definition match {
         case FieldDefinition(description, name, arguments, tpe, directives) =>
@@ -562,27 +571,28 @@ object DocumentRenderer extends Renderer[Document] {
           directivesRenderer.unsafeRender(directives, indent, writer)
       }
 
-  private lazy val typeRenderer: Renderer[Type] = (value: Type, indent: Option[Int], write: StringBuilder) => {
-    def loop(t: Type): Unit = t match {
-      case Type.NamedType(name, nonNull) =>
-        write append name
-        if (nonNull) write append '!'
-      case Type.ListType(ofType, nonNull) =>
-        write append '['
-        loop(ofType)
-        write append ']'
-        if (nonNull) write append '!'
+  private lazy val typeRenderer: SymphonyQLRenderer[Type] = (value: Type, indent: Option[Int], write: StringBuilder) =>
+    {
+      def loop(t: Type): Unit = t match {
+        case Type.NamedType(name, nonNull) =>
+          write append name
+          if (nonNull) write append '!'
+        case Type.ListType(ofType, nonNull) =>
+          write append '['
+          loop(ofType)
+          write append ']'
+          if (nonNull) write append '!'
+      }
+
+      loop(value)
     }
 
-    loop(value)
-  }
+  private lazy val inlineInputValueDefinitionsRenderer: SymphonyQLRenderer[List[InputValueDefinition]] =
+    (SymphonyQLRenderer.char('(') ++
+      inlineInputValueDefinitionRenderer.list(SymphonyQLRenderer.comma ++ SymphonyQLRenderer.spaceOrEmpty) ++
+      SymphonyQLRenderer.char(')')).when(_.nonEmpty)
 
-  private lazy val inlineInputValueDefinitionsRenderer: Renderer[List[InputValueDefinition]] =
-    (Renderer.char('(') ++
-      inlineInputValueDefinitionRenderer.list(Renderer.comma ++ Renderer.spaceOrEmpty) ++
-      Renderer.char(')')).when(_.nonEmpty)
-
-  private lazy val inlineInputValueDefinitionRenderer: Renderer[InputValueDefinition] =
+  private lazy val inlineInputValueDefinitionRenderer: SymphonyQLRenderer[InputValueDefinition] =
     (definition: InputValueDefinition, indent: Option[Int], writer: StringBuilder) =>
       definition match {
         case InputValueDefinition(description, name, tpe, defaultValue, directives) =>
@@ -595,8 +605,8 @@ object DocumentRenderer extends Renderer[Document] {
           directivesRenderer.unsafeRender(directives, indent, writer)
       }
 
-  private lazy val defaultValueRenderer: Renderer[Option[InputValue]] =
-    (value: Option[InputValue], indent: Option[Int], writer: StringBuilder) =>
+  private lazy val defaultValueRenderer: SymphonyQLRenderer[Option[SymphonyQLInputValue]] =
+    (value: Option[SymphonyQLInputValue], indent: Option[Int], writer: StringBuilder) =>
       value.foreach { value =>
         spaceOrEmpty(indent, writer)
         writer append '='
@@ -612,7 +622,7 @@ object DocumentRenderer extends Renderer[Document] {
     }
   }
 
-  private[symphony] def isBuiltinScalar(name: String): Boolean =
+  def isBuiltinScalar(name: String): Boolean =
     name == "Int" || name == "Float" || name == "String" || name == "Boolean" || name == "ID"
 
   private def spaceOrEmpty(indentation: Option[Int], writer: StringBuilder): Unit =
@@ -629,8 +639,6 @@ object DocumentRenderer extends Renderer[Document] {
 
   private def increment(indentation: Option[Int]): Option[Int] = indentation.map(_ + 1)
 
-  /** A zero allocation version of triple quote escaping.
-   */
   private def unsafeFastEscapeQuote(value: String, builder: StringBuilder): Unit = {
     var i      = 0
     var quotes = 0
@@ -643,13 +651,11 @@ object DocumentRenderer extends Renderer[Document] {
       (value.charAt(i): @switch) match {
         case '"' =>
           quotes += 1
-          // We have encountered a triple quote sequence
           if (quotes == 3) {
             builder.append("\\")
             padQuotes()
           }
         case c =>
-          // We have encountered a non-quote character before reaching the end of the triple sequence
           if (quotes > 0) {
             padQuotes()
           }
@@ -657,7 +663,6 @@ object DocumentRenderer extends Renderer[Document] {
       }
       i += 1
     }
-    // If we reached the end without fully closing the triple quote sequence, we need to append the buffer to the builder
     if (quotes > 0) {
       padQuotes()
     }

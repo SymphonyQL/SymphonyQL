@@ -1,85 +1,86 @@
 package symphony
 package parser
 
-import Value.*
-import Value.FloatValue.*
-import Value.IntValue.*
+import SymphonyQLValue.*
+import SymphonyQLValue.FloatValue.*
+import SymphonyQLValue.IntValue.*
 
 object ValueRenderer {
 
-  lazy val inputValueRenderer: Renderer[InputValue] = (value: InputValue, indent: Option[Int], write: StringBuilder) =>
-    value match {
-      case in: InputValue.ListValue   => inputListValueRenderer.unsafeRender(in, indent, write)
-      case in: InputValue.ObjectValue => inputObjectValueRenderer.unsafeRender(in, indent, write)
-      case InputValue.VariableValue(name) =>
-        write += '$'
-        write ++= name
-      case StringValue(str) =>
-        write += '"'
-        Renderer.escapedString.unsafeRender(str, indent, write)
-        write += '"'
-      case Value.EnumValue(value)    => Renderer.escapedString.unsafeRender(value, indent, write)
-      case Value.BooleanValue(value) => write append value
-      case Value.NullValue           => write ++= "null"
-      case IntNumber(value)          => write append value
-      case LongNumber(value)         => write append value
-      case BigIntNumber(value)       => write append value
-      case FloatNumber(value)        => write append value
-      case DoubleNumber(value)       => write append value
-      case BigDecimalNumber(value)   => write append value
-    }
-
-  lazy val inputObjectValueRenderer: Renderer[InputValue.ObjectValue] =
-    Renderer.char('{') ++ Renderer
-      .map(
-        Renderer.string,
-        inputValueRenderer,
-        Renderer.char(',') ++ Renderer.spaceOrEmpty,
-        Renderer.char(':') ++ Renderer.spaceOrEmpty
-      )
-      .contramap[InputValue.ObjectValue](_.fields) ++ Renderer.char('}')
-
-  lazy val inputListValueRenderer: Renderer[InputValue.ListValue] =
-    Renderer.char('[') ++ inputValueRenderer
-      .list(Renderer.char(',') ++ Renderer.spaceOrEmpty)
-      .contramap[InputValue.ListValue](_.values) ++ Renderer.char(']')
-
-  lazy val enumInputValueRenderer: Renderer[Value.EnumValue] =
-    (value: Value.EnumValue, indent: Option[Int], write: StringBuilder) =>
-      Renderer.escapedString.unsafeRender(value.value, indent, write)
-
-  lazy val outputValueRenderer: Renderer[OutputValue] =
-    (value: OutputValue, indent: Option[Int], write: StringBuilder) =>
+  lazy val inputValueRenderer: SymphonyQLRenderer[SymphonyQLInputValue] =
+    (value: SymphonyQLInputValue, indent: Option[Int], write: StringBuilder) =>
       value match {
-        case OutputValue.ListValue(values) =>
-          outputListValueRenderer.unsafeRender(OutputValue.ListValue(values), indent, write)
-        case in: OutputValue.ObjectValue =>
+        case in: SymphonyQLInputValue.ListValue   => inputListValueRenderer.unsafeRender(in, indent, write)
+        case in: SymphonyQLInputValue.ObjectValue => inputObjectValueRenderer.unsafeRender(in, indent, write)
+        case SymphonyQLInputValue.VariableValue(name) =>
+          write += '$'
+          write ++= name
+        case StringValue(str) =>
+          write += '"'
+          SymphonyQLRenderer.escapedString.unsafeRender(str, indent, write)
+          write += '"'
+        case SymphonyQLValue.EnumValue(value)    => SymphonyQLRenderer.escapedString.unsafeRender(value, indent, write)
+        case SymphonyQLValue.BooleanValue(value) => write append value
+        case SymphonyQLValue.NullValue           => write ++= "null"
+        case IntNumber(value)                    => write append value
+        case LongNumber(value)                   => write append value
+        case BigIntNumber(value)                 => write append value
+        case FloatNumber(value)                  => write append value
+        case DoubleNumber(value)                 => write append value
+        case BigDecimalNumber(value)             => write append value
+      }
+
+  lazy val inputObjectValueRenderer: SymphonyQLRenderer[SymphonyQLInputValue.ObjectValue] =
+    SymphonyQLRenderer.char('{') ++ SymphonyQLRenderer
+      .map(
+        SymphonyQLRenderer.string,
+        inputValueRenderer,
+        SymphonyQLRenderer.char(',') ++ SymphonyQLRenderer.spaceOrEmpty,
+        SymphonyQLRenderer.char(':') ++ SymphonyQLRenderer.spaceOrEmpty
+      )
+      .contramap[SymphonyQLInputValue.ObjectValue](_.fields) ++ SymphonyQLRenderer.char('}')
+
+  lazy val inputListValueRenderer: SymphonyQLRenderer[SymphonyQLInputValue.ListValue] =
+    SymphonyQLRenderer.char('[') ++ inputValueRenderer
+      .list(SymphonyQLRenderer.char(',') ++ SymphonyQLRenderer.spaceOrEmpty)
+      .contramap[SymphonyQLInputValue.ListValue](_.values) ++ SymphonyQLRenderer.char(']')
+
+  lazy val enumInputValueRenderer: SymphonyQLRenderer[SymphonyQLValue.EnumValue] =
+    (value: SymphonyQLValue.EnumValue, indent: Option[Int], write: StringBuilder) =>
+      SymphonyQLRenderer.escapedString.unsafeRender(value.value, indent, write)
+
+  lazy val outputValueRenderer: SymphonyQLRenderer[SymphonyQLOutputValue] =
+    (value: SymphonyQLOutputValue, indent: Option[Int], write: StringBuilder) =>
+      value match {
+        case SymphonyQLOutputValue.ListValue(values) =>
+          outputListValueRenderer.unsafeRender(SymphonyQLOutputValue.ListValue(values), indent, write)
+        case in: SymphonyQLOutputValue.ObjectValue =>
           outputObjectValueRenderer.unsafeRender(in, indent, write)
         case StringValue(str) =>
           write += '"'
-          Renderer.escapedString.unsafeRender(str, indent, write)
+          SymphonyQLRenderer.escapedString.unsafeRender(str, indent, write)
           write += '"'
-        case Value.EnumValue(value) =>
+        case SymphonyQLValue.EnumValue(value) =>
           write += '"'
-          Renderer.escapedString.unsafeRender(value, indent, write)
+          SymphonyQLRenderer.escapedString.unsafeRender(value, indent, write)
           write += '"'
-        case Value.BooleanValue(value) => write append value
-        case Value.NullValue           => write append "null"
-        case IntNumber(value)          => write append value
-        case LongNumber(value)         => write append value
-        case FloatNumber(value)        => write append value
-        case DoubleNumber(value)       => write append value
-        case BigDecimalNumber(value)   => write append value
-        case BigIntNumber(value)       => write append value
+        case SymphonyQLValue.BooleanValue(value) => write append value
+        case SymphonyQLValue.NullValue           => write append "null"
+        case IntNumber(value)                    => write append value
+        case LongNumber(value)                   => write append value
+        case FloatNumber(value)                  => write append value
+        case DoubleNumber(value)                 => write append value
+        case BigDecimalNumber(value)             => write append value
+        case BigIntNumber(value)                 => write append value
       }
 
-  lazy val outputListValueRenderer: Renderer[OutputValue.ListValue] =
-    Renderer.char('[') ++ outputValueRenderer
-      .list(Renderer.char(',') ++ Renderer.spaceOrEmpty)
-      .contramap[OutputValue.ListValue](_.values) ++ Renderer.char(']')
+  lazy val outputListValueRenderer: SymphonyQLRenderer[SymphonyQLOutputValue.ListValue] =
+    SymphonyQLRenderer.char('[') ++ outputValueRenderer
+      .list(SymphonyQLRenderer.char(',') ++ SymphonyQLRenderer.spaceOrEmpty)
+      .contramap[SymphonyQLOutputValue.ListValue](_.values) ++ SymphonyQLRenderer.char(']')
 
-  lazy val outputObjectValueRenderer: Renderer[OutputValue.ObjectValue] =
-    (value: OutputValue.ObjectValue, indent: Option[Int], write: StringBuilder) => {
+  lazy val outputObjectValueRenderer: SymphonyQLRenderer[SymphonyQLOutputValue.ObjectValue] =
+    (value: SymphonyQLOutputValue.ObjectValue, indent: Option[Int], write: StringBuilder) => {
       write += '{'
       var first = true
       value.fields.foreach { field =>
