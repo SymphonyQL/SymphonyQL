@@ -29,12 +29,6 @@ object TestSchemaApp extends App {
         UserMutationResolver((_, _) => UserOutput("aaaa", "bbbb"))                        -> mutationSchema
       )
     )
-    .addRootSchema(
-      SymphonyQLResolver(
-        UserQueryResolver(_ => UserOutput("a3", "b3"), _ => List(UserOutput("a4", "b4"))) -> querySchema,
-        UserMutationResolver((_, _) => UserOutput("aaaa", "bbbb"))                        -> mutationSchema
-      )
-    )
     .build()
 
   println(graphql.render)

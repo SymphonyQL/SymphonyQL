@@ -64,61 +64,56 @@ object TestSchema {
   val querySchema: Schema[UserQueryResolver] = ObjectBuilder
     .builder[UserQueryResolver]()
     .name("UserQueryResolver")
-    .fieldWithArgs(builder =>
-      builder
-        .name("getUsers")
-        .schema(outputSchema)
-        .args(
-          "user" -> queryInputSchema
-        )
-        .build() ->
-        ((a: UserQueryResolver) =>
-          Stage.ObjectStage( // TODO implement ExecutionStage
-            "UserQueryResolver",
-            Map(
-              "getUsers" -> Stage.ObjectStage(
-                "UserOutput",
-                Map(
-                  "id"       -> Stage.PureStage(StringValue("id")),
-                  "username" -> Stage.PureStage(StringValue("symphony"))
+    .fieldWithArgs(
+      builder =>
+        builder
+          .name("getUsers")
+          .schema(outputSchema)
+          .args(
+            "user" -> queryInputSchema
+          )
+          .build() ->
+          ((a: UserQueryResolver) =>
+            Stage.ObjectStage( // TODO implement ExecutionStage
+              "UserQueryResolver",
+              Map(
+                "getUsers" -> Stage.ObjectStage(
+                  "UserOutput",
+                  Map(
+                    "id"       -> Stage.PureStage(StringValue("id")),
+                    "username" -> Stage.PureStage(StringValue("symphony"))
+                  )
                 )
               )
             )
+          ),
+      builder =>
+        builder
+          .name("batchGetUsers")
+          .schema(Schema.mkList(outputSchema))
+          .args(
+            "users" -> Schema.mkList(queryInputSchema)
           )
-        )
-    )
-    .build()
-
-  val batchQuerySchema: Schema[UserQueryResolver] = ObjectBuilder
-    .builder[UserQueryResolver]()
-    .name("UserQueryResolver")
-    .fieldWithArgs(builder =>
-      builder
-        .name("batchGetUsers")
-        .schema(Schema.mkList(outputSchema))
-        .args(
-          "users" -> Schema.mkList(queryInputSchema)
-        )
-        .build() ->
-        ((a: UserQueryResolver) =>
-          Stage.ObjectStage(
-            "UserBatchQueryResolver",
-            Map(
-              "batchGetUsers" ->
-                Stage.ListStage(
-                  List(
-                    Stage.ObjectStage(
-                      "UserOutput",
-                      Map(
-                        "id"       -> Stage.PureStage(StringValue("id")),
-                        "username" -> Stage.PureStage(StringValue("symphony"))
+          .build() ->
+          ((a: UserQueryResolver) =>
+            Stage.ObjectStage(
+              "UserQueryResolver",
+              Map(
+                "batchGetUsers" ->
+                  Stage.ListStage(
+                    List(
+                      Stage.ObjectStage(
+                        "UserOutput",
+                        Map(
+                          "id"       -> Stage.PureStage(StringValue("id")),
+                          "username" -> Stage.PureStage(StringValue("symphony"))
+                        )
                       )
                     )
                   )
-                )
+              )
             )
           )
-        )
     )
     .build()
 
