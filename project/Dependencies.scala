@@ -8,6 +8,7 @@ object Dependencies {
     val `pekko-http_Version` = "1.0.0"
     val `parboiled_Version`  = "2.5.1"
     val `scalatest_Version`  = "3.2.17"
+    val `magnolia_Version`   = "1.3.4"
   }
 
   object Deps {
@@ -33,6 +34,13 @@ object Dependencies {
     val server = sbt.Def.setting {
       Seq(
         "org.apache.pekko" %% "pekko-http" % `pekko-http_Version`
+      )
+    }
+
+    // derives Schema and ArgumentExtractor for scala 3
+    val `scala-derived` = sbt.Def.setting {
+      Seq(
+        "com.softwaremill.magnolia1_3" %% "magnolia" % `magnolia_Version`
       )
     }
   }

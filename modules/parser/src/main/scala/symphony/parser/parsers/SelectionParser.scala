@@ -5,12 +5,8 @@ import org.parboiled2.support.hlist
 import org.parboiled2.support.hlist.HNil
 
 import symphony.parser.*
-import symphony.parser.InputValue.*
-import symphony.parser.SymphonyError.ParsingError
-import symphony.parser.Value.*
 import symphony.parser.adt.*
 import symphony.parser.adt.Definition.ExecutableDefinition
-import symphony.parser.adt.Definition.ExecutableDefinition.*
 import symphony.parser.adt.Selection.*
 import symphony.parser.adt.Type.*
 
@@ -22,13 +18,13 @@ abstract class SelectionParser extends ValueParser {
     name ~ ":" ~ ignored
   }
 
-  def argument: Rule1[(String, InputValue)] = rule {
+  def argument: Rule1[(String, SymphonyQLInputValue)] = rule {
     name ~ ":" ~ ignored ~ value ~> { (n, v) =>
       n -> v
     }
   }
 
-  def arguments: Rule1[Map[String, InputValue]] = rule {
+  def arguments: Rule1[Map[String, SymphonyQLInputValue]] = rule {
     "(" ~!~ ignored ~ argument.*.separatedBy(ignored) ~ ignored ~ ")" ~> (_.toMap)
   }
 

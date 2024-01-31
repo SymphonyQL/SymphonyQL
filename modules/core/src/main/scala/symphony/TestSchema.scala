@@ -1,6 +1,6 @@
 package symphony
 
-import symphony.parser.Value.StringValue
+import symphony.parser.SymphonyQLValue.StringValue
 import symphony.schema.*
 import symphony.schema.builder.*
 
@@ -47,11 +47,9 @@ object TestSchema {
     .builder[UserOutput]()
     .name("UserOutput")
     .fieldWithArgs(
-      builder => builder.name("id").schema(Schema.string).build() -> ((a: UserOutput) => ExecutionPlan.NullPlan),
+      builder => builder.name("id").schema(Schema.string).build() -> ((a: UserOutput) => Stage.NullStage),
       builder =>
-        builder.name("username").isOptional(true).schema(Schema.string).build() -> ((a: UserOutput) =>
-          ExecutionPlan.NullPlan
-        )
+        builder.name("username").isOptional(true).schema(Schema.string).build() -> ((a: UserOutput) => Stage.NullStage)
     )
     .build()
 
@@ -75,14 +73,14 @@ object TestSchema {
         )
         .build() ->
         ((a: UserQueryResolver) =>
-          ExecutionPlan.ObjectDataPlan( // TODO implement ExecutionPlan
+          Stage.ObjectStage( // TODO implement ExecutionStage
             "UserQueryResolver",
             Map(
-              "getUsers" -> ExecutionPlan.ObjectDataPlan(
+              "getUsers" -> Stage.ObjectStage(
                 "UserOutput",
                 Map(
-                  "id"       -> ExecutionPlan.PureDataPlan(StringValue("id")),
-                  "username" -> ExecutionPlan.PureDataPlan(StringValue("symphony"))
+                  "id"       -> Stage.PureStage(StringValue("id")),
+                  "username" -> Stage.PureStage(StringValue("symphony"))
                 )
               )
             )
@@ -91,9 +89,9 @@ object TestSchema {
     )
     .build()
 
-  val batchQuerySchema: Schema[UserBatchQueryResolver] = ObjectBuilder
-    .builder[UserBatchQueryResolver]()
-    .name("UserBatchQueryResolver")
+  val batchQuerySchema: Schema[UserQueryResolver] = ObjectBuilder
+    .builder[UserQueryResolver]()
+    .name("UserQueryResolver")
     .fieldWithArgs(builder =>
       builder
         .name("batchGetUsers")
@@ -102,18 +100,18 @@ object TestSchema {
           "users" -> Schema.mkList(queryInputSchema)
         )
         .build() ->
-        ((a: UserBatchQueryResolver) =>
-          ExecutionPlan.ObjectDataPlan(
+        ((a: UserQueryResolver) =>
+          Stage.ObjectStage(
             "UserBatchQueryResolver",
             Map(
               "batchGetUsers" ->
-                ExecutionPlan.ListDataPlan(
+                Stage.ListStage(
                   List(
-                    ExecutionPlan.ObjectDataPlan(
+                    Stage.ObjectStage(
                       "UserOutput",
                       Map(
-                        "id"       -> ExecutionPlan.PureDataPlan(StringValue("id")),
-                        "username" -> ExecutionPlan.PureDataPlan(StringValue("symphony"))
+                        "id"       -> Stage.PureStage(StringValue("id")),
+                        "username" -> Stage.PureStage(StringValue("symphony"))
                       )
                     )
                   )
@@ -145,14 +143,14 @@ object TestSchema {
         )
         .build() ->
         ((a: UserMutationResolver) =>
-          ExecutionPlan.ObjectDataPlan(
+          Stage.ObjectStage(
             "UserMutationResolver",
             Map(
-              "updateUser" -> ExecutionPlan.ObjectDataPlan(
+              "updateUser" -> Stage.ObjectStage(
                 "UserOutput",
                 Map(
-                  "id"       -> ExecutionPlan.PureDataPlan(StringValue("id")),
-                  "username" -> ExecutionPlan.PureDataPlan(StringValue("symphony"))
+                  "id"       -> Stage.PureStage(StringValue("id")),
+                  "username" -> Stage.PureStage(StringValue("symphony"))
                 )
               )
             )

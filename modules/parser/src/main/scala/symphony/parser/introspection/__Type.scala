@@ -2,7 +2,7 @@ package symphony
 package parser
 package introspection
 
-import symphony.parser.Value.StringValue
+import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*

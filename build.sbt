@@ -36,7 +36,8 @@ lazy val root = (project in file("."))
     core,
     parser,
     server,
-    validator
+    validator,
+    `scala-derivation`
   )
   .settings(
     publish / skip := true,
@@ -80,4 +81,14 @@ lazy val server = (project in file("modules/server"))
     name := "symphony-server",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.server.value
+  )
+
+lazy val `scala-derivation` = (project in file("modules/scala-derivation"))
+  .dependsOn(core)
+  .settings(
+    publish / skip := false,
+    commonSettings,
+    name := "symphony-scala-derivation",
+    commands ++= Commands.value,
+    libraryDependencies ++= Dependencies.Deps.`scala-derived`.value
   )

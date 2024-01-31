@@ -5,6 +5,6 @@ package adt
 final case class VariableDefinition(
   name: String,
   variableType: Type,
-  defaultValue: Option[InputValue],
+  defaultValue: Option[SymphonyQLInputValue],
   directives: List[Directive]
 )

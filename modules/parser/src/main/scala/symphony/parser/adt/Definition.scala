@@ -144,7 +144,7 @@ object Definition {
         description: Option[String],
         name: String,
         ofType: Type,
-        defaultValue: Option[InputValue],
+        defaultValue: Option[SymphonyQLInputValue],
         directives: List[Directive]
       )
 

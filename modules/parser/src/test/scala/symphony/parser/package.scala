@@ -31,7 +31,7 @@ def simpleQueryWithFragment(
 def mkSimpleField(
   name: String,
   alias: Option[String] = None,
-  arguments: Map[String, InputValue] = Map(),
+  arguments: Map[String, SymphonyQLInputValue] = Map(),
   directives: List[Directive] = List.empty,
   selectionSet: List[Selection] = List.empty
 ): Field = Field(alias, name, arguments, directives, selectionSet)

@@ -1,20 +1,13 @@
 package symphony.parser.parsers
 
-import scala.util.*
-
 import org.parboiled2.*
 import org.parboiled2.support.hlist
 import org.parboiled2.support.hlist.HNil
 
 import symphony.parser.*
-import symphony.parser.InputValue.*
-import symphony.parser.SymphonyError.ParsingError
-import symphony.parser.Value.*
+import symphony.parser.SymphonyQLInputValue.*
+import symphony.parser.SymphonyQLValue.*
 import symphony.parser.adt.*
-import symphony.parser.adt.Definition.ExecutableDefinition
-import symphony.parser.adt.Definition.ExecutableDefinition.*
-import symphony.parser.adt.Selection.*
-import symphony.parser.adt.Type.*
 
 abstract class ValueParser extends CommonParser {
 
@@ -26,7 +19,7 @@ abstract class ValueParser extends CommonParser {
   }
 
   def intValue: Rule1[IntValue] = rule {
-    capture(integerPart) ~> ((v: String) => IntValue.fromStringUnsafe(v))
+    capture(integerPart) ~> ((v: String) => IntValue.stringToIntValue(v))
   }
 
   def floatValue: Rule1[FloatValue] = rule {
@@ -37,11 +30,11 @@ abstract class ValueParser extends CommonParser {
     ) ~> { t => FloatValue(t) }
   }
 
-  def nullValue: Rule1[InputValue] = rule {
+  def nullValue: Rule1[SymphonyQLInputValue] = rule {
     str("null") ~> (() => NullValue)
   }
 
-  def enumValue: Rule1[InputValue] = rule {
+  def enumValue: Rule1[SymphonyQLInputValue] = rule {
     name ~> EnumValue.apply
   }
 
@@ -49,7 +42,7 @@ abstract class ValueParser extends CommonParser {
     "[" ~!~ value.*.separatedBy(ignored) ~ "]" ~> (values => ListValue(values.toList))
   }
 
-  def objectField: Rule1[(String, InputValue)] = rule {
+  def objectField: Rule1[(String, SymphonyQLInputValue)] = rule {
     name ~ ":" ~!~ ignored ~ value ~> { (n, v) => n -> v }
   }
 
@@ -61,11 +54,11 @@ abstract class ValueParser extends CommonParser {
     "$" ~ name ~> VariableValue.apply
   }
 
-  def defaultValue: Rule1[InputValue] = rule {
+  def defaultValue: Rule1[SymphonyQLInputValue] = rule {
     "=" ~ ignored ~!~ value
   }
 
-  def value: Rule1[InputValue] =
+  def value: Rule1[SymphonyQLInputValue] =
     rule {
       floatValue | intValue | booleanValue | stringValue | nullValue | enumValue | listValue | objectValue | variableValue
     }

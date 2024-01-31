@@ -13,7 +13,7 @@ object Selection {
   final case class Field(
     alias: Option[String],
     name: String,
-    arguments: Map[String, InputValue],
+    arguments: Map[String, SymphonyQLInputValue],
     directives: List[Directive],
     selectionSet: List[Selection]
   ) extends Selection
