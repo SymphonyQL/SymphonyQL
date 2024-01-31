@@ -3,6 +3,7 @@ package parser
 
 import scala.annotation.switch
 
+import Value.IntValue
 import adt.*
 import adt.Definition.ExecutableDefinition.*
 import adt.Definition.TypeSystemDefinition.*
@@ -10,7 +11,6 @@ import introspection.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.DirectiveLocation.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.adt.Type.{ innerType, NamedType }
-import value.InputValue
 
 object DocumentRenderer extends Renderer[Document] {
 
@@ -255,7 +255,7 @@ object DocumentRenderer extends Renderer[Document] {
     (selection: Selection, indent: Option[Int], builder: StringBuilder) => {
       pad(indent, builder)
       selection match {
-        case Selection.Field(alias, name, arguments, directives, selectionSet, _) =>
+        case Selection.Field(alias, name, arguments, directives, selectionSet) =>
           alias.foreach { a =>
             builder append a
             builder append ':'

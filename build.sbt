@@ -35,11 +35,21 @@ lazy val root = (project in file("."))
   .aggregate(
     core,
     parser,
-    server
+    server,
+    validator
   )
   .settings(
     publish / skip := true,
     commonSettings,
+    commands ++= Commands.value
+  )
+
+lazy val validator = (project in file("modules/validator"))
+  .dependsOn(parser)
+  .settings(
+    publish / skip := false,
+    commonSettings,
+    name := "symphony-validator",
     commands ++= Commands.value
   )
 
@@ -53,7 +63,7 @@ lazy val parser = (project in file("modules/parser"))
   )
 
 lazy val core = (project in file("modules/core"))
-  .dependsOn(parser)
+  .dependsOn(parser, validator)
   .settings(
     publish / skip := false,
     commonSettings,
@@ -63,7 +73,7 @@ lazy val core = (project in file("modules/core"))
   )
 
 lazy val server = (project in file("modules/server"))
-  .dependsOn(parser)
+  .dependsOn(core)
   .settings(
     publish / skip := false,
     commonSettings,

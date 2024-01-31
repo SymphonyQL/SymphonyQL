@@ -2,10 +2,10 @@ package symphony.parser
 
 import scala.util.control.NoStackTrace
 
+import symphony.parser.*
+import symphony.parser.OutputValue.*
+import symphony.parser.Value.StringValue
 import symphony.parser.adt.LocationInfo
-import symphony.parser.value.*
-import symphony.parser.value.OutputValue.*
-import symphony.parser.value.Value.StringValue
 
 sealed trait SymphonyError extends NoStackTrace with Product with Serializable {
   def msg: String

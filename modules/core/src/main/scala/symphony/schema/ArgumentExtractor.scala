@@ -1,10 +1,10 @@
 package symphony.schema
 
+import symphony.parser.*
+import symphony.parser.InputValue
+import symphony.parser.InputValue.*
 import symphony.parser.SymphonyError.*
-import symphony.parser.value.*
-import symphony.parser.value.InputValue
-import symphony.parser.value.InputValue.*
-import symphony.parser.value.Value.*
+import symphony.parser.Value.*
 
 trait ArgumentExtractor[T] { self =>
 

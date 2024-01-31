@@ -1,6 +1,6 @@
 package symphony
 
-import symphony.parser.value.Value.StringValue
+import symphony.parser.Value.StringValue
 import symphony.schema.*
 import symphony.schema.builder.*
 

@@ -4,7 +4,6 @@ package adt
 
 import Definition.TypeSystemDefinition.TypeDefinition.*
 import Type.*
-import value.InputValue
 
 sealed trait Definition extends Serializable
 

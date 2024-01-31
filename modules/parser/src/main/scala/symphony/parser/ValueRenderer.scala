@@ -1,11 +1,9 @@
 package symphony
 package parser
 
-import value.*
-import value.InputValue
-import value.Value.*
-import value.Value.FloatValue.*
-import value.Value.IntValue.*
+import Value.*
+import Value.FloatValue.*
+import Value.IntValue.*
 
 object ValueRenderer {
 

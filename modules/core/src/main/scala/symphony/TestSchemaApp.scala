@@ -1,7 +1,7 @@
 package symphony
 
+import symphony.parser.Value.*
 import symphony.parser.introspection.*
-import symphony.parser.value.Value.*
 import symphony.schema.*
 import symphony.schema.builder.*
 
