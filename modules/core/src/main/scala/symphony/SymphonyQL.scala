@@ -1,10 +1,13 @@
 package symphony
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.*
 
-import symphony.execution.SymphonyQLExecutor
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.*
+
+import symphony.execution.Executor
 import symphony.parser.*
 import symphony.parser.SymphonyQLError.ExecutionError
 import symphony.parser.adt.Definition.TypeSystemDefinition.*
@@ -13,68 +16,77 @@ import symphony.schema.*
 
 final class SymphonyQL private (rootSchema: SymphonyQLSchema) {
 
-  private val allTypes = (
-    rootSchema.query.map(op => Types.collectTypes(op.opType)).toList.flatten ++ rootSchema.mutation
-      .map(op => Types.collectTypes(op.opType))
-      .toList
-      .flatten
-  )
-    .groupBy(t => (t.name, t.kind, t.origin))
-    .flatMap(_._2.headOption)
-    .toList
-
-  val document: Document = Document(
+  private lazy val _document: Document = Document(
     SchemaDefinition(
       Nil,
       rootSchema.query.flatMap(_.opType.name),
       rootSchema.mutation.flatMap(_.opType.name),
-      None,
+      rootSchema.subscription.flatMap(_.opType.name),
       None
-    ) :: allTypes.flatMap(_.toTypeDefinition),
+    ) :: rootSchema.collectTypes.flatMap(_.toTypeDefinition),
     SourceMapper.empty
   )
 
-  def render: String = DocumentRenderer.render(document)
+  def document: Document = _document
 
-  def execute(request: SymphonyQLRequest): Future[SymphonyQLResponse[SymphonyQLError]] = {
-    val document = Future(SymphonyQLParser.parseQuery(request.query.getOrElse("")))
-    document.flatMap {
-      case Left(value) => Future.successful(Left(value))
-      case Right(value) =>
-        SymphonyQLExecutor.executeRequest(
-          value,
+  def render: String = DocumentRenderer.render(_document)
+
+  def runWith(
+    request: SymphonyQLRequest
+  )(implicit actorSystem: ActorSystem): Future[SymphonyQLResponse[SymphonyQLError]] =
+    compile(request)
+      .map(SymphonyQLResponse(_, List.empty))
+      .recoverWith {
+        case se: SymphonyQLError => Source.failed(se)
+        case ex: Exception       =>
+          Source.single(
+            SymphonyQLResponse(
+              SymphonyQLValue.NullValue,
+              List(
+                SymphonyQLError.ExecutionError(
+                  "Caught error during execution of source field",
+                  innerThrowable = Some(ex)
+                )
+              )
+            )
+          )
+      }
+      .runWith[Future[SymphonyQLResponse[SymphonyQLError]]](Sink.head)
+
+  private def compile(
+    request: SymphonyQLRequest
+  )(implicit actorSystem: ActorSystem): Source[SymphonyQLOutputValue, NotUsed] = {
+    val document = SymphonyQLParser.parseQuery(request.query.getOrElse(""))
+    document match
+      case Left(ex)   => Source.failed(ex)
+      case Right(doc) =>
+        Executor.execute(
+          doc,
           rootSchema,
           request.operationName,
           request.variables.getOrElse(Map.empty)
         )
-    }.map {
-      case Left(value)  => SymphonyQLResponse(SymphonyQLValue.NullValue, List(value))
-      case Right(value) => SymphonyQLResponse(value, List.empty)
-    }
   }
-
 }
 
 object SymphonyQL {
   def builder(): SymphonyQLBuilder = new SymphonyQLBuilder
 
   final class SymphonyQLBuilder {
-    private var rootSchema: Option[SymphonyQLSchema] = None
+    private var rootSchema = SymphonyQLSchema(None, None, None)
 
     def rootResolver[Q, M, S](
       rootResolver: SymphonyQLResolver[Q, M, S]
     ): this.type = {
-      rootSchema = rootSchema.map(
-        _ ++ SymphonyQLSchema(
-          rootResolver.queryResolver.map(r => Operation(r._2.toType, r._2.resolve(r._1))),
-          rootResolver.mutationResolver.map(r => Operation(r._2.toType, r._2.resolve(r._1))),
-          rootResolver.subscriptionResolver.map(r => Operation(r._2.toType, r._2.resolve(r._1)))
-        )
+      rootSchema = rootSchema ++ SymphonyQLSchema(
+        rootResolver.queryResolver.map(r => Operation(r._2.toType(), r._2.analyze(r._1))),
+        rootResolver.mutationResolver.map(r => Operation(r._2.toType(), r._2.analyze(r._1))),
+        rootResolver.subscriptionResolver.map(r => Operation(r._2.toType(), r._2.analyze(r._1)))
       )
       this
     }
 
-    def build() = new SymphonyQL(rootSchema.getOrElse(SymphonyQLSchema(None, None, None)))
+    def build() = new SymphonyQL(rootSchema)
   }
 
 }

@@ -117,8 +117,8 @@ abstract class CommonParser extends Parser {
 
   def blockStringValue(rawValue: String): String = {
     val l1: List[String] = rawValue.split("\r?\n").toList
-    val commonIndent = l1 match {
-      case Nil => None
+    val commonIndent     = l1 match {
+      case Nil       => None
       case _ :: tail =>
         tail.foldLeft(Option.empty[Int]) { case (commonIndent, line) =>
           val indent = "[ \t]*".r.findPrefixOf(line).map(_.length).getOrElse(0)
@@ -126,14 +126,14 @@ abstract class CommonParser extends Parser {
         }
     }
     // remove indentation
-    val l2 = (commonIndent, l1) match {
+    val l2               = (commonIndent, l1) match {
       case (Some(value), head :: tail) => head :: tail.map(_.drop(value))
       case _                           => l1
     }
     // remove start lines that are only whitespaces
-    val l3 = l2.dropWhile("[ \t]*".r.replaceAllIn(_, "").isEmpty)
+    val l3               = l2.dropWhile("[ \t]*".r.replaceAllIn(_, "").isEmpty)
     // remove end lines that are only whitespaces
-    val l4 = l3.reverse.dropWhile("[ \t]*".r.replaceAllIn(_, "").isEmpty).reverse
+    val l4               = l3.reverse.dropWhile("[ \t]*".r.replaceAllIn(_, "").isEmpty).reverse
     l4.mkString("\n")
   }
 

@@ -28,9 +28,7 @@ open class DefinitionParser(val input: ParserInput) extends SelectionParser { se
   def operationDefinition: Rule1[OperationDefinition] = rule {
     operationType ~!~ ignored ~ name.? ~ ignored ~ variableDefinitions.? ~ ignored ~ directives ~ ignored ~ selectionSet ~> {
       (operationType, name, variableDefinitions, directives, selection) =>
-        {
-          OperationDefinition(operationType, name, variableDefinitions.getOrElse(Nil), directives, selection)
-        }
+        OperationDefinition(operationType, name, variableDefinitions.getOrElse(Nil), directives, selection)
     } | ignored ~ selectionSet ~> { sel =>
       OperationDefinition(OperationType.Query, None, Nil, Nil, sel)
     }

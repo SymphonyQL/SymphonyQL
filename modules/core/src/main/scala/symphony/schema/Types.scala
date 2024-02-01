@@ -7,9 +7,9 @@ import symphony.parser.introspection.*
 
 object Types {
 
-  def makeList(underlying: __Type): __Type = __Type(__TypeKind.LIST, ofType = Some(underlying))
+  def mkList(underlying: __Type): __Type = __Type(__TypeKind.LIST, ofType = Some(underlying))
 
-  def makeNonNull(underlying: __Type): __Type = __Type(__TypeKind.NON_NULL, ofType = Some(underlying))
+  def mkNonNull(underlying: __Type): __Type = __Type(__TypeKind.NON_NULL, ofType = Some(underlying))
 
   def mkScalar(
     name: String,
@@ -138,12 +138,12 @@ object Types {
 
   def collectTypes(t: __Type, existingTypes: List[__Type] = Nil): List[__Type] =
     t.kind match {
-      case __TypeKind.SCALAR | __TypeKind.ENUM =>
+      case __TypeKind.SCALAR | __TypeKind.ENUM   =>
         t.name.fold(existingTypes)(_ => if (existingTypes.exists(same(t, _))) existingTypes else t :: existingTypes)
       case __TypeKind.LIST | __TypeKind.NON_NULL =>
         t.ofType.fold(existingTypes)(collectTypes(_, existingTypes))
-      case _ =>
-        val list1 =
+      case _                                     =>
+        val list1         =
           t.name.fold(existingTypes)(_ =>
             if (existingTypes.exists(same(t, _))) {
               existingTypes.map {
@@ -151,14 +151,14 @@ object Types {
                   ex.copy(interfaces =
                     () =>
                       (ex.interfaces(), t.interfaces()) match {
-                        case (None, None)             => None
-                        case (Some(interfaces), None) => Some(interfaces)
-                        case (None, Some(interfaces)) => Some(interfaces)
+                        case (None, None)              => None
+                        case (Some(interfaces), None)  => Some(interfaces)
+                        case (None, Some(interfaces))  => Some(interfaces)
                         case (Some(left), Some(right)) =>
                           Some(left ++ right.filterNot(t => left.exists(_.name == t.name)))
                       }
                   )
-                case other => other
+                case other             => other
               }
             } else t :: existingTypes
           )
@@ -166,7 +166,7 @@ object Types {
           t.allFields.flatMap(f => f.`type` :: f.allArgs.map(_.`type`)) ++
             t.allInputFields.map(_.`type`) ++
             t.interfaces().getOrElse(Nil).map(() => _)
-        val list2 = embeddedTypes.foldLeft(list1) { case (types, f) =>
+        val list2         = embeddedTypes.foldLeft(list1) { case (types, f) =>
           val t = innerType(f())
           t.name.fold(types)(_ => if (existingTypes.exists(same(t, _))) types else collectTypes(t, types))
         }

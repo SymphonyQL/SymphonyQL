@@ -16,7 +16,7 @@ final class FieldBuilder private {
   private var schema: Schema[_]                 = _
   private var isDeprecated: Boolean             = false
   private var deprecationReason: Option[String] = None
-  private var isOptional: Boolean               = false
+  private var hasArgs: Boolean                  = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -48,8 +48,8 @@ final class FieldBuilder private {
     this
   }
 
-  def isOptional(isOptional: Boolean): this.type = {
-    this.isOptional = isOptional
+  def hasArgs(hasArgs: Boolean): this.type = {
+    this.hasArgs = hasArgs
     this
   }
 
@@ -57,8 +57,8 @@ final class FieldBuilder private {
     Types.mkField(
       name,
       description,
-      List.empty,
-      () => if (isOptional) schema.toType else Types.makeNonNull(schema.toType),
+      if (hasArgs) schema.arguments else List.empty,
+      () => if (schema.optional) schema.toType(hasArgs) else Types.mkNonNull(schema.toType(hasArgs)),
       isDeprecated,
       deprecationReason,
       Option(directives)

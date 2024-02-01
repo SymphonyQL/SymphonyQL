@@ -8,7 +8,7 @@ inThisBuild(
     sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
     homepage               := Some(url("https://github.com/SymphonyQL")),
     licenses               := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
-    developers := List(
+    developers             := List(
       Developer(
         id = "jxnu-liguobin",
         name = "正在登陆",
@@ -50,7 +50,7 @@ lazy val validator = (project in file("modules/validator"))
   .settings(
     publish / skip := false,
     commonSettings,
-    name := "symphony-validator",
+    name           := "symphony-validator",
     commands ++= Commands.value
   )
 
@@ -58,7 +58,7 @@ lazy val parser = (project in file("modules/parser"))
   .settings(
     publish / skip := false,
     commonSettings,
-    name := "symphony-parser",
+    name           := "symphony-parser",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.parser.value
   )
@@ -68,7 +68,7 @@ lazy val core = (project in file("modules/core"))
   .settings(
     publish / skip := false,
     commonSettings,
-    name := "symphony-core",
+    name           := "symphony-core",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.core.value
   )
@@ -78,7 +78,7 @@ lazy val server = (project in file("modules/server"))
   .settings(
     publish / skip := false,
     commonSettings,
-    name := "symphony-server",
+    name           := "symphony-server",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.server.value
   )
@@ -88,7 +88,15 @@ lazy val `scala-derivation` = (project in file("modules/scala-derivation"))
   .settings(
     publish / skip := false,
     commonSettings,
-    name := "symphony-scala-derivation",
+    name           := "symphony-scala-derivation",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.`scala-derived`.value
+  )
+
+lazy val `examples` = (project in file("examples"))
+  .dependsOn(server, core, `scala-derivation`)
+  .settings(
+    publish / skip := true,
+    commonSettings,
+    commands ++= Commands.value
   )

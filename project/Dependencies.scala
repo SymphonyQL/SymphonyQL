@@ -26,7 +26,8 @@ object Dependencies {
     val core = sbt.Def.setting {
       Seq(
         "org.apache.pekko" %% "pekko-stream"  % `pekko-core_Version`,
-        "org.apache.pekko" %% "pekko-testkit" % `pekko-core_Version` % Test
+        "org.apache.pekko" %% "pekko-testkit" % `pekko-core_Version` % Test,
+        "org.scalatest"    %% "scalatest"     % `scalatest_Version`  % Test
       )
     }
 
@@ -40,7 +41,8 @@ object Dependencies {
     // derives Schema and ArgumentExtractor for scala 3
     val `scala-derived` = sbt.Def.setting {
       Seq(
-        "com.softwaremill.magnolia1_3" %% "magnolia" % `magnolia_Version`
+        "com.softwaremill.magnolia1_3" %% "magnolia"  % `magnolia_Version`,
+        "org.scalatest"                %% "scalatest" % `scalatest_Version` % Test
       )
     }
   }

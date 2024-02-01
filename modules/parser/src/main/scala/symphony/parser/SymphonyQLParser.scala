@@ -23,7 +23,7 @@ object SymphonyQLParser {
       case Failure(exception) =>
         exception.printStackTrace()
         Left(ParsingError(s"Query parsing error", innerThrowable = Some(exception)))
-      case Success(value) => Right(Document(value.definitions, SourceMapper(query)))
+      case Success(value)     => Right(Document(value.definitions, SourceMapper(query)))
   }
 
   def check(query: String): Option[String] = {

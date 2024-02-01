@@ -4,7 +4,8 @@ import scala.collection.mutable.ArrayBuffer
 
 import adt.LocationInfo
 
-/** Maps an index to the "friendly" version of an index based on the underlying source.
+/**
+ * Maps an index to the "friendly" version of an index based on the underlying source.
  */
 trait SourceMapper extends Serializable {
 

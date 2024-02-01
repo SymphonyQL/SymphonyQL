@@ -19,103 +19,73 @@ trait ArgumentExtractor[T] { self =>
 
 object ArgumentExtractor {
 
-  case object UnitArgumentExtractor extends ArgumentExtractor[Unit] {
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Unit] = Right(())
+  implicit lazy val unit: ArgumentExtractor[Unit] = (_: SymphonyQLInputValue) => Right(())
+
+  implicit lazy val int: ArgumentExtractor[Int] = (input: SymphonyQLInputValue) => long.extract(input).map(_.toInt)
+
+  implicit lazy val long: ArgumentExtractor[Long] = {
+    case value: IntValue => Right(value.toLong)
+    case other           => Left(ArgumentError(s"Cannot build an Long from input $other"))
   }
 
-  case object IntArgumentExtractor extends ArgumentExtractor[Int] {
-
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Int] =
-      LongArgumentExtractor.extract(input).map(_.toInt)
+  implicit lazy val double: ArgumentExtractor[Double] = {
+    case value: IntValue   => Right(value.toLong.toDouble)
+    case value: FloatValue => Right(value.toDouble)
+    case other             => Left(ArgumentError(s"Cannot build a Double from input $other"))
   }
 
-  case object LongArgumentExtractor extends ArgumentExtractor[Long] {
+  implicit lazy val float: ArgumentExtractor[Float] = (input: SymphonyQLInputValue) =>
+    double.extract(input).map(_.toFloat)
 
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Long] =
-      input match
-        case value: IntValue => Right(value.toLong)
-        case other           => Left(ArgumentError(s"Can't build an Long from input $other"))
+  implicit lazy val string: ArgumentExtractor[String] = {
+    case StringValue(value) => Right(value)
+    case other              => Left(ArgumentError(s"Cannot build a String from input $other"))
   }
 
-  case object DoubleArgumentExtractor extends ArgumentExtractor[Double] {
-
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Double] =
-      input match
-        case value: IntValue   => Right(value.toLong.toDouble)
-        case value: FloatValue => Right(value.toDouble)
-        case other             => Left(ArgumentError(s"Can't build a Double from input $other"))
+  implicit lazy val boolean: ArgumentExtractor[Boolean] = {
+    case BooleanValue(value) => Right(value)
+    case other               => Left(ArgumentError(s"Cannot build a Boolean from input $other"))
   }
 
-  case object FloatArgumentExtractor extends ArgumentExtractor[Float] {
-
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Float] =
-      DoubleArgumentExtractor.extract(input).map(_.toFloat)
+  implicit def option[A](implicit ev: ArgumentExtractor[A]): ArgumentExtractor[Option[A]] = {
+    case SymphonyQLValue.NullValue => Right(None)
+    case value                     => ev.extract(value).map(Some(_))
   }
 
-  case object StringArgumentExtractor extends ArgumentExtractor[String] {
-
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, String] =
-      input match
-        case StringValue(value) => Right(value)
-        case other              => Left(ArgumentError(s"Can't build a String from input $other"))
-  }
-
-  case object BooleanArgumentExtractor extends ArgumentExtractor[Boolean] {
-
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Boolean] =
-      input match
-        case BooleanValue(value) => Right(value)
-        case other               => Left(ArgumentError(s"Can't build a Boolean from input $other"))
-  }
-
-  final case class OptionArgumentExtractor[A](ev: ArgumentExtractor[A]) extends ArgumentExtractor[Option[A]] {
-
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Option[A]] =
-      input match
-        case SymphonyQLValue.NullValue => Right(None)
-        case value                     => ev.extract(value).map(Some(_))
-  }
-
-  final case class ListArgumentExtractor[A](ev: ArgumentExtractor[A]) extends ArgumentExtractor[List[A]] {
-
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, List[A]] = {
-      input match
-        case SymphonyQLInputValue.ListValue(items) =>
-          items
-            .foldLeft[Either[ArgumentError, List[A]]](Right(Nil)) {
-              case (res @ Left(_), _) => res
-              case (Right(res), value) =>
-                ev.extract(value) match {
-                  case Left(error)  => Left(error)
-                  case Right(value) => Right(value :: res)
-                }
+  implicit def list[A](implicit ev: ArgumentExtractor[A]): ArgumentExtractor[List[A]] = {
+    case SymphonyQLInputValue.ListValue(values) =>
+      values
+        .foldLeft[Either[ArgumentError, List[A]]](Right(Nil)) {
+          case (res @ Left(_), _)  => res
+          case (Right(res), value) =>
+            ev.extract(value) match {
+              case Left(error)  => Left(error)
+              case Right(value) => Right(value :: res)
             }
-            .map(_.reverse)
-        case other => ev.extract(other).map(List(_))
-    }
+        }
+        .map(_.reverse)
+    case other                                  => ev.extract(other).map(List(_))
   }
 
-  final case class SeqArgumentExtractor[A](ev: ArgumentExtractor[A]) extends ArgumentExtractor[Seq[A]] {
-    private lazy val list = ListArgumentExtractor(ev)
+  implicit def seq[A](implicit ev: ArgumentExtractor[A]): ArgumentExtractor[Seq[A]] = new ArgumentExtractor[Seq[A]] {
+    private lazy val _list = list(ev)
 
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Seq[A]] = {
-      list.extract(input).map(_.toSeq)
-    }
+    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Seq[A]] =
+      _list.extract(input).map(_.toSeq)
   }
 
-  final case class SetArgumentExtractor[A](ev: ArgumentExtractor[A]) extends ArgumentExtractor[Set[A]] {
-    private lazy val list = ListArgumentExtractor(ev)
+  implicit def set[A](implicit ev: ArgumentExtractor[A]): ArgumentExtractor[Set[A]] = new ArgumentExtractor[Set[A]] {
+    private lazy val _list = list(ev)
 
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Set[A]] = {
-      list.extract(input).map(_.toSet)
-    }
+    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Set[A]] =
+      _list.extract(input).map(_.toSet)
   }
 
-  final case class VectorArgumentExtractor[A](ev: ArgumentExtractor[A]) extends ArgumentExtractor[Vector[A]] {
-    private lazy val list = ListArgumentExtractor(ev)
+  implicit def vector[A](implicit ev: ArgumentExtractor[A]): ArgumentExtractor[Vector[A]] =
+    new ArgumentExtractor[Vector[A]] {
+      private lazy val _list = list(ev)
 
-    override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Vector[A]] = {
-      list.extract(input).map(_.toVector)
+      override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Vector[A]] =
+        _list.extract(input).map(_.toVector)
     }
-  }
 }

@@ -13,7 +13,7 @@ final class ScalarBuilder[A] {
   private var name: String                         = _
   private var description: Option[String]          = None
   private var toOutput: A => SymphonyQLOutputValue = _ => NullValue
-  private var isOptional: Boolean                  = false
+  private var isNullable: Boolean                  = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -30,13 +30,13 @@ final class ScalarBuilder[A] {
     this
   }
 
-  def isOptional(isOptional: Boolean): this.type = {
-    this.isOptional = isOptional
+  def isNullable(isOptional: Boolean): this.type = {
+    this.isNullable = isOptional
     this
   }
 
   def build(): Schema[A] =
-    if (isOptional) Schema.mkNullable(Schema.mkScalar(name, description, toOutput))
+    if (isNullable) Schema.mkNullable(Schema.mkScalar(name, description, toOutput))
     else Schema.mkScalar(name, description, toOutput)
 
 }

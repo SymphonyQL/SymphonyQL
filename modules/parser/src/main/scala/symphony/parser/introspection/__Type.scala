@@ -50,12 +50,12 @@ final case class __Type(
           case __TypeKind.NON_NULL => of.toType(true)
           case _                   => NamedType(name.getOrElse(""), nonNull)
         }
-      case None => NamedType(name.getOrElse(""), nonNull)
+      case None     => NamedType(name.getOrElse(""), nonNull)
     }
 
   def toTypeDefinition: Option[TypeDefinition] =
     kind match {
-      case __TypeKind.SCALAR =>
+      case __TypeKind.SCALAR       =>
         Some(
           ScalarTypeDefinition(
             description,
@@ -67,7 +67,7 @@ final case class __Type(
                 .toList
           )
         )
-      case __TypeKind.OBJECT =>
+      case __TypeKind.OBJECT       =>
         Some(
           ObjectTypeDefinition(
             description,
@@ -77,7 +77,7 @@ final case class __Type(
             allFields.map(_.toFieldDefinition)
           )
         )
-      case __TypeKind.INTERFACE =>
+      case __TypeKind.INTERFACE    =>
         Some(
           InterfaceTypeDefinition(
             description,
@@ -87,7 +87,7 @@ final case class __Type(
             allFields.map(_.toFieldDefinition)
           )
         )
-      case __TypeKind.UNION =>
+      case __TypeKind.UNION        =>
         Some(
           UnionTypeDefinition(
             description,
@@ -96,7 +96,7 @@ final case class __Type(
             possibleTypes.getOrElse(Nil).flatMap(_.name)
           )
         )
-      case __TypeKind.ENUM =>
+      case __TypeKind.ENUM         =>
         Some(
           EnumTypeDefinition(
             description,
@@ -114,7 +114,7 @@ final case class __Type(
             allInputFields.map(_.toInputValueDefinition)
           )
         )
-      case _ => None
+      case _                       => None
     }
 
   lazy val list: __Type = __Type(__TypeKind.LIST, ofType = Some(self))

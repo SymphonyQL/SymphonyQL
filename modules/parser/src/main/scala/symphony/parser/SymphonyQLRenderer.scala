@@ -2,7 +2,8 @@ package symphony.parser
 
 import scala.annotation.{ switch, targetName }
 
-/** The inverse of a `Parser` over some type A. A renderer can be used to render a value of type A to a string in either
+/**
+ * The inverse of a `Parser` over some type A. A renderer can be used to render a value of type A to a string in either
  *  a regular or compact format.
  *
  *  For specializations actually relevant to graphql see [[symphony.parser.ValueRenderer]] and
@@ -22,7 +23,8 @@ trait SymphonyQLRenderer[-A] { self =>
     sb.toString()
   }
 
-  /** Combines this renderer with another renderer sequentially. Semantically equivalent to `this andThen that`
+  /**
+   * Combines this renderer with another renderer sequentially. Semantically equivalent to `this andThen that`
    */
   @targetName("add")
   def ++[A1 <: A](that: SymphonyQLRenderer[A1]): SymphonyQLRenderer[A1] = self match {
@@ -30,23 +32,27 @@ trait SymphonyQLRenderer[-A] { self =>
     case _                                      => SymphonyQLRenderer.Combined(List(self, that))
   }
 
-  /** Contramaps the input of this renderer with the given function producing a renderer that now operates on type B
+  /**
+   * Contramaps the input of this renderer with the given function producing a renderer that now operates on type B
    */
   def contramap[B](f: B => A): SymphonyQLRenderer[B] = (value: B, indent: Option[Int], write: StringBuilder) =>
     self.unsafeRender(f(value), indent, write)
 
-  /** Returns an optional renderer that will only render the value if it is defined
+  /**
+   * Returns an optional renderer that will only render the value if it is defined
    */
   def optional: SymphonyQLRenderer[Option[A]] = (value: Option[A], indent: Option[Int], write: StringBuilder) =>
     value.foreach(self.unsafeRender(_, indent, write))
 
-  /** Returns a renderer that renders a list of A where the underlying renderer is responsible for rendering the
+  /**
+   * Returns a renderer that renders a list of A where the underlying renderer is responsible for rendering the
    *  separator between each element.
    */
   def list: SymphonyQLRenderer[List[A]] =
     list(SymphonyQLRenderer.empty)
 
-  /** Returns a renderer that renders a list of A but where the separator is rendered by provided argument renderer. The
+  /**
+   * Returns a renderer that renders a list of A but where the separator is rendered by provided argument renderer. The
    *  second parameter determines whether to print the separator before the first element or not.
    */
   def list[A1 <: A](separator: SymphonyQLRenderer[A1], omitFirst: Boolean = true): SymphonyQLRenderer[List[A1]] =
@@ -59,7 +65,8 @@ trait SymphonyQLRenderer[-A] { self =>
       }
     }
 
-  /** Returns a renderer that renders a set of A but where the separator is rendered by provided argument renderer.
+  /**
+   * Returns a renderer that renders a set of A but where the separator is rendered by provided argument renderer.
    */
   def set[A1 <: A](separator: SymphonyQLRenderer[A1]): SymphonyQLRenderer[Set[A1]] =
     (value: Set[A1], indent: Option[Int], write: StringBuilder) => {
@@ -71,12 +78,14 @@ trait SymphonyQLRenderer[-A] { self =>
       }
     }
 
-  /** Returns a renderer that will only render when the provided predicate is true.
+  /**
+   * Returns a renderer that will only render when the provided predicate is true.
    */
   def when[A1 <: A](pred: A1 => Boolean): SymphonyQLRenderer[A1] =
     (value: A1, indent: Option[Int], write: StringBuilder) => if (pred(value)) self.unsafeRender(value, indent, write)
 
-  /** Provides the actual unsafe rendering logic.
+  /**
+   * Provides the actual unsafe rendering logic.
    */
   def unsafeRender(value: A, indent: Option[Int], write: StringBuilder): Unit
 }
@@ -86,19 +95,22 @@ object SymphonyQLRenderer {
   def combine[A](renderers: SymphonyQLRenderer[A]*): SymphonyQLRenderer[A] =
     Combined(renderers.toList)
 
-  /** A Renderer which always renders a single character.
+  /**
+   * A Renderer which always renders a single character.
    */
   def char(char: Char): SymphonyQLRenderer[Any] = (value: Any, indent: Option[Int], write: StringBuilder) =>
     write.append(char)
 
   def comma: SymphonyQLRenderer[Any] = char(',')
 
-  /** A Renderer which always renders a string.
+  /**
+   * A Renderer which always renders a string.
    */
   def string(str: String): SymphonyQLRenderer[Any] = (value: Any, indent: Option[Int], write: StringBuilder) =>
     write.append(str)
 
-  /** A Renderer which simply renders the input string
+  /**
+   * A Renderer which simply renders the input string
    */
   lazy val string: SymphonyQLRenderer[String] = (value: String, indent: Option[Int], write: StringBuilder) =>
     write.append(value)
@@ -126,19 +138,22 @@ object SymphonyQLRenderer {
     }
   }
 
-  /** A Renderer which doesn't render anything.
+  /**
+   * A Renderer which doesn't render anything.
    */
   lazy val empty: SymphonyQLRenderer[Any] = (value: Any, indent: Option[Int], write: StringBuilder) => ()
 
   lazy val spaceOrEmpty: SymphonyQLRenderer[Any] = (value: Any, indent: Option[Int], write: StringBuilder) =>
     if (indent.isDefined) write.append(' ')
 
-  /** A Renderer which renders a newline character when in non-compact mode otherwise it renders a comma
+  /**
+   * A Renderer which renders a newline character when in non-compact mode otherwise it renders a comma
    */
   lazy val newlineOrComma: SymphonyQLRenderer[Any] = (value: Any, indent: Option[Int], write: StringBuilder) =>
     if (indent.isDefined) write.append('\n') else write.append(',')
 
-  /** A Renderer which renders a newline character when in non-compact mode otherwise it renders a space
+  /**
+   * A Renderer which renders a newline character when in non-compact mode otherwise it renders a space
    */
   lazy val newlineOrSpace: SymphonyQLRenderer[Any] = (value: Any, indent: Option[Int], write: StringBuilder) =>
     if (indent.isDefined) write.append('\n') else write.append(' ')

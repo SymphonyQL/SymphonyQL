@@ -155,7 +155,7 @@ class ParserSpec extends AnyFunSpec with Matchers {
           |    name
           |  }
           |}""".stripMargin
-      val doc = SymphonyQLParser.parseQuery(query)
+      val doc   = SymphonyQLParser.parseQuery(query)
       doc.toOption.orNull shouldEqual
         simpleQuery(
           selectionSet = List(
@@ -185,7 +185,7 @@ class ParserSpec extends AnyFunSpec with Matchers {
                     |    name
                     |  }
                     |}""".stripMargin
-      val doc = SymphonyQLParser.parseQuery(query)
+      val doc   = SymphonyQLParser.parseQuery(query)
 //      println(doc.toOption.orNull.operationDefinitions.last.selectionSet.last.asInstanceOf[Field].arguments.map(kv => kv._1 -> kv._2.getClass))
       doc.toOption.orNull shouldEqual
         simpleQuery(
@@ -233,7 +233,7 @@ class ParserSpec extends AnyFunSpec with Matchers {
                     |    profilePic(size: $devicePicSize)
                     |  }
                     |}""".stripMargin
-      val doc = SymphonyQLParser.parseQuery(query)
+      val doc   = SymphonyQLParser.parseQuery(query)
       doc.toOption.orNull shouldEqual
         simpleQuery(
           name = Some("getProfile"),
@@ -259,7 +259,7 @@ class ParserSpec extends AnyFunSpec with Matchers {
       val query = """query myQuery($someTest: Boolean) {
                     |  experimentalField @skip(if: $someTest)
                     |}""".stripMargin
-      val doc = SymphonyQLParser.parseQuery(query)
+      val doc   = SymphonyQLParser.parseQuery(query)
       doc.toOption.orNull shouldEqual
         simpleQuery(
           name = Some("myQuery"),
@@ -279,7 +279,7 @@ class ParserSpec extends AnyFunSpec with Matchers {
         """query getProfile($devicePicSize: [Int!]!) {
           |  nothing
           |}""".stripMargin
-      val doc = SymphonyQLParser.parseQuery(query)
+      val doc   = SymphonyQLParser.parseQuery(query)
       doc.toOption.orNull shouldEqual
         simpleQuery(
           name = Some("getProfile"),
@@ -371,7 +371,7 @@ class ParserSpec extends AnyFunSpec with Matchers {
                     |    }
                     |  }
                     |}""".stripMargin
-      val doc = SymphonyQLParser.parseQuery(query)
+      val doc   = SymphonyQLParser.parseQuery(query)
       doc.toOption.orNull shouldEqual
         simpleQuery(
           name = Some("inlineFragmentTyping"),
@@ -412,7 +412,7 @@ class ParserSpec extends AnyFunSpec with Matchers {
                     |    }
                     |  }
                     |}""".stripMargin
-      val doc = SymphonyQLParser.parseQuery(query)
+      val doc   = SymphonyQLParser.parseQuery(query)
       doc.toOption.orNull shouldEqual
         simpleQuery(
           name = Some("inlineFragmentNoType"),

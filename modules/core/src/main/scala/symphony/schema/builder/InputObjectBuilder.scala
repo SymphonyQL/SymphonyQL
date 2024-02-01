@@ -2,7 +2,7 @@ package symphony.schema.builder
 
 import symphony.parser.adt.Directive
 import symphony.parser.introspection.*
-import symphony.schema.Schema
+import symphony.schema.*
 
 object InputObjectBuilder {
   def builder[A](): InputObjectBuilder[A] = new InputObjectBuilder[A]
@@ -13,7 +13,7 @@ final class InputObjectBuilder[A] private {
   private var description: Option[String]           = None
   private var fields: List[FieldBuilder => __Field] = List.empty
   private var directives: List[Directive]           = List.empty
-  private var isOptional: Boolean                   = false
+  private var isNullable: Boolean                   = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -35,17 +35,27 @@ final class InputObjectBuilder[A] private {
     this
   }
 
-  def isOptional(isOptional: Boolean): this.type = {
-    this.isOptional = isOptional
+  def isNullable(isNullable: Boolean): this.type = {
+    this.isNullable = isNullable
     this
   }
 
-  def build(): Schema[A] = Schema.mkInputObject(
-    name,
-    description,
-    isOptional,
-    fields.map(_.apply(FieldBuilder.builder())),
-    directives
-  )
+  def build(): Schema[A] =
+    if (isNullable)
+      Schema.mkNullable(
+        Schema.mkObject(
+          name,
+          description,
+          * => fields.map(_.apply(FieldBuilder.builder())).map(f => f -> (* => Stage.NullStage)),
+          directives
+        )
+      )
+    else
+      Schema.mkObject(
+        name,
+        description,
+        * => fields.map(_.apply(FieldBuilder.builder())).map(f => f -> (* => Stage.NullStage)),
+        directives
+      )
 
 }

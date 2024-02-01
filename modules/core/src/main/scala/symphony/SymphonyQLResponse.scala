@@ -14,8 +14,8 @@ final case class SymphonyQLResponse[+E](
   def toOutputValue: SymphonyQLOutputValue =
     ObjectValue(
       List(
-        "data" -> (if (errors.isEmpty) Some(data) else None),
-        "errors" -> (if (errors.nonEmpty)
+        "data"       -> (if (errors.isEmpty) Some(data) else None),
+        "errors"     -> (if (errors.nonEmpty)
                        Some(ListValue(errors.map {
                          case e: SymphonyQLError => e.toOutputValue
                          case e                  => ObjectValue(List("message" -> StringValue(e.toString)))

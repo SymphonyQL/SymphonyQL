@@ -97,7 +97,7 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
             }
             writer append tripleQuote
             newlineOrSpace(indent, writer)
-          case value =>
+          case value                         =>
             pad(indent, writer)
             writer append '"'
             SymphonyQLRenderer.escapedString.unsafeRender(value, indent, writer)
@@ -127,14 +127,14 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
             case __TypeKind.NON_NULL =>
               loop(t.ofType)
               write append '!'
-            case __TypeKind.LIST =>
+            case __TypeKind.LIST     =>
               write append '['
               loop(t.ofType)
               write append ']'
-            case _ =>
+            case _                   =>
               write append t.name.getOrElse("null")
           }
-        case None =>
+        case None    =>
           write append "null"
       }
 
@@ -267,11 +267,11 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
           inputArgumentsRenderer.unsafeRender(arguments, indent, builder)
           directivesRenderer.unsafeRender(directives, indent, builder)
           selectionsRenderer.unsafeRender(selectionSet, indent, builder)
-        case Selection.FragmentSpread(name, directives) =>
+        case Selection.FragmentSpread(name, directives)                        =>
           builder append "..."
           builder append name
           directivesRenderer.unsafeRender(directives, indent, builder)
-        case Selection.InlineFragment(typeCondition, dirs, selectionSet) =>
+        case Selection.InlineFragment(typeCondition, dirs, selectionSet)       =>
           builder append "..."
           typeCondition.foreach { t =>
             spaceOrEmpty(indent, builder)
@@ -352,17 +352,17 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
   private lazy val typeDefinitionRenderer: SymphonyQLRenderer[TypeDefinition] =
     (definition: TypeDefinition, indent: Option[Int], writer: StringBuilder) =>
       definition match {
-        case typ: TypeDefinition.ObjectTypeDefinition =>
+        case typ: TypeDefinition.ObjectTypeDefinition      =>
           objectTypeDefinitionRenderer.unsafeRender(typ, indent, writer)
-        case typ: TypeDefinition.InterfaceTypeDefinition =>
+        case typ: TypeDefinition.InterfaceTypeDefinition   =>
           interfaceTypeDefinitionRenderer.unsafeRender(typ, indent, writer)
         case typ: TypeDefinition.InputObjectTypeDefinition =>
           inputObjectTypeDefinition.unsafeRender(typ, indent, writer)
-        case typ: TypeDefinition.EnumTypeDefinition =>
+        case typ: TypeDefinition.EnumTypeDefinition        =>
           enumRenderer.unsafeRender(typ, indent, writer)
-        case typ: TypeDefinition.UnionTypeDefinition =>
+        case typ: TypeDefinition.UnionTypeDefinition       =>
           unionRenderer.unsafeRender(typ, indent, writer)
-        case typ: TypeDefinition.ScalarTypeDefinition =>
+        case typ: TypeDefinition.ScalarTypeDefinition      =>
           scalarRenderer.unsafeRender(typ, indent, writer)
       }
 
@@ -527,7 +527,7 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
     writer append ' '
     writer append name
     implements match {
-      case Nil =>
+      case Nil          =>
       case head :: tail =>
         writer append " implements "
         writer append innerType(head)
@@ -574,7 +574,7 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
   private lazy val typeRenderer: SymphonyQLRenderer[Type] = (value: Type, indent: Option[Int], write: StringBuilder) =>
     {
       def loop(t: Type): Unit = t match {
-        case Type.NamedType(name, nonNull) =>
+        case Type.NamedType(name, nonNull)  =>
           write append name
           if (nonNull) write append '!'
         case Type.ListType(ofType, nonNull) =>
@@ -640,8 +640,8 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
   private def increment(indentation: Option[Int]): Option[Int] = indentation.map(_ + 1)
 
   private def unsafeFastEscapeQuote(value: String, builder: StringBuilder): Unit = {
-    var i      = 0
-    var quotes = 0
+    var i                 = 0
+    var quotes            = 0
     def padQuotes(): Unit =
       while (quotes > 0) {
         builder.append('"')
@@ -655,7 +655,7 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
             builder.append("\\")
             padQuotes()
           }
-        case c =>
+        case c   =>
           if (quotes > 0) {
             padQuotes()
           }

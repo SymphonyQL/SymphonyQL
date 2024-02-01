@@ -16,7 +16,7 @@ final case class __InputValue(
 ) {
 
   def toInputValueDefinition: InputValueDefinition = {
-    val default = defaultValue.flatMap(v => SymphonyQLParser.parseInputValue(v).toOption)
+    val default       = defaultValue.flatMap(v => SymphonyQLParser.parseInputValue(v).toOption)
     val allDirectives = (if (isDeprecated)
                            List(
                              Directive(

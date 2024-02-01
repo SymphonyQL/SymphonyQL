@@ -10,11 +10,11 @@ object ObjectBuilder {
 }
 
 final class ObjectBuilder[A] private {
-  private var name: String                                                      = _
-  private var description: Option[String]                                       = None
-  private var fieldWithArgs: List[FieldWithArgBuilder => (__Field, A => Stage)] = List.empty
-  private var directives: List[Directive]                                       = List.empty
-  private var isOptional: Boolean                                               = false
+  private var name: String                                        = _
+  private var description: Option[String]                         = None
+  private var fields: List[FieldBuilder => (__Field, A => Stage)] = List.empty
+  private var directives: List[Directive]                         = List.empty
+  private var isNullable: Boolean                                 = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -26,8 +26,8 @@ final class ObjectBuilder[A] private {
     this
   }
 
-  def fieldWithArgs(fields: (FieldWithArgBuilder => (__Field, A => Stage))*): this.type = {
-    this.fieldWithArgs = fields.toList
+  def fields(fields: (FieldBuilder => (__Field, A => Stage))*): this.type = {
+    this.fields = fields.toList
     this
   }
 
@@ -36,18 +36,27 @@ final class ObjectBuilder[A] private {
     this
   }
 
-  def isOptional(isOptional: Boolean): this.type = {
-    this.isOptional = isOptional
+  def isNullable(isNullable: Boolean): this.type = {
+    this.isNullable = isNullable
     this
   }
 
   def build(): Schema[A] =
-    Schema.mkObject(
-      name,
-      description,
-      isOptional,
-      fieldWithArgs.map(_.apply(FieldWithArgBuilder.builder())),
-      directives
-    )
+    if (isNullable)
+      Schema.mkNullable(
+        Schema.mkObject(
+          name,
+          description,
+          _ => fields.map(_.apply(FieldBuilder.builder())),
+          directives
+        )
+      )
+    else
+      Schema.mkObject(
+        name,
+        description,
+        _ => fields.map(_.apply(FieldBuilder.builder())),
+        directives
+      )
 
 }

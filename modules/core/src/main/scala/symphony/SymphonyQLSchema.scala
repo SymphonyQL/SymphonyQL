@@ -1,5 +1,7 @@
 package symphony
 
+import scala.annotation.targetName
+
 import symphony.parser.introspection.*
 import symphony.schema.*
 
@@ -10,6 +12,20 @@ final case class SymphonyQLSchema(
   additionalTypes: List[__Type] = Nil
 ) {
 
+  def collectTypes: List[__Type] =
+    (
+      query.map(op => Types.collectTypes(op.opType)).toList.flatten ++
+        mutation
+          .map(op => Types.collectTypes(op.opType))
+          .toList
+          .flatten ++
+        subscription
+          .map(op => Types.collectTypes(op.opType))
+          .toList
+          .flatten
+    ).groupBy(t => (t.name, t.kind, t.origin)).flatMap(_._2.headOption).toList
+
+  @targetName("add")
   def ++(that: SymphonyQLSchema): SymphonyQLSchema =
     SymphonyQLSchema(
       (query ++ that.query).reduceOption(_ ++ _),

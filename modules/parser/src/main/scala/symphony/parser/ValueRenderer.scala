@@ -10,24 +10,24 @@ object ValueRenderer {
   lazy val inputValueRenderer: SymphonyQLRenderer[SymphonyQLInputValue] =
     (value: SymphonyQLInputValue, indent: Option[Int], write: StringBuilder) =>
       value match {
-        case in: SymphonyQLInputValue.ListValue   => inputListValueRenderer.unsafeRender(in, indent, write)
-        case in: SymphonyQLInputValue.ObjectValue => inputObjectValueRenderer.unsafeRender(in, indent, write)
+        case in: SymphonyQLInputValue.ListValue       => inputListValueRenderer.unsafeRender(in, indent, write)
+        case in: SymphonyQLInputValue.ObjectValue     => inputObjectValueRenderer.unsafeRender(in, indent, write)
         case SymphonyQLInputValue.VariableValue(name) =>
           write += '$'
           write ++= name
-        case StringValue(str) =>
+        case StringValue(str)                         =>
           write += '"'
           SymphonyQLRenderer.escapedString.unsafeRender(str, indent, write)
           write += '"'
-        case SymphonyQLValue.EnumValue(value)    => SymphonyQLRenderer.escapedString.unsafeRender(value, indent, write)
-        case SymphonyQLValue.BooleanValue(value) => write append value
-        case SymphonyQLValue.NullValue           => write ++= "null"
-        case IntNumber(value)                    => write append value
-        case LongNumber(value)                   => write append value
-        case BigIntNumber(value)                 => write append value
-        case FloatNumber(value)                  => write append value
-        case DoubleNumber(value)                 => write append value
-        case BigDecimalNumber(value)             => write append value
+        case SymphonyQLValue.EnumValue(value)         => SymphonyQLRenderer.escapedString.unsafeRender(value, indent, write)
+        case SymphonyQLValue.BooleanValue(value)      => write append value
+        case SymphonyQLValue.NullValue                => write ++= "null"
+        case IntNumber(value)                         => write append value
+        case LongNumber(value)                        => write append value
+        case BigIntNumber(value)                      => write append value
+        case FloatNumber(value)                       => write append value
+        case DoubleNumber(value)                      => write append value
+        case BigDecimalNumber(value)                  => write append value
       }
 
   lazy val inputObjectValueRenderer: SymphonyQLRenderer[SymphonyQLInputValue.ObjectValue] =
@@ -54,24 +54,24 @@ object ValueRenderer {
       value match {
         case SymphonyQLOutputValue.ListValue(values) =>
           outputListValueRenderer.unsafeRender(SymphonyQLOutputValue.ListValue(values), indent, write)
-        case in: SymphonyQLOutputValue.ObjectValue =>
+        case in: SymphonyQLOutputValue.ObjectValue   =>
           outputObjectValueRenderer.unsafeRender(in, indent, write)
-        case StringValue(str) =>
+        case StringValue(str)                        =>
           write += '"'
           SymphonyQLRenderer.escapedString.unsafeRender(str, indent, write)
           write += '"'
-        case SymphonyQLValue.EnumValue(value) =>
+        case SymphonyQLValue.EnumValue(value)        =>
           write += '"'
           SymphonyQLRenderer.escapedString.unsafeRender(value, indent, write)
           write += '"'
-        case SymphonyQLValue.BooleanValue(value) => write append value
-        case SymphonyQLValue.NullValue           => write append "null"
-        case IntNumber(value)                    => write append value
-        case LongNumber(value)                   => write append value
-        case FloatNumber(value)                  => write append value
-        case DoubleNumber(value)                 => write append value
-        case BigDecimalNumber(value)             => write append value
-        case BigIntNumber(value)                 => write append value
+        case SymphonyQLValue.BooleanValue(value)     => write append value
+        case SymphonyQLValue.NullValue               => write append "null"
+        case IntNumber(value)                        => write append value
+        case LongNumber(value)                       => write append value
+        case FloatNumber(value)                      => write append value
+        case DoubleNumber(value)                     => write append value
+        case BigDecimalNumber(value)                 => write append value
+        case BigIntNumber(value)                     => write append value
       }
 
   lazy val outputListValueRenderer: SymphonyQLRenderer[SymphonyQLOutputValue.ListValue] =
