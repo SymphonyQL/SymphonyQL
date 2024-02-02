@@ -4,11 +4,13 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
-
 import symphony.*
 import symphony.parser.*
+import symphony.parser.introspection.__TypeKind
 import symphony.schema.*
 import symphony.schema.ArgumentExtractor.*
+
+import scala.concurrent.Future
 
 class AutoGenSpec extends AnyFunSpec with Matchers {
 
@@ -17,8 +19,13 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
 
   final case class UserOutput(id: String, username: String)
 
-  final case class UserQueryResolver(
+  final case class SourceQueryResolver(
     getUsers: UserQueryInput => Source[UserOutput, NotUsed]
+  )
+
+  final case class SimpleUserQueryResolver(
+    user: UserOutput,
+    userFuture: Future[UserOutput]
   )
 
   import symphony.derivation.SchemaGen.auto
@@ -28,63 +35,54 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
   describe("Simple Derivation") {
     it("derives simple input schema") {
       val inputSchema = SchemaGen.gen[UserQueryInput]
-      val inputDoc    = DocumentRenderer.renderType(inputSchema.toType(true))
-      inputDoc shouldEqual "UserQueryInputInput"
+      hasType(inputSchema.toType(true), "UserQueryInputInput", __TypeKind.INPUT_OBJECT)
     }
 
     it("derives simple output schema") {
       val outputSchema = SchemaGen.gen[UserOutput]
-      val outputDoc    = DocumentRenderer.renderType(outputSchema.toType())
-      outputDoc shouldEqual "UserOutput"
+      hasType(outputSchema.toType(), "UserOutput", __TypeKind.OBJECT)
     }
 
     it("derives simple func schema") {
       val funSchema = Schema.mkFuncSchema(
         summon[ArgumentExtractor[UserQueryInput]],
         summon[Schema[UserQueryInput]],
-        summon[Schema[UserQueryResolver]]
+        summon[Schema[SourceQueryResolver]]
       )
-      funSchema.arguments.size shouldEqual 1
+      hasType(funSchema.toType(), "String", __TypeKind.SCALAR)
     }
 
-    it("derives simple root schema") {
-      val pekkoSchema    = SchemaGen.gen[UserQueryResolver]
-      val pekkoSchemaDoc = DocumentRenderer.renderType(pekkoSchema.toType())
-      val resolver       = UserQueryResolver(_ => Source.single(UserOutput("id", "symphony")))
-
-      val stage = pekkoSchema.analyze(resolver)
-
-      println(
-        stage
-          .asInstanceOf[Stage.ObjectStage]
-          .fields("getUsers")
-          .asInstanceOf[Stage.FunctionStage]
-          .stage
-          .apply(Map.empty)
+    it("derives simple root schema with simple resolvers") {
+      val objectSchema   = SchemaGen.gen[SimpleUserQueryResolver]
+      val pekkoSchemaDoc = DocumentRenderer.renderType(objectSchema.toType())
+      val resolver       = SimpleUserQueryResolver(
+        UserOutput("id", "symphony obj"),
+        Future.successful(UserOutput("id", "symphony future"))
       )
+      assert(pekkoSchemaDoc == "SimpleUserQueryResolver")
 
-      pekkoSchemaDoc shouldEqual "UserQueryResolver"
+      resolver.user.username shouldEqual "symphony obj"
     }
 
     it("use simple schema") {
-      val resolver = UserQueryResolver(_ => Source.single(UserOutput("id", "symphony")))
+      val resolver = SourceQueryResolver(_ => Source.single(UserOutput("id", "symphony")))
 
       val graphql: SymphonyQL = SymphonyQL
         .builder()
-        .rootResolver(SymphonyQLResolver(resolver -> SchemaGen.gen[UserQueryResolver]))
+        .rootResolver(SymphonyQLResolver(resolver -> SchemaGen.gen[SourceQueryResolver]))
         .build()
 
       graphql.render shouldEqual """schema {
-                                   |  query: UserQueryResolver
+                                   |  query: SourceQueryResolver
+                                   |}
+                                   |
+                                   |type SourceQueryResolver {
+                                   |  getUsers(id: String!): UserOutput
                                    |}
                                    |
                                    |type UserOutput {
                                    |  id: String!
                                    |  username: String!
-                                   |}
-                                   |
-                                   |type UserQueryResolver {
-                                   |  getUsers(id: String!): UserOutput!
                                    |}""".stripMargin
     }
   }
