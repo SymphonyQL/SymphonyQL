@@ -4,11 +4,11 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import symphony.*
 import symphony.schema.*
-import symphony.derivation.SchemaGen
-import symphony.derivation.SchemaGen.given
-import symphony.derivation.SchemaGen.*
+import symphony.derivation.SchemaDerivation.*
+import symphony.derivation.SchemaDerivation.given
+import symphony.derivation.ArgumentExtractorDerivation.*
 
-import symphony.derivation.ArgumentExtractorGen.given
+import symphony.derivation.ArgumentExtractorDerivation.given
 
 class AutoSchemaSpec extends AnyFunSpec with Matchers {
 
@@ -27,8 +27,8 @@ class AutoSchemaSpec extends AnyFunSpec with Matchers {
       .builder()
       .rootResolver(
         SymphonyQLResolver(
-          QueryTest((a) => List())                -> SchemaGen.derived[QueryTest],
-          MutationTest(c => true, params => true) -> SchemaGen.derived[MutationTest]
+          QueryTest((a) => List())                -> SchemaDerivation.derived[QueryTest],
+          MutationTest(c => true, params => true) -> SchemaDerivation.derived[MutationTest]
         )
       )
       .build()

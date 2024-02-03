@@ -9,10 +9,10 @@ import symphony.parser.*
 import symphony.parser.introspection.__TypeKind
 import symphony.schema.*
 
-import symphony.derivation.SchemaGen.gen
-import symphony.derivation.SchemaGen.*
-import symphony.derivation.ArgumentExtractorGen.gen
-import symphony.derivation.ArgumentExtractorGen.*
+import symphony.derivation.SchemaDerivation.gen
+import symphony.derivation.SchemaDerivation.*
+import symphony.derivation.ArgumentExtractorDerivation.gen
+import symphony.derivation.ArgumentExtractorDerivation.*
 
 import scala.concurrent.Future
 
@@ -34,26 +34,26 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
 
   describe("Simple Derivation") {
     it("derives simple input schema") {
-      val inputSchema = SchemaGen.derived[UserQueryInput]
+      val inputSchema = SchemaDerivation.derived[UserQueryInput]
       hasType(inputSchema.toType(true), "UserQueryInputInput", __TypeKind.INPUT_OBJECT)
     }
 
     it("derives simple output schema") {
-      val outputSchema = SchemaGen.derived[UserOutput]
+      val outputSchema = SchemaDerivation.derived[UserOutput]
       hasType(outputSchema.toType(), "UserOutput", __TypeKind.OBJECT)
     }
 
     it("derives simple func schema") {
-      val funSchema = SchemaGen.mkFuncSchema(
+      val funSchema = SchemaDerivation.mkFuncSchema(
         summon[ArgumentExtractor[UserQueryInput]],
-        SchemaGen.derived[UserQueryInput],
-        SchemaGen.derived[UserOutput]
+        SchemaDerivation.derived[UserQueryInput],
+        SchemaDerivation.derived[UserOutput]
       )
       hasType(funSchema.toType(), "UserOutput", __TypeKind.OBJECT)
     }
 
     it("derives simple root schema with simple resolvers") {
-      val objectSchema   = SchemaGen.derived[SimpleUserQueryResolver]
+      val objectSchema   = SchemaDerivation.derived[SimpleUserQueryResolver]
       val pekkoSchemaDoc = DocumentRenderer.renderType(objectSchema.toType())
       val resolver       = SimpleUserQueryResolver(
         UserOutput("id", "symphony obj"),
@@ -67,7 +67,7 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
       val resolver            = SourceQueryResolver(args => Source.single(UserOutput("id", "symphony")))
       val graphql: SymphonyQL = SymphonyQL
         .builder()
-        .rootResolver(SymphonyQLResolver(resolver -> SchemaGen.derived[SourceQueryResolver]))
+        .rootResolver(SymphonyQLResolver(resolver -> SchemaDerivation.derived[SourceQueryResolver]))
         .build()
 
       graphql.render shouldEqual """schema {

@@ -3,10 +3,10 @@ package example.schema
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
 import symphony.*
-import symphony.derivation.SchemaGen.*
-import symphony.derivation.SchemaGen.given
-import symphony.derivation.ArgumentExtractorGen.given
-import symphony.derivation.SchemaGen
+import symphony.derivation.SchemaDerivation.*
+import symphony.derivation.SchemaDerivation.given
+import symphony.derivation.ArgumentExtractorDerivation.given
+import symphony.derivation.SchemaDerivation
 import symphony.parser.*
 import symphony.schema.Schema
 
@@ -22,7 +22,7 @@ object ScalaUserMain extends App {
         UserQueryResolver(
           args => UserOutput("a1" + args.id, "b1" + args.id),
           args => Source.single(UserOutput("a1" + args.id, "b1" + args.id))
-        ) -> SchemaGen.derived[UserQueryResolver]
+        ) -> SchemaDerivation.derived[UserQueryResolver]
       )
     )
     .build()

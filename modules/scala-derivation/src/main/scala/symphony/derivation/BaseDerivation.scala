@@ -33,7 +33,7 @@ trait BaseDerivation {
                 __Field(
                   "_",
                   Some(
-                    "GraphQL does not support empty objects. Do not query, use __typename instead."
+                    "SymphonyQL does not support empty objects. Do not query, use __typename instead."
                   ),
                   _ => Nil,
                   () => Types.mkScalar("Boolean")

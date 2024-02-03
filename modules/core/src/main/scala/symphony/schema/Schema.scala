@@ -145,7 +145,9 @@ object Schema {
   def mkSourceSchema[A](schema: Schema[A]): Schema[Source[A, NotUsed]] =
     new Schema[Source[A, NotUsed]] {
       override def optional: Boolean                         = true
-      override def toType(isInput: Boolean): __Type          = schema.toType(isInput)
+      override def toType(isInput: Boolean): __Type          =
+        val t = schema.toType(isInput)
+        (if (schema.optional) t else t.nonNull).list
       override def analyze(value: Source[A, NotUsed]): Stage =
         StreamStage(value.map(schema.analyze).mapError {
           case e: ExecutionError => e

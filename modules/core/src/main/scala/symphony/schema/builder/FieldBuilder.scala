@@ -17,7 +17,6 @@ final class FieldBuilder private {
   private var isDeprecated: Boolean             = false
   private var deprecationReason: Option[String] = None
   private var hasArgs: Boolean                  = false
-  private var isInput: Boolean                  = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -54,17 +53,12 @@ final class FieldBuilder private {
     this
   }
 
-  def isInput(isInput: Boolean): this.type = {
-    this.isInput = isInput
-    this
-  }
-
   def build(): __Field =
     Types.mkField(
       name,
       description,
       if (hasArgs) schema.arguments else List.empty,
-      () => if (schema.optional) schema.toType(isInput) else Types.mkNonNull(schema.toType(isInput)),
+      () => if (schema.optional) schema.toType() else Types.mkNonNull(schema.toType()),
       isDeprecated,
       deprecationReason,
       Option(directives)

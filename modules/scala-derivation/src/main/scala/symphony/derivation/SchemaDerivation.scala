@@ -1,27 +1,23 @@
 package symphony.derivation
 
-import scala.compiletime.*
-import scala.deriving.Mirror
 import magnolia1.*
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
-import symphony.parser.SymphonyQLError.*
-import symphony.parser.SymphonyQLInputValue
-import symphony.parser.SymphonyQLOutputValue.ObjectValue
 import symphony.parser.SymphonyQLValue.*
 import symphony.parser.introspection.*
 import symphony.schema.*
-import symphony.schema.Schema.mkScalar
 import symphony.schema.Stage.*
 
+import scala.compiletime.*
 import scala.concurrent.Future
+import scala.deriving.Mirror
 import scala.language.implicitConversions
 
-object SchemaGen extends GenericSchema {
+object SchemaDerivation extends GenericSchema {
   def apply[T](implicit schema: Schema[T]): Schema[T] = schema
 }
 
-trait GenericSchema extends SchemaGen {
+trait GenericSchema extends SchemaDerivation {
 
   implicit val unit: Schema[Unit]                                                        = Schema.unit
   implicit val boolean: Schema[Boolean]                                                  = Schema.boolean
@@ -46,7 +42,7 @@ trait GenericSchema extends SchemaGen {
     Schema.mkSourceSchema(schema)
 }
 
-trait SchemaGen extends BaseDerivation {
+trait SchemaDerivation extends BaseDerivation {
 
   inline given gen[A]: Schema[A] = derived[A]
 

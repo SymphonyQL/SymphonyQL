@@ -1,18 +1,17 @@
 package symphony
 
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.*
-
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
-
 import symphony.execution.Executor
 import symphony.parser.*
 import symphony.parser.SymphonyQLError.ExecutionError
 import symphony.parser.adt.Definition.TypeSystemDefinition.*
 import symphony.parser.adt.Document
 import symphony.schema.*
+
+import scala.concurrent.Future
+import scala.util.*
 
 final class SymphonyQL private (rootSchema: SymphonyQLSchema) {
 

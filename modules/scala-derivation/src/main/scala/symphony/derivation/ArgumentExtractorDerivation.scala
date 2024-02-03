@@ -4,16 +4,16 @@ import scala.compiletime.*
 import scala.deriving.*
 import magnolia1.Macro
 import symphony.parser.SymphonyQLError.*
-import symphony.parser.{ SymphonyQLInputValue, SymphonyQLValue }
+import symphony.parser.*
 import symphony.parser.SymphonyQLInputValue.*
 import symphony.parser.SymphonyQLValue.*
 import symphony.schema.*
 
-object ArgumentExtractorGen extends GenericArgumentExtractor {
+object ArgumentExtractorDerivation extends GenericArgumentExtractor {
   def apply[T](implicit ae: ArgumentExtractor[T]): ArgumentExtractor[T] = ae
 }
 
-trait GenericArgumentExtractor extends ArgumentExtractorGen {
+trait GenericArgumentExtractor extends ArgumentExtractorDerivation {
 
   implicit lazy val unit: ArgumentExtractor[Unit]                                         = ArgumentExtractor.unit
   implicit lazy val int: ArgumentExtractor[Int]                                           = ArgumentExtractor.int
@@ -29,7 +29,7 @@ trait GenericArgumentExtractor extends ArgumentExtractorGen {
   implicit def vector[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Vector[A]] = ArgumentExtractor.vector(ae)
 }
 
-trait ArgumentExtractorGen extends BaseDerivation {
+trait ArgumentExtractorDerivation extends BaseDerivation {
   import BaseDerivation.*
 
   inline given gen[A]: ArgumentExtractor[A] = derived[A]

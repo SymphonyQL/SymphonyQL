@@ -1,16 +1,12 @@
 package example.schema
 
-import example.schema.ScalaUserMain.{graphql, querySource}
-
-import scala.concurrent.*
-import scala.concurrent.duration.Duration
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
 import symphony.*
-import symphony.derivation.SchemaGen
 import symphony.parser.*
-import symphony.parser.SymphonyQLError
-import symphony.schema.Schema
+
+import scala.concurrent.*
+import scala.concurrent.duration.Duration
 
 object UserMain extends App {
 
@@ -26,9 +22,8 @@ object UserMain extends App {
     )
     .build()
 
-  /**
-   * *
-   * {{{
+  /** *
+   *  {{{
    *   schema {
    *    query: UserQueryResolver
    *  }
@@ -41,7 +36,7 @@ object UserMain extends App {
    *  type UserQueryResolver {
    *    getUsers(id: String!): UserOutput!
    *  }
-   * }}}
+   *  }}}
    */
   println(graphql.render)
 
@@ -60,10 +55,10 @@ object UserMain extends App {
       |    username
       |  }
       |}""".stripMargin
-    
+
   implicit val actorSystem: ActorSystem = ActorSystem("symphonyActorSystem")
 
-  val getRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(query)))
+  val getRes: Future[SymphonyQLResponse[SymphonyQLError]]      = graphql.runWith(SymphonyQLRequest(Some(query)))
   val batchGetRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(querySource)))
 
   println(Await.result(getRes, Duration.Inf))
