@@ -2,13 +2,13 @@ package example.schema
 
 import scala.concurrent.*
 import scala.concurrent.duration.Duration
-
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
-
 import symphony.*
+import symphony.derivation.SchemaGen
 import symphony.parser.*
 import symphony.parser.SymphonyQLError
+import symphony.schema.Schema
 
 object UserMain extends App {
 

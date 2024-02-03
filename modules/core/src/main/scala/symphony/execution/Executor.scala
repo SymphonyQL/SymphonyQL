@@ -1,11 +1,9 @@
 package symphony.execution
 
 import scala.collection.immutable.ListMap
-
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
-
 import symphony.SymphonyQLSchema
 import symphony.parser.*
 import symphony.parser.SymphonyQLError.ExecutionError
@@ -15,6 +13,9 @@ import symphony.parser.adt.Definition.ExecutableDefinition.*
 import symphony.parser.adt.OperationType.*
 import symphony.parser.adt.Selection.*
 import symphony.schema.*
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 object Executor {
 
@@ -78,7 +79,8 @@ object Executor {
       case ExecutionStage.FutureStage(future)                                 =>
         Source.future(future).flatMapConcat(drainExecutionStages)
       case ExecutionStage.StreamStage(source)                                 =>
-        source.flatMapConcat(drainExecutionStages)
+        val sourceStage = source.flatMapConcat(drainExecutionStages)
+        Source.single(SymphonyQLOutputValue.StreamValue(sourceStage))
       case ExecutionStage.ListStage(stages)                                   =>
         val sourceList = stages.map(drainExecutionStages)
         Source.zipN(sourceList).map(s => SymphonyQLOutputValue.ListValue(s.toList))

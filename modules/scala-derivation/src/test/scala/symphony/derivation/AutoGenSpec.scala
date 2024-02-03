@@ -65,8 +65,7 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
     }
 
     it("use simple schema") {
-      val resolver = SourceQueryResolver(_ => Source.single(UserOutput("id", "symphony")))
-
+      val resolver            = SourceQueryResolver(args => Source.single(UserOutput("id", "symphony")))
       val graphql: SymphonyQL = SymphonyQL
         .builder()
         .rootResolver(SymphonyQLResolver(resolver -> SchemaGen.gen[SourceQueryResolver]))

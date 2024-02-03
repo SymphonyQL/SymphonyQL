@@ -28,15 +28,15 @@ trait Schema[T] { self =>
 }
 
 object Schema {
-
-  implicit lazy val unit: Schema[Unit]       = mkScalar("Unit", None, _ => ObjectValue(Nil))
-  implicit lazy val boolean: Schema[Boolean] = mkScalar("Boolean", None, BooleanValue.apply)
-  implicit lazy val string: Schema[String]   = mkScalar("String", None, StringValue.apply)
-  implicit lazy val int: Schema[Int]         = mkScalar("Int", None, IntValue(_))
-  implicit lazy val long: Schema[Long]       = mkScalar("Long", None, IntValue(_))
-  implicit lazy val double: Schema[Double]   = mkScalar("Float", None, FloatValue(_))
-  implicit lazy val float: Schema[Float]     = mkScalar("Float", None, FloatValue(_))
-
+//
+//  implicit lazy val unit: Schema[Unit]       = mkScalar("Unit", None, _ => ObjectValue(Nil))
+//  implicit lazy val boolean: Schema[Boolean] = mkScalar("Boolean", None, BooleanValue.apply)
+//  implicit lazy val string: Schema[String]   = mkScalar("String", None, StringValue.apply)
+//  implicit lazy val int: Schema[Int]         = mkScalar("Int", None, IntValue(_))
+//  implicit lazy val long: Schema[Long]       = mkScalar("Long", None, IntValue(_))
+//  implicit lazy val double: Schema[Double]   = mkScalar("Float", None, FloatValue(_))
+//  implicit lazy val float: Schema[Float]     = mkScalar("Float", None, FloatValue(_))
+//
   def mkScalar[A](name: String, description: Option[String], toOutput: A => SymphonyQLOutputValue): Schema[A] =
     new Schema[A] {
       override def toType(isInput: Boolean): __Type = Types.mkScalar(name, description)
@@ -126,7 +126,7 @@ object Schema {
           }
       }
       override def optional: Boolean                = outputSchema.optional
-      override def toType(isInput: Boolean): __Type = outputSchema.toType(isInput)
+      override def toType(isInput: Boolean = false): __Type = outputSchema.toType(isInput)
       override def analyze(value: A => B): Stage    =
         FunctionStage { args =>
           val builder    = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args))

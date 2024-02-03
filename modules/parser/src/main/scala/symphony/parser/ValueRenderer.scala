@@ -4,6 +4,7 @@ package parser
 import SymphonyQLValue.*
 import SymphonyQLValue.FloatValue.*
 import SymphonyQLValue.IntValue.*
+import SymphonyQLOutputValue.*
 
 object ValueRenderer {
 
@@ -72,6 +73,7 @@ object ValueRenderer {
         case DoubleNumber(value)                     => write append value
         case BigDecimalNumber(value)                 => write append value
         case BigIntNumber(value)                     => write append value
+        case StreamValue(_)                          => write append "<stream>"
       }
 
   lazy val outputListValueRenderer: SymphonyQLRenderer[SymphonyQLOutputValue.ListValue] =

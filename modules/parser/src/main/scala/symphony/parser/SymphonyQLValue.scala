@@ -1,6 +1,9 @@
 package symphony
 package parser
 
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+
 import scala.util.control.NonFatal
 import scala.util.hashing.MurmurHash3
 
@@ -12,6 +15,10 @@ object SymphonyQLOutputValue {
     override def toString: String = ValueRenderer.outputListValueRenderer.renderCompact(this)
   }
 
+  final case class StreamValue(stream: Source[SymphonyQLOutputValue, NotUsed]) extends SymphonyQLOutputValue {
+    override def toString: String = "<stream>"
+  }
+  
   final case class ObjectValue(fields: List[(String, SymphonyQLOutputValue)]) extends SymphonyQLOutputValue {
     override def toString: String = ValueRenderer.outputObjectValueRenderer.renderCompact(this)
 

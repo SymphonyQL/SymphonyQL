@@ -17,6 +17,7 @@ object Dependencies {
     // parser schema and query, convert to ADTs, types definition
     val parser = sbt.Def.setting {
       Seq(
+        "org.apache.pekko" %% "pekko-stream"  % `pekko-core_Version` % Provided, // StreamValue
         "org.parboiled" %% "parboiled" % `parboiled_Version`,
         "org.scalatest" %% "scalatest" % `scalatest_Version` % Test
       )

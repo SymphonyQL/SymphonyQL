@@ -1,7 +1,6 @@
 package example.schema
 
-import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.scaladsl.Source
+import symphony.derivation.SchemaGen
 import symphony.parser.*
 import symphony.parser.SymphonyQLValue.StringValue
 import symphony.schema.*
@@ -31,7 +30,35 @@ val listArgumentExtractor: ArgumentExtractor[List[UserQueryInput]] = { case Symp
 val queryInputSchema: Schema[UserQueryInput] = InputObjectBuilder
   .builder[UserQueryInput]()
   .name("UserQueryInput")
-  .fields(builder => builder.name("id").schema(Schema.string).build())
+  .fields(builder =>
+    builder
+      .name("value")
+      .hasArgs(true)
+      .isInput(true)
+      .schema(
+        InputObjectBuilder
+          .builder[UserQueryInput => String]()
+          .name("UserQueryInput")
+          .fields(builder =>
+            builder
+              .hasArgs(false)
+              .name("id")
+              .schema(
+                Schema.mkFuncSchema(
+                  singleArgumentExtractor,
+                  InputObjectBuilder
+                    .builder[UserQueryInput]()
+                    .name("UserQueryInput")
+                    .build(),
+                  Schema.string
+                )
+              )
+              .build()
+          )
+          .build()
+      )
+      .build()
+  )
   .build()
 
 /**
