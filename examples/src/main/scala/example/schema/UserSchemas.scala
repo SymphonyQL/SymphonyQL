@@ -1,6 +1,5 @@
 package example.schema
 
-import symphony.derivation.SchemaGen
 import symphony.parser.*
 import symphony.parser.SymphonyQLValue.StringValue
 import symphony.schema.*
@@ -8,15 +7,6 @@ import symphony.schema.builder.*
 
 val singleArgumentExtractor: ArgumentExtractor[UserQueryInput] = { case SymphonyQLInputValue.ObjectValue(fields) =>
   Right(UserQueryInput(fields("id").asInstanceOf[StringValue].value))
-}
-
-val listArgumentExtractor: ArgumentExtractor[List[UserQueryInput]] = { case SymphonyQLInputValue.ObjectValue(values) =>
-  Right(
-    values("value")
-      .asInstanceOf[SymphonyQLInputValue.ListValue]
-      .values
-      .map(singleArgumentExtractor.extract(_).toOption.orNull)
-  )
 }
 
 // Schema DSL
@@ -83,7 +73,6 @@ val outputSchema: Schema[UserOutput] = ObjectBuilder
 /**
  * {{{
  *   type UserQueryResolver {
- *      batchGetUsers(users: [UserQueryInput!]!): [UserOutput!]!
  *      getUsers(user: UserQueryInput!): UserOutput!
  *   }
  *  }}}
@@ -91,59 +80,29 @@ val outputSchema: Schema[UserOutput] = ObjectBuilder
 val querySchema: Schema[UserQueryResolver] = ObjectBuilder
   .builder[UserQueryResolver]()
   .name("UserQueryResolver")
-  .fields(
-    builder =>
-      builder
-        .name("getUsers")
-        .hasArgs(true)
-        .schema(
-          Schema.mkFuncSchema(
-            singleArgumentExtractor,
-            queryInputSchema,
-            outputSchema
+  .fields(builder =>
+    builder
+      .name("getUsers")
+      .hasArgs(true)
+      .schema(
+        Schema.mkFuncSchema(
+          singleArgumentExtractor,
+          queryInputSchema,
+          outputSchema
+        )
+      )
+      .build() -> (a =>
+      Stage.FunctionStage { args =>
+        val user =
+          a.getUsers(singleArgumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args)).toOption.orNull)
+        Stage.ObjectStage(
+          "UserOutput",
+          Map(
+            "id"       -> PureStage(StringValue(user.id)),
+            "username" -> PureStage(StringValue(user.username))
           )
         )
-        .build() -> (a =>
-        Stage.FunctionStage { args =>
-          val user =
-            a.getUsers(singleArgumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args)).toOption.orNull)
-          Stage.ObjectStage(
-            "UserOutput",
-            Map(
-              "id"       -> PureStage(StringValue(user.id)),
-              "username" -> PureStage(StringValue(user.username))
-            )
-          )
-        }
-      ),
-    builder =>
-      builder
-        .name("batchGetUsers")
-        .hasArgs(true)
-        .schema(
-          Schema.mkFuncSchema(
-            listArgumentExtractor,
-            Schema.mkList(queryInputSchema),
-            Schema.mkSourceSchema(outputSchema)
-          )
-        )
-        .build() ->
-        (a =>
-          Stage.FunctionStage { args =>
-            Stage.StreamStage(
-              a.batchGetUsers(
-                listArgumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args)).toOption.getOrElse(List.empty)
-              ).map(user =>
-                Stage.ObjectStage(
-                  "UserOutput",
-                  Map(
-                    "id"       -> PureStage(StringValue(user.id)),
-                    "username" -> PureStage(StringValue(user.username))
-                  )
-                )
-              )
-            )
-          }
-        )
+      }
+    ),
   )
   .build()

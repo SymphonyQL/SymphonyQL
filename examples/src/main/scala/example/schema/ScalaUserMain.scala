@@ -1,16 +1,19 @@
 package example.schema
 
-import scala.concurrent.*
-import scala.concurrent.duration.Duration
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
 import symphony.*
+import symphony.derivation.SchemaGen.*
+import symphony.derivation.SchemaGen.auto
+import symphony.derivation.ArgumentExtractorGen.auto
 import symphony.derivation.SchemaGen
 import symphony.parser.*
-import symphony.parser.SymphonyQLError
 import symphony.schema.Schema
 
-object UserMain extends App {
+import scala.concurrent.*
+import scala.concurrent.duration.Duration
+
+object ScalaUserMain extends App {
 
   val graphql: SymphonyQL = SymphonyQL
     .builder()
@@ -19,7 +22,7 @@ object UserMain extends App {
         UserQueryResolver(
           args => UserOutput("a1" + args.id, "b1" + args.id),
           args => Source.apply(args.ids.map(a => UserOutput("a1" + a, "b1" + a)))
-        ) -> querySchema
+        ) -> SchemaGen.gen[UserQueryResolver]
       )
     )
     .build()
@@ -34,11 +37,22 @@ object UserMain extends App {
       |  }
       |}""".stripMargin
 
+  val batchQuery =
+    """{
+      |  batchGetUsers(ids: "10001") {
+      |    id
+      |    username
+      |  }
+      |}""".stripMargin
+
   implicit val actorSystem: ActorSystem = ActorSystem("symphonyActorSystem")
 
   val getRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(query)))
 
+  val batchGetRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(batchQuery)))
+
   println(Await.result(getRes, Duration.Inf))
+  println(Await.result(batchGetRes, Duration.Inf))
 
   actorSystem.terminate()
 

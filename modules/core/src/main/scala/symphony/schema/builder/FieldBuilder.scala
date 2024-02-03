@@ -58,7 +58,7 @@ final class FieldBuilder private {
     this.isInput = isInput
     this
   }
-  
+
   def build(): __Field =
     Types.mkField(
       name,

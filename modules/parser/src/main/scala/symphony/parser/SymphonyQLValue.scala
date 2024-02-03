@@ -18,7 +18,7 @@ object SymphonyQLOutputValue {
   final case class StreamValue(stream: Source[SymphonyQLOutputValue, NotUsed]) extends SymphonyQLOutputValue {
     override def toString: String = "<stream>"
   }
-  
+
   final case class ObjectValue(fields: List[(String, SymphonyQLOutputValue)]) extends SymphonyQLOutputValue {
     override def toString: String = ValueRenderer.outputObjectValueRenderer.renderCompact(this)
 
