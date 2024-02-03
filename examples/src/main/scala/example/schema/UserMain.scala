@@ -18,12 +18,29 @@ object UserMain extends App {
       SymphonyQLResolver(
         UserQueryResolver(
           args => UserOutput("a1" + args.id, "b1" + args.id),
-          args => Source.apply(args.ids.map(a => UserOutput("a1" + a, "b1" + a)))
+          args => Source.single(UserOutput("a1" + args.id, "b1" + args.id))
         ) -> querySchema
       )
     )
     .build()
 
+  /**
+   * *
+   * {{{
+   *   schema {
+   *    query: UserQueryResolver
+   *  }
+   *
+   *  type UserOutput {
+   *    id: String!
+   *    username: String
+   *  }
+   *
+   *  type UserQueryResolver {
+   *    getUsers(id: String!): UserOutput!
+   *  }
+   * }}}
+   */
   println(graphql.render)
 
   val query =

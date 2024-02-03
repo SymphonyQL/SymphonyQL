@@ -10,55 +10,12 @@ val singleArgumentExtractor: ArgumentExtractor[UserQueryInput] = { case Symphony
 }
 
 // Schema DSL
-/**
- * {{{
- *  input UserQueryInput {
- *      id: String!
- *   }
- *  }}}
- */
 val queryInputSchema: Schema[UserQueryInput] = InputObjectBuilder
   .builder[UserQueryInput]()
   .name("UserQueryInput")
-  .fields(builder =>
-    builder
-      .name("value")
-      .hasArgs(true)
-      .isInput(true)
-      .schema(
-        InputObjectBuilder
-          .builder[UserQueryInput => String]()
-          .name("UserQueryInput")
-          .fields(builder =>
-            builder
-              .hasArgs(false)
-              .name("id")
-              .schema(
-                Schema.mkFuncSchema(
-                  singleArgumentExtractor,
-                  InputObjectBuilder
-                    .builder[UserQueryInput]()
-                    .name("UserQueryInput")
-                    .build(),
-                  Schema.string
-                )
-              )
-              .build()
-          )
-          .build()
-      )
-      .build()
-  )
+  .fields(builder => builder.name("id").schema(Schema.string).build())
   .build()
 
-/**
- * {{{
- *   type UserOutput {
- *      id: String!
- *      username: String
- *   }
- *  }}}
- */
 val outputSchema: Schema[UserOutput] = ObjectBuilder
   .builder[UserOutput]()
   .name("UserOutput")
@@ -70,39 +27,62 @@ val outputSchema: Schema[UserOutput] = ObjectBuilder
   .build()
 
 // ===============================================Resolver=========================================================
-/**
- * {{{
- *   type UserQueryResolver {
- *      getUsers(user: UserQueryInput!): UserOutput!
- *   }
- *  }}}
- */
 val querySchema: Schema[UserQueryResolver] = ObjectBuilder
   .builder[UserQueryResolver]()
   .name("UserQueryResolver")
-  .fields(builder =>
-    builder
-      .name("getUsers")
-      .hasArgs(true)
-      .schema(
-        Schema.mkFuncSchema(
-          singleArgumentExtractor,
-          queryInputSchema,
-          outputSchema
-        )
-      )
-      .build() -> (a =>
-      Stage.FunctionStage { args =>
-        val user =
-          a.getUsers(singleArgumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args)).toOption.orNull)
-        Stage.ObjectStage(
-          "UserOutput",
-          Map(
-            "id"       -> PureStage(StringValue(user.id)),
-            "username" -> PureStage(StringValue(user.username))
+  .fields(
+    builder =>
+      builder
+        .name("getUsers")
+        .hasArgs(true)
+        .schema(
+          Schema.mkFuncSchema(
+            singleArgumentExtractor,
+            queryInputSchema,
+            outputSchema
           )
         )
-      }
-    ),
+        .build() -> (a =>
+        Stage.FunctionStage { args =>
+          val user =
+            a.getUsers(singleArgumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args)).toOption.orNull)
+          Stage.ObjectStage(
+            "UserOutput",
+            Map(
+              "id"       -> PureStage(StringValue(user.id)),
+              "username" -> PureStage(StringValue(user.username))
+            )
+          )
+        }
+      ),
+    builder =>
+      builder
+        .name("batchGetUsers")
+        .hasArgs(true)
+        .schema(
+          Schema.mkFuncSchema(
+            singleArgumentExtractor,
+            queryInputSchema,
+            Schema.mkSourceSchema(outputSchema)
+          )
+        )
+        .build() ->
+        ((a: UserQueryResolver) =>
+          Stage.FunctionStage { args =>
+            Stage.StreamStage(
+              a.batchGetUsers(
+                singleArgumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args)).toOption.orNull
+              ).map(user =>
+                Stage.ObjectStage(
+                  "UserOutput",
+                  Map(
+                    "id"       -> PureStage(StringValue(user.id)),
+                    "username" -> PureStage(StringValue(user.username))
+                  )
+                )
+              )
+            )
+          }
+        )
   )
   .build()

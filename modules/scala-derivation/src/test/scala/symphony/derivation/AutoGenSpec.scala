@@ -8,7 +8,11 @@ import symphony.*
 import symphony.parser.*
 import symphony.parser.introspection.__TypeKind
 import symphony.schema.*
-import symphony.schema.ArgumentExtractor.*
+
+import symphony.derivation.SchemaGen.gen
+import symphony.derivation.SchemaGen.*
+import symphony.derivation.ArgumentExtractorGen.gen
+import symphony.derivation.ArgumentExtractorGen.*
 
 import scala.concurrent.Future
 
@@ -28,39 +32,34 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
     userFuture: Future[UserOutput]
   )
 
-  import symphony.derivation.SchemaGen.auto
-
-  given ArgumentExtractor[UserQueryInput] = ArgumentExtractorGen.gen[UserQueryInput]
-
   describe("Simple Derivation") {
     it("derives simple input schema") {
-      val inputSchema = SchemaGen.gen[UserQueryInput]
+      val inputSchema = SchemaGen.derived[UserQueryInput]
       hasType(inputSchema.toType(true), "UserQueryInputInput", __TypeKind.INPUT_OBJECT)
     }
 
     it("derives simple output schema") {
-      val outputSchema = SchemaGen.gen[UserOutput]
+      val outputSchema = SchemaGen.derived[UserOutput]
       hasType(outputSchema.toType(), "UserOutput", __TypeKind.OBJECT)
     }
 
     it("derives simple func schema") {
-      val funSchema = Schema.mkFuncSchema(
+      val funSchema = SchemaGen.mkFuncSchema(
         summon[ArgumentExtractor[UserQueryInput]],
-        summon[Schema[UserQueryInput]],
-        summon[Schema[SourceQueryResolver]]
+        SchemaGen.derived[UserQueryInput],
+        SchemaGen.derived[UserOutput]
       )
-      hasType(funSchema.toType(), "String", __TypeKind.SCALAR)
+      hasType(funSchema.toType(), "UserOutput", __TypeKind.OBJECT)
     }
 
     it("derives simple root schema with simple resolvers") {
-      val objectSchema   = SchemaGen.gen[SimpleUserQueryResolver]
+      val objectSchema   = SchemaGen.derived[SimpleUserQueryResolver]
       val pekkoSchemaDoc = DocumentRenderer.renderType(objectSchema.toType())
       val resolver       = SimpleUserQueryResolver(
         UserOutput("id", "symphony obj"),
         Future.successful(UserOutput("id", "symphony future"))
       )
       assert(pekkoSchemaDoc == "SimpleUserQueryResolver")
-
       resolver.user.username shouldEqual "symphony obj"
     }
 
@@ -68,7 +67,7 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
       val resolver            = SourceQueryResolver(args => Source.single(UserOutput("id", "symphony")))
       val graphql: SymphonyQL = SymphonyQL
         .builder()
-        .rootResolver(SymphonyQLResolver(resolver -> SchemaGen.gen[SourceQueryResolver]))
+        .rootResolver(SymphonyQLResolver(resolver -> SchemaGen.derived[SourceQueryResolver]))
         .build()
 
       graphql.render shouldEqual """schema {

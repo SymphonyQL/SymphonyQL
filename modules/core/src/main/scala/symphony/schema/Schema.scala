@@ -29,13 +29,13 @@ trait Schema[T] { self =>
 
 object Schema {
 
-  implicit lazy val unit: Schema[Unit]       = mkScalar("Unit", None, _ => ObjectValue(Nil))
-  implicit lazy val boolean: Schema[Boolean] = mkScalar("Boolean", None, BooleanValue.apply)
-  implicit lazy val string: Schema[String]   = mkScalar("String", None, StringValue.apply)
-  implicit lazy val int: Schema[Int]         = mkScalar("Int", None, IntValue(_))
-  implicit lazy val long: Schema[Long]       = mkScalar("Long", None, IntValue(_))
-  implicit lazy val double: Schema[Double]   = mkScalar("Float", None, FloatValue(_))
-  implicit lazy val float: Schema[Float]     = mkScalar("Float", None, FloatValue(_))
+  val unit: Schema[Unit]       = mkScalar("Unit", None, _ => ObjectValue(Nil))
+  val boolean: Schema[Boolean] = mkScalar("Boolean", None, BooleanValue.apply)
+  val string: Schema[String]   = mkScalar("String", None, StringValue.apply)
+  val int: Schema[Int]         = mkScalar("Int", None, IntValue(_))
+  val long: Schema[Long]       = mkScalar("Long", None, IntValue(_))
+  val double: Schema[Double]   = mkScalar("Float", None, FloatValue(_))
+  val float: Schema[Float]     = mkScalar("Float", None, FloatValue(_))
 
   def mkScalar[A](name: String, description: Option[String], toOutput: A => SymphonyQLOutputValue): Schema[A] =
     new Schema[A] {
@@ -73,7 +73,7 @@ object Schema {
     override def analyze(value: A): Stage         = schema.analyze(value)
   }
 
-  implicit def mkOption[A](implicit schema: Schema[A]): Schema[Option[A]] = new Schema[Option[A]] {
+  def mkOption[A](schema: Schema[A]): Schema[Option[A]] = new Schema[Option[A]] {
     override def optional: Boolean                = true
     override def toType(isInput: Boolean): __Type = schema.toType(isInput)
     override def analyze(value: Option[A]): Stage =
@@ -83,14 +83,14 @@ object Schema {
       }
   }
 
-  implicit def mkVector[A](implicit schema: Schema[A]): Schema[Vector[A]] =
+  def mkVector[A](schema: Schema[A]): Schema[Vector[A]] =
     mkList[A](schema).contramap(_.toList)
 
-  implicit def mkSet[A](implicit schema: Schema[A]): Schema[Set[A]] = mkList[A](schema).contramap(_.toList)
+  def mkSet[A](schema: Schema[A]): Schema[Set[A]] = mkList[A](schema).contramap(_.toList)
 
-  implicit def mkSeq[A](implicit schema: Schema[A]): Schema[Seq[A]] = mkList[A](schema).contramap(_.toList)
+  def mkSeq[A](schema: Schema[A]): Schema[Seq[A]] = mkList[A](schema).contramap(_.toList)
 
-  implicit def mkList[A](implicit schema: Schema[A]): Schema[List[A]] = new Schema[List[A]] {
+  def mkList[A](schema: Schema[A]): Schema[List[A]] = new Schema[List[A]] {
     override def toType(isInput: Boolean): __Type = {
       val t = schema.toType(isInput)
       (if (schema.optional) t else t.nonNull).list
@@ -98,10 +98,10 @@ object Schema {
     override def analyze(value: List[A]): Stage   = ListStage(value.map(schema.analyze))
   }
 
-  implicit def future[A](implicit schema: Schema[A]): Schema[Future[A]] =
+  def mkFuture[A](schema: Schema[A]): Schema[Future[A]] =
     mkSourceSchema[A](schema).contramap[Future[A]](Source.future)
 
-  implicit def mkFuncSchema[A, B](implicit
+  def mkFuncSchema[A, B](
     argumentExtractor: ArgumentExtractor[A],
     inputSchema: Schema[A],
     outputSchema: Schema[B]
@@ -142,7 +142,7 @@ object Schema {
         }
     }
 
-  implicit def mkSourceSchema[A](implicit schema: Schema[A]): Schema[Source[A, NotUsed]] =
+  def mkSourceSchema[A](schema: Schema[A]): Schema[Source[A, NotUsed]] =
     new Schema[Source[A, NotUsed]] {
       override def optional: Boolean                         = true
       override def toType(isInput: Boolean): __Type          = schema.toType(isInput)

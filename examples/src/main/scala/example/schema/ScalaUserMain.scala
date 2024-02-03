@@ -4,8 +4,8 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
 import symphony.*
 import symphony.derivation.SchemaGen.*
-import symphony.derivation.SchemaGen.auto
-import symphony.derivation.ArgumentExtractorGen.auto
+import symphony.derivation.SchemaGen.given
+import symphony.derivation.ArgumentExtractorGen.given
 import symphony.derivation.SchemaGen
 import symphony.parser.*
 import symphony.schema.Schema
@@ -21,8 +21,8 @@ object ScalaUserMain extends App {
       SymphonyQLResolver(
         UserQueryResolver(
           args => UserOutput("a1" + args.id, "b1" + args.id),
-          args => Source.apply(args.ids.map(a => UserOutput("a1" + a, "b1" + a)))
-        ) -> SchemaGen.gen[UserQueryResolver]
+          args => Source.single(UserOutput("a1" + args.id, "b1" + args.id))
+        ) -> SchemaGen.derived[UserQueryResolver]
       )
     )
     .build()
@@ -37,7 +37,7 @@ object ScalaUserMain extends App {
       |  }
       |}""".stripMargin
 
-  val batchQuery =
+  val querySource =
     """{
       |  batchGetUsers(ids: "10001") {
       |    id
@@ -49,9 +49,8 @@ object ScalaUserMain extends App {
 
   val getRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(query)))
 
-  val batchGetRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(batchQuery)))
+  val batchGetRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(querySource)))
 
-  println(Await.result(getRes, Duration.Inf))
   println(Await.result(batchGetRes, Duration.Inf))
 
   actorSystem.terminate()

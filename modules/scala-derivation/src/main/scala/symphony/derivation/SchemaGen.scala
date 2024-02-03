@@ -2,20 +2,55 @@ package symphony.derivation
 
 import scala.compiletime.*
 import scala.deriving.Mirror
-
 import magnolia1.*
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
+import symphony.parser.SymphonyQLError.*
+import symphony.parser.SymphonyQLInputValue
+import symphony.parser.SymphonyQLOutputValue.ObjectValue
 import symphony.parser.SymphonyQLValue.*
 import symphony.parser.introspection.*
 import symphony.schema.*
+import symphony.schema.Schema.mkScalar
 import symphony.schema.Stage.*
 
-object SchemaGen extends SchemaGen {
-  inline given auto[A]: Schema[A] = gen[A]
+import scala.concurrent.Future
+import scala.language.implicitConversions
+
+object SchemaGen extends GenericSchema {
+  def apply[T](implicit schema: Schema[T]): Schema[T] = schema
+}
+
+trait GenericSchema extends SchemaGen {
+
+  implicit val unit: Schema[Unit]                                                        = Schema.unit
+  implicit val boolean: Schema[Boolean]                                                  = Schema.boolean
+  implicit val string: Schema[String]                                                    = Schema.string
+  implicit val int: Schema[Int]                                                          = Schema.int
+  implicit val long: Schema[Long]                                                        = Schema.long
+  implicit val double: Schema[Double]                                                    = Schema.double
+  implicit val float: Schema[Float]                                                      = Schema.float
+  implicit def mkOption[A](implicit schema: Schema[A]): Schema[Option[A]]                = Schema.mkOption(schema)
+  implicit def mkVector[A](implicit schema: Schema[A]): Schema[Vector[A]]                = Schema.mkVector(schema)
+  implicit def mkSet[A](implicit schema: Schema[A]): Schema[Set[A]]                      = Schema.mkSet(schema)
+  implicit def mkSeq[A](implicit schema: Schema[A]): Schema[Seq[A]]                      = Schema.mkSeq(schema)
+  implicit def mkList[A](implicit schema: Schema[A]): Schema[List[A]]                    = Schema.mkList(schema)
+  implicit def mkFuture[A](implicit schema: Schema[A]): Schema[Future[A]]                = Schema.mkFuture(schema)
+  implicit def mkFuncSchema[A, B](implicit
+    argumentExtractor: ArgumentExtractor[A],
+    inputSchema: Schema[A],
+    outputSchema: Schema[B]
+  ): Schema[A => B] =
+    Schema.mkFuncSchema(argumentExtractor, inputSchema, outputSchema)
+  implicit def mkSourceSchema[A](implicit schema: Schema[A]): Schema[Source[A, NotUsed]] =
+    Schema.mkSourceSchema(schema)
 }
 
 trait SchemaGen extends BaseDerivation {
 
-  inline def gen[A]: Schema[A] =
+  inline given gen[A]: Schema[A] = derived[A]
+
+  inline def derived[A]: Schema[A] =
     inline summonInline[Mirror.Of[A]] match {
       case m: Mirror.SumOf[A]     =>
         lazy val members  = recurse[m.MirroredElemLabels, m.MirroredElemTypes]()

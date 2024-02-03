@@ -2,22 +2,39 @@ package symphony.derivation
 
 import scala.compiletime.*
 import scala.deriving.*
-
 import magnolia1.Macro
 import symphony.parser.SymphonyQLError.*
-import symphony.parser.SymphonyQLInputValue
+import symphony.parser.{ SymphonyQLInputValue, SymphonyQLValue }
 import symphony.parser.SymphonyQLInputValue.*
 import symphony.parser.SymphonyQLValue.*
 import symphony.schema.*
 
-object ArgumentExtractorGen extends ArgumentExtractorGen {
-  inline given auto[A]: ArgumentExtractor[A] = gen[A]
+object ArgumentExtractorGen extends GenericArgumentExtractor {
+  def apply[T](implicit ae: ArgumentExtractor[T]): ArgumentExtractor[T] = ae
+}
+
+trait GenericArgumentExtractor extends ArgumentExtractorGen {
+
+  implicit lazy val unit: ArgumentExtractor[Unit]                                         = ArgumentExtractor.unit
+  implicit lazy val int: ArgumentExtractor[Int]                                           = ArgumentExtractor.int
+  implicit lazy val long: ArgumentExtractor[Long]                                         = ArgumentExtractor.long
+  implicit lazy val double: ArgumentExtractor[Double]                                     = ArgumentExtractor.double
+  implicit lazy val float: ArgumentExtractor[Float]                                       = ArgumentExtractor.float
+  implicit lazy val string: ArgumentExtractor[String]                                     = ArgumentExtractor.string
+  implicit lazy val boolean: ArgumentExtractor[Boolean]                                   = ArgumentExtractor.boolean
+  implicit def option[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Option[A]] = ArgumentExtractor.option(ae)
+  implicit def list[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[List[A]]     = ArgumentExtractor.list(ae)
+  implicit def seq[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Seq[A]]       = ArgumentExtractor.seq(ae)
+  implicit def set[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Set[A]]       = ArgumentExtractor.set(ae)
+  implicit def vector[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Vector[A]] = ArgumentExtractor.vector(ae)
 }
 
 trait ArgumentExtractorGen extends BaseDerivation {
   import BaseDerivation.*
 
-  inline def gen[A]: ArgumentExtractor[A] =
+  inline given gen[A]: ArgumentExtractor[A] = derived[A]
+
+  inline def derived[A]: ArgumentExtractor[A] =
     inline summonInline[Mirror.Of[A]] match {
       case m: Mirror.SumOf[A]     =>
         makeSum[A](
