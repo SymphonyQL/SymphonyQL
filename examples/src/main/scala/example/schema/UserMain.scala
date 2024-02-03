@@ -1,5 +1,7 @@
 package example.schema
 
+import example.schema.ScalaUserMain.{graphql, querySource}
+
 import scala.concurrent.*
 import scala.concurrent.duration.Duration
 import org.apache.pekko.actor.ActorSystem
@@ -51,11 +53,21 @@ object UserMain extends App {
       |  }
       |}""".stripMargin
 
+  val querySource =
+    """{
+      |  batchGetUsers(id: "10001") {
+      |    id
+      |    username
+      |  }
+      |}""".stripMargin
+    
   implicit val actorSystem: ActorSystem = ActorSystem("symphonyActorSystem")
 
   val getRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(query)))
+  val batchGetRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(querySource)))
 
   println(Await.result(getRes, Duration.Inf))
+  println(Await.result(batchGetRes, Duration.Inf))
 
   actorSystem.terminate()
 

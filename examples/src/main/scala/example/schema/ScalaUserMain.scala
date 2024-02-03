@@ -39,7 +39,7 @@ object ScalaUserMain extends App {
 
   val querySource =
     """{
-      |  batchGetUsers(ids: "10001") {
+      |  batchGetUsers(id: "10001") {
       |    id
       |    username
       |  }
@@ -51,6 +51,7 @@ object ScalaUserMain extends App {
 
   val batchGetRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(querySource)))
 
+  // 有问题，会block 
   println(Await.result(batchGetRes, Duration.Inf))
 
   actorSystem.terminate()
