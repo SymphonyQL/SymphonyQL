@@ -4,8 +4,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
 import symphony.*
 import symphony.derivation.SchemaDerivation.*
-import symphony.derivation.SchemaDerivation.given
-import symphony.derivation.ArgumentExtractorDerivation.given
+import symphony.derivation.ArgumentExtractorDerivation.*
 import symphony.derivation.SchemaDerivation
 import symphony.parser.*
 import symphony.schema.Schema

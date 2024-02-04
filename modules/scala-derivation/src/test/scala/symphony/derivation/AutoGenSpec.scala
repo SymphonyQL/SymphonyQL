@@ -9,9 +9,7 @@ import symphony.parser.*
 import symphony.parser.introspection.__TypeKind
 import symphony.schema.*
 
-import symphony.derivation.SchemaDerivation.gen
 import symphony.derivation.SchemaDerivation.*
-import symphony.derivation.ArgumentExtractorDerivation.gen
 import symphony.derivation.ArgumentExtractorDerivation.*
 
 import scala.concurrent.Future
@@ -75,7 +73,7 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
                                    |}
                                    |
                                    |type SourceQueryResolver {
-                                   |  getUsers(id: String!): UserOutput
+                                   |  getUsers(id: String!): [UserOutput!]
                                    |}
                                    |
                                    |type UserOutput {

@@ -5,10 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import symphony.*
 import symphony.schema.*
 import symphony.derivation.SchemaDerivation.*
-import symphony.derivation.SchemaDerivation.given
 import symphony.derivation.ArgumentExtractorDerivation.*
-
-import symphony.derivation.ArgumentExtractorDerivation.given
 
 class AutoSchemaSpec extends AnyFunSpec with Matchers {
 

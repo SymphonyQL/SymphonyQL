@@ -44,7 +44,7 @@ trait GenericSchema extends SchemaDerivation {
 
 trait SchemaDerivation extends BaseDerivation {
 
-  inline given gen[A]: Schema[A] = derived[A]
+  implicit inline def gen[A]: Schema[A] = derived[A]
 
   inline def derived[A]: Schema[A] =
     inline summonInline[Mirror.Of[A]] match {

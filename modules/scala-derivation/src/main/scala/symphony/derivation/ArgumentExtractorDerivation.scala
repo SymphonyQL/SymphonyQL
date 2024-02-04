@@ -32,7 +32,7 @@ trait GenericArgumentExtractor extends ArgumentExtractorDerivation {
 trait ArgumentExtractorDerivation extends BaseDerivation {
   import BaseDerivation.*
 
-  inline given gen[A]: ArgumentExtractor[A] = derived[A]
+  implicit inline def gen[A]: ArgumentExtractor[A] = derived[A]
 
   inline def derived[A]: ArgumentExtractor[A] =
     inline summonInline[Mirror.Of[A]] match {
