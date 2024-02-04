@@ -2,9 +2,9 @@ package symphony.schema
 
 import scala.annotation.targetName
 
-import symphony.parser.introspection.__Type
+import symphony.parser.adt.introspection.IntrospectionType
 
-final case class Operation(opType: __Type, stage: Stage) {
+final case class Operation(opType: IntrospectionType, stage: Stage) {
 
   @targetName("add")
   def ++(that: Operation): Operation =

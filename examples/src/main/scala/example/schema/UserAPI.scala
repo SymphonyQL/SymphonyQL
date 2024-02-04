@@ -3,11 +3,14 @@ package example.schema
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.*
 
-final case class UserQueryInput(id: String)
+object UserAPI {
+  enum Origin extends Enum[Origin] {
+    case EARTH, MARS, BELT
+  }
 
-final case class UserOutput(id: String, username: String)
+  case class Character(name: String, origin: Origin)
 
-final case class UserQueryResolver(
-  getUsers: UserQueryInput => UserOutput,
-  batchGetUsers: UserQueryInput => Source[UserOutput, NotUsed]
-)
+  case class FilterArgs(origin: Option[Origin])
+
+  case class Queries(characters: FilterArgs => Source[Character, NotUsed])
+}

@@ -1,5 +1,10 @@
 # SymphonyQL
-SymphonyQL is a GraphQL implementation built with Pekko
+
+SymphonyQL is a GraphQL implementation built with Apache Pekko
+
+## Motivation
+
+Apache Pekko native, Java/Scala support.
 
 ## Inspire By 
 

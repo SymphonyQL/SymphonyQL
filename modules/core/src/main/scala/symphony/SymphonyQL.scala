@@ -5,11 +5,11 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
 import symphony.execution.Executor
 import symphony.parser.*
-import symphony.parser.SymphonyQLError.ExecutionError
 import symphony.parser.adt.Definition.TypeSystemDefinition.*
 import symphony.parser.adt.Document
 import symphony.schema.*
-
+import scala.jdk.FutureConverters.*
+import java.util.concurrent.CompletionStage
 import scala.concurrent.Future
 import scala.util.*
 
@@ -30,33 +30,21 @@ final class SymphonyQL private (rootSchema: SymphonyQLSchema) {
 
   def render: String = DocumentRenderer.render(_document)
 
+  def run(request: SymphonyQLRequest, actorSystem: ActorSystem): CompletionStage[SymphonyQLResponse[SymphonyQLError]] =
+    runWith(request)(actorSystem).asJava
+
   def runWith(
     request: SymphonyQLRequest
   )(implicit actorSystem: ActorSystem): Future[SymphonyQLResponse[SymphonyQLError]] =
     compile(request)
       .map(SymphonyQLResponse(_, List.empty))
-      .recoverWith {
-        case se: SymphonyQLError => Source.failed(se)
-        case ex: Exception       =>
-          Source.single(
-            SymphonyQLResponse(
-              SymphonyQLValue.NullValue,
-              List(
-                SymphonyQLError.ExecutionError(
-                  "Caught error during execution of source field",
-                  innerThrowable = Some(ex)
-                )
-              )
-            )
-          )
-      }
       .runWith[Future[SymphonyQLResponse[SymphonyQLError]]](Sink.head)
 
   private def compile(
     request: SymphonyQLRequest
   )(implicit actorSystem: ActorSystem): Source[SymphonyQLOutputValue, NotUsed] = {
     val document = SymphonyQLParser.parseQuery(request.query.getOrElse(""))
-    document match
+    val res      = document match
       case Left(ex)   => Source.failed(ex)
       case Right(doc) =>
         Executor.execute(
@@ -65,11 +53,12 @@ final class SymphonyQL private (rootSchema: SymphonyQLSchema) {
           request.operationName,
           request.variables.getOrElse(Map.empty)
         )
+    res
   }
 }
 
 object SymphonyQL {
-  def builder(): SymphonyQLBuilder = new SymphonyQLBuilder
+  def newSymphonyQL(): SymphonyQLBuilder = new SymphonyQLBuilder
 
   final class SymphonyQLBuilder {
     private var rootSchema = SymphonyQLSchema(None, None, None)
@@ -85,7 +74,7 @@ object SymphonyQL {
       this
     }
 
-    def build() = new SymphonyQL(rootSchema)
+    def build(): SymphonyQL = new SymphonyQL(rootSchema)
   }
 
 }

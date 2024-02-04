@@ -2,17 +2,17 @@ package symphony
 
 import scala.annotation.targetName
 
-import symphony.parser.introspection.*
+import symphony.parser.adt.introspection.*
 import symphony.schema.*
 
 final case class SymphonyQLSchema(
   query: Option[Operation],
   mutation: Option[Operation],
   subscription: Option[Operation],
-  additionalTypes: List[__Type] = Nil
+  additionalTypes: List[IntrospectionType] = Nil
 ) {
 
-  def collectTypes: List[__Type] =
+  def collectTypes: List[IntrospectionType] =
     (
       query.map(op => Types.collectTypes(op.opType)).toList.flatten ++
         mutation
@@ -33,7 +33,7 @@ final case class SymphonyQLSchema(
       (subscription ++ that.subscription).reduceOption(_ ++ _)
     )
 
-  def types: List[__Type] = {
+  def types: List[IntrospectionType] = {
     val empty = additionalTypes
     (query.map(_.opType).fold(empty)(Types.collectTypes(_)) ++
       mutation.map(_.opType).fold(empty)(Types.collectTypes(_)) ++

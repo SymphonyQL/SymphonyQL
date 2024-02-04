@@ -14,6 +14,7 @@ import symphony.parser.adt.OperationType.*
 import symphony.parser.adt.Selection.*
 import symphony.schema.*
 
+import java.util.function
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -78,9 +79,11 @@ object Executor {
     stage match
       case ExecutionStage.FutureStage(future)                                 =>
         Source.future(future).flatMapConcat(drainExecutionStages)
-      case ExecutionStage.StreamStage(source)                                 =>
+      case ExecutionStage.ScalaSourceStage(source)                            =>
         val sourceStage = source.flatMapConcat(drainExecutionStages)
         Source.single(SymphonyQLOutputValue.StreamValue(sourceStage))
+      case ExecutionStage.JavaSourceStage(source)                             =>
+        drainExecutionStages(ExecutionStage.ScalaSourceStage(source.asScala))
       case ExecutionStage.ListStage(stages)                                   =>
         val sourceList = stages.map(drainExecutionStages)
         Source.zipN(sourceList).map(s => SymphonyQLOutputValue.ListValue(s.toList))
@@ -106,23 +109,21 @@ object Executor {
       arguments: Map[String, SymphonyQLInputValue]
     ): ExecutionStage =
       stage match
-        case Stage.FutureStage(future) =>
+        case Stage.FutureStage(future)        =>
           ExecutionStage.FutureStage(future.map(loopExecuteStage(_, selections, arguments)))
-        case Stage.StreamStage(source) =>
+        case Stage.ScalaSourceStage(source)   =>
           if (operationType == OperationType.Subscription) {
-            ExecutionStage.StreamStage(source.map(loopExecuteStage(_, selections, arguments)))
+            ExecutionStage.ScalaSourceStage(source.map(loopExecuteStage(_, selections, arguments)))
           } else {
-            val future = source
-              .runWith(Sink.fold(List.empty[Stage])((l, a) => a :: l))
-              .map(_.reverse)
-              .map(Stage.ListStage.apply)
+            val future = source.runWith(Sink.seq[Stage]).map(s => Stage.ListStage(s.toList))
             loopExecuteStage(
               Stage.FutureStage(future),
               selections,
               arguments
             )
           }
-
+        case Stage.JavaSourceStage(source)    =>
+          loopExecuteStage(Stage.ScalaSourceStage(source.asScala), selections, arguments)
         case Stage.FunctionStage(stage)       => loopExecuteStage(stage(arguments), selections, Map())
         case Stage.ListStage(stages)          =>
           if (stages.forall(_.isInstanceOf[PureStage]))

@@ -18,7 +18,7 @@ object Dependencies {
     val parser = sbt.Def.setting {
       Seq(
         "org.apache.pekko" %% "pekko-stream" % `pekko-core_Version` % Provided, // StreamValue
-        "org.parboiled"    %% "parboiled"    % `parboiled_Version`,
+        "org.parboiled"    %% "parboiled"    % `parboiled_Version`  % Provided,
         "org.scalatest"    %% "scalatest"    % `scalatest_Version`  % Test
       )
     }
@@ -26,24 +26,18 @@ object Dependencies {
     // prepare, analyzer, run, tracing
     val core = sbt.Def.setting {
       Seq(
-        "org.apache.pekko" %% "pekko-stream"  % `pekko-core_Version`,
-        "org.apache.pekko" %% "pekko-testkit" % `pekko-core_Version` % Test,
-        "org.scalatest"    %% "scalatest"     % `scalatest_Version`  % Test
+        "com.softwaremill.magnolia1_3" %% "magnolia"      % `magnolia_Version`,
+        "org.apache.pekko"             %% "pekko-stream"  % `pekko-core_Version` % Provided,
+        "org.apache.pekko"             %% "pekko-testkit" % `pekko-core_Version` % Test,
+        "org.scalatest"                %% "scalatest"     % `scalatest_Version`  % Test
       )
     }
 
     // default http server
     val server = sbt.Def.setting {
       Seq(
-        "org.apache.pekko" %% "pekko-http" % `pekko-http_Version`
-      )
-    }
-
-    // derives Schema and ArgumentExtractor for scala 3
-    val `scala-derived` = sbt.Def.setting {
-      Seq(
-        "com.softwaremill.magnolia1_3" %% "magnolia"  % `magnolia_Version`,
-        "org.scalatest"                %% "scalatest" % `scalatest_Version` % Test
+        "org.apache.pekko" %% "pekko-http"   % `pekko-http_Version`,
+        "org.apache.pekko" %% "pekko-stream" % `pekko-core_Version`
       )
     }
   }

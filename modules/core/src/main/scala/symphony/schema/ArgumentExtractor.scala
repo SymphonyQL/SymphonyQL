@@ -5,6 +5,11 @@ import symphony.parser.SymphonyQLError.*
 import symphony.parser.SymphonyQLInputValue
 import symphony.parser.SymphonyQLInputValue.*
 import symphony.parser.SymphonyQLValue.*
+import symphony.schema.scaladsl.ArgExtractorDerivation
+
+import java.util
+import scala.jdk.javaapi.CollectionConverters
+import java.util.Optional
 
 trait ArgumentExtractor[T] { self =>
 
@@ -17,41 +22,74 @@ trait ArgumentExtractor[T] { self =>
 
 }
 
-object ArgumentExtractor {
+object ArgumentExtractor extends GenericArgExtractor with ArgExtractorJavaAPI {
+  def apply[T](implicit ae: ArgumentExtractor[T]): ArgumentExtractor[T] = ae
 
-  lazy val unit: ArgumentExtractor[Unit] = (_: SymphonyQLInputValue) => Right(())
+}
+trait ArgExtractorJavaAPI { self: GenericArgExtractor =>
 
-  lazy val int: ArgumentExtractor[Int] = (input: SymphonyQLInputValue) => long.extract(input).map(_.toInt)
+  /**
+   * Java API
+   */
+  def createOption[A](ae: ArgumentExtractor[A]): ArgumentExtractor[Optional[A]] =
+    (input: SymphonyQLInputValue) => ae.extract(input).map(Optional.of)
 
-  lazy val long: ArgumentExtractor[Long] = {
+  /**
+   * Java API
+   */
+  def createList[A](ae: ArgumentExtractor[A]): ArgumentExtractor[java.util.List[A]] =
+    (input: SymphonyQLInputValue) => mkList(ae).extract(input).map(a => CollectionConverters.asJava(a))
+
+  /**
+   * Java API
+   */
+  def createSet[A](ae: ArgumentExtractor[A]): ArgumentExtractor[java.util.Set[A]] =
+    (input: SymphonyQLInputValue) => mkSet(ae).extract(input).map(a => CollectionConverters.asJava(a))
+
+  /**
+   * Java API
+   */
+  def createVector[A](ae: ArgumentExtractor[A]): ArgumentExtractor[java.util.Vector[A]] =
+    (input: SymphonyQLInputValue) =>
+      mkVector(ae).extract(input).map(a => new util.Vector[A](CollectionConverters.asJava(a)))
+}
+trait GenericArgExtractor extends ArgExtractorDerivation {
+
+  implicit lazy val UnitArg: ArgumentExtractor[Unit] = (_: SymphonyQLInputValue) => Right(())
+
+  implicit lazy val IntArg: ArgumentExtractor[Int] = (input: SymphonyQLInputValue) =>
+    LongArg.extract(input).map(_.toInt)
+
+  implicit lazy val LongArg: ArgumentExtractor[Long] = {
     case value: IntValue => Right(value.toLong)
     case other           => Left(ArgumentError(s"Cannot build an Long from input $other"))
   }
 
-  lazy val double: ArgumentExtractor[Double] = {
+  implicit lazy val DoubleArg: ArgumentExtractor[Double] = {
     case value: IntValue   => Right(value.toLong.toDouble)
     case value: FloatValue => Right(value.toDouble)
     case other             => Left(ArgumentError(s"Cannot build a Double from input $other"))
   }
 
-  lazy val float: ArgumentExtractor[Float] = (input: SymphonyQLInputValue) => double.extract(input).map(_.toFloat)
+  implicit lazy val FloatArg: ArgumentExtractor[Float] = (input: SymphonyQLInputValue) =>
+    DoubleArg.extract(input).map(_.toFloat)
 
-  lazy val string: ArgumentExtractor[String] = {
+  implicit lazy val StringArg: ArgumentExtractor[String] = {
     case StringValue(value) => Right(value)
     case other              => Left(ArgumentError(s"Cannot build a String from input $other"))
   }
 
-  lazy val boolean: ArgumentExtractor[Boolean] = {
+  implicit lazy val BooleanArg: ArgumentExtractor[Boolean] = {
     case BooleanValue(value) => Right(value)
     case other               => Left(ArgumentError(s"Cannot build a Boolean from input $other"))
   }
 
-  def option[A](ae: ArgumentExtractor[A]): ArgumentExtractor[Option[A]] = {
+  implicit def mkOption[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Option[A]] = {
     case SymphonyQLValue.NullValue => Right(None)
     case value                     => ae.extract(value).map(Some(_))
   }
 
-  def list[A](ae: ArgumentExtractor[A]): ArgumentExtractor[List[A]] = {
+  implicit def mkList[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[List[A]] = {
     case SymphonyQLInputValue.ListValue(values) =>
       values
         .foldLeft[Either[ArgumentError, List[A]]](Right(Nil)) {
@@ -66,23 +104,23 @@ object ArgumentExtractor {
     case other                                  => ae.extract(other).map(List(_))
   }
 
-  def seq[A](ae: ArgumentExtractor[A]): ArgumentExtractor[Seq[A]] = new ArgumentExtractor[Seq[A]] {
-    private lazy val _list = list(ae)
+  implicit def mkSeq[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Seq[A]] = new ArgumentExtractor[Seq[A]] {
+    private lazy val _list = mkList(ae)
 
     override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Seq[A]] =
       _list.extract(input).map(_.toSeq)
   }
 
-  def set[A](ae: ArgumentExtractor[A]): ArgumentExtractor[Set[A]] = new ArgumentExtractor[Set[A]] {
-    private lazy val _list = list(ae)
+  implicit def mkSet[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Set[A]] = new ArgumentExtractor[Set[A]] {
+    private lazy val _list = mkList(ae)
 
     override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Set[A]] =
       _list.extract(input).map(_.toSet)
   }
 
-  def vector[A](ae: ArgumentExtractor[A]): ArgumentExtractor[Vector[A]] =
+  implicit def mkVector[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Vector[A]] =
     new ArgumentExtractor[Vector[A]] {
-      private lazy val _list = list(ae)
+      private lazy val _list = mkList(ae)
 
       override def extract(input: SymphonyQLInputValue): Either[ArgumentError, Vector[A]] =
         _list.extract(input).map(_.toVector)
