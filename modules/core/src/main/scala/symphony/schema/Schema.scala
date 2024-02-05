@@ -18,16 +18,20 @@ import scala.jdk.FutureConverters.*
 import scala.jdk.OptionConverters.*
 
 trait Schema[T] { self =>
-  def optional: Boolean                        = false
-  def toType(isInput: Boolean = false): IntrospectionType
-  def arguments: List[IntrospectionInputValue] = Nil
+  private lazy val tpe: IntrospectionType      = tpe()
+  private lazy val inputTpe: IntrospectionType = tpe(true)
+
+  def optional: Boolean                                    = false
+  def tpe(isInput: Boolean = false): IntrospectionType
+  def lazyTpe(isInput: Boolean = false): IntrospectionType = if (isInput) inputTpe else tpe
+  def arguments: List[IntrospectionInputValue]             = Nil
   def analyze(value: T): Stage
 
   def contramap[A](f: A => T): Schema[A] = new Schema[A] {
-    override def optional: Boolean                           = self.optional
-    override def arguments: List[IntrospectionInputValue]    = self.arguments
-    override def toType(isInput: Boolean): IntrospectionType = self.toType(isInput)
-    override def analyze(value: A): Stage                    = self.analyze(f(value))
+    override def optional: Boolean                        = self.optional
+    override def arguments: List[IntrospectionInputValue] = self.arguments
+    override def tpe(isInput: Boolean): IntrospectionType = self.lazyTpe(isInput)
+    override def analyze(value: A): Stage                 = self.analyze(f(value))
   }
 }
 
@@ -71,9 +75,9 @@ trait SchemaJavaAPI {
    * Unsafe Nullable
    */
   def createNullable[A](schema: Schema[A]): Schema[A] = new Schema[A] {
-    override def optional: Boolean                           = true
-    override def toType(isInput: Boolean): IntrospectionType = schema.toType(isInput)
-    override def analyze(value: A): Stage                    = schema.analyze(value)
+    override def optional: Boolean                        = true
+    override def tpe(isInput: Boolean): IntrospectionType = schema.lazyTpe(isInput)
+    override def analyze(value: A): Stage                 = schema.analyze(value)
   }
 
   /**
@@ -118,10 +122,10 @@ trait GenericSchema extends SchemaDerivation {
     repr: A => String,
     directives: List[Directive] = List.empty
   ): Schema[A] = new Schema[A] {
-    private val validEnumValues                              = values.map(_.name).toSet
-    override def toType(isInput: Boolean): IntrospectionType =
+    private val validEnumValues                           = values.map(_.name).toSet
+    override def tpe(isInput: Boolean): IntrospectionType =
       Types.mkEnum(Some(name), description, values, None, if (directives.nonEmpty) Some(directives) else None)
-    override def analyze(value: A): Stage                    = {
+    override def analyze(value: A): Stage                 = {
       val asString = repr(value)
       if (validEnumValues.contains(asString)) PureStage(EnumValue(asString))
       else Stage.FutureStage(Future.failed(SymphonyQLError.ExecutionError(s"Invalid enum value '$asString'")))
@@ -130,8 +134,8 @@ trait GenericSchema extends SchemaDerivation {
 
   def mkScalar[A](name: String, description: Option[String], toOutput: A => SymphonyQLOutputValue): Schema[A] =
     new Schema[A] {
-      override def toType(isInput: Boolean): IntrospectionType = Types.mkScalar(name, description)
-      override def analyze(value: A): Stage                    = PureStage(toOutput(value))
+      override def tpe(isInput: Boolean): IntrospectionType = Types.mkScalar(name, description)
+      override def analyze(value: A): Stage                 = PureStage(toOutput(value))
     }
 
   def mkObject[A](
@@ -141,7 +145,7 @@ trait GenericSchema extends SchemaDerivation {
     directives: List[Directive] = List.empty
   ): Schema[A] =
     new Schema[A] {
-      override def toType(isInput: Boolean): IntrospectionType =
+      override def tpe(isInput: Boolean): IntrospectionType =
         if (isInput)
           Types.mkInputObject(
             Some(if (name.endsWith("Input")) name else s"${name}Input"),
@@ -159,9 +163,9 @@ trait GenericSchema extends SchemaDerivation {
     }
 
   implicit def mkOption[A](implicit schema: Schema[A]): Schema[Option[A]] = new Schema[Option[A]] {
-    override def optional: Boolean                           = true
-    override def toType(isInput: Boolean): IntrospectionType = schema.toType(isInput)
-    override def analyze(value: Option[A]): Stage            =
+    override def optional: Boolean                        = true
+    override def tpe(isInput: Boolean): IntrospectionType = schema.lazyTpe(isInput)
+    override def analyze(value: Option[A]): Stage         =
       value match {
         case Some(value) => schema.analyze(value)
         case None        => NullStage
@@ -176,11 +180,11 @@ trait GenericSchema extends SchemaDerivation {
   implicit def mkSeq[A](implicit schema: Schema[A]): Schema[Seq[A]] = mkList[A](schema).contramap(_.toList)
 
   implicit def mkList[A](implicit schema: Schema[A]): Schema[List[A]] = new Schema[List[A]] {
-    override def toType(isInput: Boolean): IntrospectionType = {
-      val t = schema.toType(isInput)
+    override def tpe(isInput: Boolean): IntrospectionType = {
+      val t = schema.lazyTpe(isInput)
       (if (schema.optional) t else t.nonNull).list
     }
-    override def analyze(value: List[A]): Stage              = ListStage(value.map(schema.analyze))
+    override def analyze(value: List[A]): Stage           = ListStage(value.map(schema.analyze))
   }
 
   implicit def mkFuture[A](implicit schema: Schema[A]): Schema[Future[A]] =
@@ -192,8 +196,8 @@ trait GenericSchema extends SchemaDerivation {
     outputSchema: Schema[B]
   ): Schema[A => B] =
     new Schema[A => B] {
-      private lazy val inputType                                       = inputSchema.toType(true)
-      override def arguments: List[IntrospectionInputValue]            = {
+      private lazy val inputType                                    = inputSchema.lazyTpe(true)
+      override def arguments: List[IntrospectionInputValue]         = {
         val input = inputType.allInputFields
         if (input.nonEmpty) input
         else
@@ -210,9 +214,9 @@ trait GenericSchema extends SchemaDerivation {
             case _                                               => List.empty[IntrospectionInputValue]
           }
       }
-      override def optional: Boolean                                   = outputSchema.optional
-      override def toType(isInput: Boolean = false): IntrospectionType = outputSchema.toType(isInput)
-      override def analyze(value: A => B): Stage                       =
+      override def optional: Boolean                                = outputSchema.optional
+      override def tpe(isInput: Boolean = false): IntrospectionType = outputSchema.lazyTpe(isInput)
+      override def analyze(value: A => B): Stage                    =
         FunctionStage { args =>
           val builder    = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args))
           val fixBuilder = inputType.kind match {
@@ -233,8 +237,8 @@ trait GenericSchema extends SchemaDerivation {
   implicit def mkSource[A](implicit schema: Schema[A]): Schema[scaladsl.Source[A, NotUsed]] =
     new Schema[scaladsl.Source[A, NotUsed]] {
       override def optional: Boolean                                  = true
-      override def toType(isInput: Boolean): IntrospectionType        =
-        val t = schema.toType(isInput)
+      override def tpe(isInput: Boolean): IntrospectionType           =
+        val t = schema.lazyTpe(isInput)
         (if (schema.optional) t else t.nonNull).list
       override def analyze(value: scaladsl.Source[A, NotUsed]): Stage = ScalaSourceStage(value.map(schema.analyze))
     }

@@ -88,7 +88,7 @@ trait ArgExtractorDerivation extends BaseDerivation {
             fields
               .get(label)
               .map(builder.extract)
-              .getOrElse(Left(ArgumentError(s"Cannot build a case class from input $input")))
+              .getOrElse(builder.default())
           case value                                    => builder.extract(value)
         }
       }.foldLeft[Either[ArgumentError, Tuple]](Right(EmptyTuple)) { (acc, item) =>

@@ -3,7 +3,7 @@ package example.schema
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.*
 
-object UserAPI {
+object Users {
   enum Origin extends Enum[Origin] {
     case EARTH, MARS, BELT
   }

@@ -5,7 +5,7 @@ import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.introspection.IntrospectionEnumValue
 import symphony.schema.*
 import symphony.schema.javadsl.*
-import UserAPI.*
+import Users.*
 // for parsing input parameters
 val argumentExtractor: ArgumentExtractor[FilterArgs] = {
   case SymphonyQLInputValue.ObjectValue(fields) =>
@@ -35,9 +35,13 @@ val inputSchema: Schema[FilterArgs]                  = InputObjectBuilder
 val outputSchema: Schema[Character]                  = ObjectBuilder
   .newObject[Character]()
   .name("Character")
-  .fields(
-    builder => builder.name("name").schema(Schema.StringSchema).build() -> (_ => Stage.createNull()),
-    builder => builder.name("origin").schema(enumSchema).build() -> (_ => Stage.createNull())
+  .field(
+    builder => builder.name("name").schema(Schema.StringSchema).build(),
+    _ => Stage.createNull()
+  )
+  .field(
+    builder => builder.name("origin").schema(enumSchema).build(),
+    _ => Stage.createNull()
   )
   .build()
 
@@ -45,18 +49,20 @@ val outputSchema: Schema[Character]                  = ObjectBuilder
 val queriesSchema: Schema[Queries] = ObjectBuilder
   .newObject[Queries]()
   .name("Queries")
-  .fields(builder =>
-    builder
-      .name("characters")
-      .hasArgs(true)
-      .schema(
-        Schema.mkFunction(
-          argumentExtractor,
-          inputSchema,
-          Schema.mkSource(outputSchema)
+  .field(
+    builder =>
+      builder
+        .name("characters")
+        .hasArgs(true)
+        .schema(
+          Schema.mkFunction(
+            argumentExtractor,
+            inputSchema,
+            Schema.mkSource(outputSchema)
+          )
         )
-      )
-      .build() -> (a =>
+        .build(),
+    a =>
       Stage.FunctionStage { args =>
         Stage.createScalaSource {
           a.characters(argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args)).toOption.orNull).map { c =>
@@ -70,6 +76,5 @@ val queriesSchema: Schema[Queries] = ObjectBuilder
           }
         }
       }
-    ),
   )
   .build()

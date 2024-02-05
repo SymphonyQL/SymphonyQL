@@ -37,7 +37,7 @@ final class FieldBuilder private {
     this
   }
 
-  def schema(schema: Schema[_]): this.type = {
+  def schema[V](schema: Schema[V]): this.type = {
     this.schema = schema
     this
   }
@@ -62,7 +62,7 @@ final class FieldBuilder private {
       name,
       description,
       if (hasArgs) schema.arguments else List.empty,
-      () => if (schema.optional) schema.toType() else Types.mkNonNull(schema.toType()),
+      () => if (schema.optional) schema.lazyTpe() else Types.mkNonNull(schema.lazyTpe()),
       isDeprecated,
       deprecationReason,
       Option(directives)

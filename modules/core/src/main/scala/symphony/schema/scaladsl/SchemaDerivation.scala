@@ -18,7 +18,7 @@ trait SchemaDerivation extends BaseDerivation {
       case m: Mirror.SumOf[A]     =>
         lazy val members  = recurse[m.MirroredElemLabels, m.MirroredElemTypes]()
         lazy val info     = Macro.typeInfo[A]
-        lazy val subTypes = members.map(m => m._1 -> m._2.toType()).sortBy(_._1)
+        lazy val subTypes = members.map(m => m._1 -> m._2.lazyTpe()).sortBy(_._1)
         lazy val isEnum   = subTypes.forall {
           case (_, t)
               if t.fields.apply(DeprecatedArgs(Some(true))).forall(_.isEmpty) &&
@@ -27,7 +27,7 @@ trait SchemaDerivation extends BaseDerivation {
           case _ => false
         }
         new Schema[A] {
-          def toType(isInput: Boolean): IntrospectionType =
+          def tpe(isInput: Boolean): IntrospectionType =
             if (isEnum && subTypes.nonEmpty) {
               Types.mkEnum(
                 Some(getName(info)),
@@ -55,7 +55,7 @@ trait SchemaDerivation extends BaseDerivation {
         lazy val fields = recurse[m.MirroredElemLabels, m.MirroredElemTypes]()
         lazy val info   = Macro.typeInfo[A]
         new Schema[A] {
-          def toType(isInput: Boolean): IntrospectionType =
+          def tpe(isInput: Boolean): IntrospectionType =
             if (isInput)
               Types.mkInputObject(
                 Some(customInputTypeName(getName(info))),
@@ -65,8 +65,8 @@ trait SchemaDerivation extends BaseDerivation {
                     label,
                     None,
                     () =>
-                      if (schema.optional) schema.toType(isInput)
-                      else Types.mkNonNull(schema.toType(isInput)),
+                      if (schema.optional) schema.lazyTpe(isInput)
+                      else Types.mkNonNull(schema.lazyTpe(isInput)),
                     None,
                     false,
                     None,
@@ -84,7 +84,7 @@ trait SchemaDerivation extends BaseDerivation {
                     label,
                     None,
                     (_: DeprecatedArgs) => schema.arguments,
-                    () => if (schema.optional) schema.toType(isInput) else Types.mkNonNull(schema.toType(isInput))
+                    () => if (schema.optional) schema.lazyTpe(isInput) else Types.mkNonNull(schema.lazyTpe(isInput))
                   )
                 },
                 List.empty,

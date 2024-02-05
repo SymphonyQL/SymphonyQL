@@ -12,13 +12,13 @@ object ScalarBuilder {
 }
 
 final class ScalarBuilder[A] {
-  private var name: String                                                          = _
-  private var description: Option[String]                                           = None
-  private var toOutput: () => java.util.function.Function[A, SymphonyQLOutputValue] = () =>
-    new java.util.function.Function[A, SymphonyQLOutputValue]() {
+  private var name: String                                           = _
+  private var description: Option[String]                            = None
+  private var toOutput: () => JavaFunction[A, SymphonyQLOutputValue] = () =>
+    new JavaFunction[A, SymphonyQLOutputValue]() {
       override def apply(t: A): SymphonyQLOutputValue = NullValue
     }
-  private var isNullable: Boolean                                                   = false
+  private var isNullable: Boolean                                    = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -30,7 +30,7 @@ final class ScalarBuilder[A] {
     this
   }
 
-  def toOutput(toOutput: java.util.function.Function[A, SymphonyQLOutputValue]): this.type = {
+  def toOutput(toOutput: JavaFunction[A, SymphonyQLOutputValue]): this.type = {
     this.toOutput = () => toOutput
     this
   }

@@ -14,13 +14,11 @@ object ObjectBuilder {
 }
 
 final class ObjectBuilder[A] private {
-  private var name: String                = _
-  private var description: Option[String] = None
-  private var fields
-    : List[java.util.function.Function[FieldBuilder, (IntrospectionField, java.util.function.Function[A, Stage])]] =
-    List.empty
-  private var directives: List[Directive] = List.empty
-  private var isNullable: Boolean         = false
+  private var name: String                                                                           = _
+  private var description: Option[String]                                                            = None
+  private var fields: List[(JavaFunction[FieldBuilder, IntrospectionField], JavaFunction[A, Stage])] = List.empty
+  private var directives: List[Directive]                                                            = List.empty
+  private var isNullable: Boolean                                                                    = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -33,17 +31,10 @@ final class ObjectBuilder[A] private {
   }
 
   def field(
-    field: java.util.function.Function[FieldBuilder, (IntrospectionField, java.util.function.Function[A, Stage])]
+    field: JavaFunction[FieldBuilder, IntrospectionField],
+    stage: JavaFunction[A, Stage]
   ): this.type = {
-    this.fields = fields ::: List(field)
-    this
-  }
-
-  @varargs
-  def fields(
-    fields: java.util.function.Function[FieldBuilder, (IntrospectionField, java.util.function.Function[A, Stage])]*
-  ): this.type = {
-    this.fields = fields.toList
+    this.fields = fields ::: List(field -> stage)
     this
   }
 
@@ -64,7 +55,7 @@ final class ObjectBuilder[A] private {
         Schema.mkObject(
           name,
           description,
-          _ => fields.map(_.apply(FieldBuilder.newField())).map(kv => kv._1 -> kv._2.asScala),
+          _ => fields.map(kv => kv._1(FieldBuilder.newField()) -> kv._2.asScala),
           directives
         )
       )
@@ -72,7 +63,7 @@ final class ObjectBuilder[A] private {
       Schema.mkObject(
         name,
         description,
-        _ => fields.map(_.apply(FieldBuilder.newField())).map(kv => kv._1 -> kv._2.asScala),
+        _ => fields.map(kv => kv._1(FieldBuilder.newField()) -> kv._2.asScala),
         directives
       )
 

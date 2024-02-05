@@ -1,12 +1,9 @@
 package symphony.execution
 
-import scala.collection.immutable.ListMap
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
-import symphony.SymphonyQLSchema
 import symphony.parser.*
-import symphony.parser.SymphonyQLError.ExecutionError
 import symphony.parser.SymphonyQLValue.*
 import symphony.parser.adt.*
 import symphony.parser.adt.Definition.ExecutableDefinition.*
@@ -14,94 +11,18 @@ import symphony.parser.adt.OperationType.*
 import symphony.parser.adt.Selection.*
 import symphony.schema.*
 
-import java.util.function
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import scala.collection.immutable.ListMap
+import scala.concurrent.ExecutionContext
 
 object Executor {
 
-  def execute(
-    document: Document,
-    schema: SymphonyQLSchema,
-    operationName: Option[String] = None,
-    variables: Map[String, SymphonyQLInputValue] = Map()
-  )(implicit actorSystem: ActorSystem): Source[SymphonyQLOutputValue, NotUsed] = {
-    val fragments = document.definitions.collect { case fragment: FragmentDefinition =>
-      fragment.name -> fragment
-    }.toMap
-    getOperation(operationName, document) match {
-      case Left(error) => Source.failed(ExecutionError(error))
-      case Right(op)   =>
-        op.operationType match {
-          case Query        =>
-            schema.query match
-              case Some(q) =>
-                executeStage(
-                  q.stage,
-                  op.selectionSet,
-                  fragments,
-                  op.variableDefinitions,
-                  variables,
-                  Query
-                )
-              case None    => Source.failed(ExecutionError("Queries are not supported on this schema"))
-          case Mutation     =>
-            schema.mutation match {
-              case Some(m) =>
-                executeStage(
-                  m.stage,
-                  op.selectionSet,
-                  fragments,
-                  op.variableDefinitions,
-                  variables,
-                  Mutation
-                )
-              case None    => Source.failed(ExecutionError("Mutations are not supported on this schema"))
-            }
-          case Subscription =>
-            schema.subscription match {
-              case Some(s) =>
-                executeStage(
-                  s.stage,
-                  op.selectionSet,
-                  fragments,
-                  op.variableDefinitions,
-                  variables,
-                  Subscription
-                )
-              case None    => Source.failed(ExecutionError("Subscriptions are not supported on this schema"))
-            }
-        }
-    }
-  }
-
-  private def drainExecutionStages(stage: ExecutionStage): Source[SymphonyQLOutputValue, NotUsed] =
-    stage match
-      case ExecutionStage.FutureStage(future)                                 =>
-        Source.future(future).flatMapConcat(drainExecutionStages)
-      case ExecutionStage.ScalaSourceStage(source)                            =>
-        val sourceStage = source.flatMapConcat(drainExecutionStages)
-        Source.single(SymphonyQLOutputValue.StreamValue(sourceStage))
-      case ExecutionStage.JavaSourceStage(source)                             =>
-        drainExecutionStages(ExecutionStage.ScalaSourceStage(source.asScala))
-      case ExecutionStage.ListStage(stages)                                   =>
-        val sourceList = stages.map(drainExecutionStages)
-        Source.zipN(sourceList).map(s => SymphonyQLOutputValue.ListValue(s.toList))
-      case ExecutionStage.ObjectStage(stages: List[(String, ExecutionStage)]) =>
-        val sourceList = stages.map(kv => drainExecutionStages(kv._2).map(s => kv._1 -> s))
-        Source.zipN(sourceList).map(s => SymphonyQLOutputValue.ObjectValue(s.toList))
-      case PureStage(value)                                                   => Source.single(value)
-
-  private def executeStage(
-    stage: Stage,
-    selectionSet: List[Selection],
-    fragments: Map[String, FragmentDefinition],
-    variableDefinitions: List[VariableDefinition],
-    variableValues: Map[String, SymphonyQLInputValue],
-    operationType: OperationType
-  )(implicit actorSystem: ActorSystem): Source[SymphonyQLOutputValue, NotUsed] = {
-
-    import actorSystem.dispatcher
+  def executeRequest(
+    request: ExecutionRequest
+  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Source[SymphonyQLOutputValue, NotUsed] = {
+    val fragments           = request.fragments
+    val variableDefinitions = request.variableDefinitions
+    val variableValues      = request.variableValues
+    val operationType       = request.operationType
 
     def loopExecuteStage(
       stage: Stage,
@@ -160,9 +81,27 @@ object Executor {
               obj.fold(p)(PureStage(_))
             case _ => p
           }
-    val executionStage = loopExecuteStage(stage, selectionSet, Map())
+
+    val executionStage = loopExecuteStage(request.stage, request.selectionSet, Map())
     drainExecutionStages(executionStage)
   }
+
+  private def drainExecutionStages(stage: ExecutionStage): Source[SymphonyQLOutputValue, NotUsed] =
+    stage match
+      case ExecutionStage.FutureStage(future)                                 =>
+        Source.future(future).flatMapConcat(drainExecutionStages)
+      case ExecutionStage.ScalaSourceStage(source)                            =>
+        val sourceStage = source.flatMapConcat(drainExecutionStages)
+        Source.single(SymphonyQLOutputValue.StreamValue(sourceStage))
+      case ExecutionStage.JavaSourceStage(source)                             =>
+        drainExecutionStages(ExecutionStage.ScalaSourceStage(source.asScala))
+      case ExecutionStage.ListStage(stages)                                   =>
+        val sourceList = stages.map(drainExecutionStages)
+        Source.zipN(sourceList).map(s => SymphonyQLOutputValue.ListValue(s.toList))
+      case ExecutionStage.ObjectStage(stages: List[(String, ExecutionStage)]) =>
+        val sourceList = stages.map(kv => drainExecutionStages(kv._2).map(s => kv._1 -> s))
+        Source.zipN(sourceList).map(s => SymphonyQLOutputValue.ObjectValue(s.toList))
+      case PureStage(value)                                                   => Source.single(value)
 
   private def extractVariables(
     arguments: Map[String, SymphonyQLInputValue],
@@ -207,20 +146,4 @@ object Executor {
       .values
       .toList
   }
-
-  private def getOperation(
-    operationName: Option[String] = None,
-    document: Document
-  ): Either[String, OperationDefinition] =
-    operationName match {
-      case Some(name) =>
-        document.definitions.collectFirst { case op: OperationDefinition if op.name.contains(name) => op }
-          .toRight(s"Unknown operation $name.")
-      case None       =>
-        document.definitions.collect { case op: OperationDefinition => op } match {
-          case head :: Nil => Right(head)
-          case _           => Left("Operation name is required.")
-        }
-    }
-
 }

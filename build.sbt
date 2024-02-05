@@ -37,7 +37,8 @@ lazy val root = (project in file("."))
     parser,
     server,
     validator,
-    examples
+    examples,
+    benchmarks
   )
   .settings(
     publish / skip := true,
@@ -89,4 +90,24 @@ lazy val examples = (project in file("examples"))
     publish / skip := true,
     commonSettings,
     commands ++= Commands.value
+  )
+
+lazy val benchmarks = project
+  .in(file("benchmarks"))
+  .settings(commonSettings)
+  .settings(
+    publish / skip := true
+  )
+  .dependsOn(core)
+  .enablePlugins(JmhPlugin)
+  .settings(
+    scalacOptions ++= Seq("-Xmax-inlines", "100"),
+    libraryDependencies ++= Seq(
+      "com.github.ghostdogpr" %% "caliban"       % "2.5.1",
+      "org.apache.pekko"      %% "pekko-stream"  % `pekko-core_Version`,
+      "org.parboiled"         %% "parboiled"     % `parboiled_Version`,
+      "org.sangria-graphql"   %% "sangria"       % "4.1.0",
+      "org.sangria-graphql"   %% "sangria-circe" % "1.3.2",
+      "io.circe"              %% "circe-parser"  % "0.14.6"
+    )
   )

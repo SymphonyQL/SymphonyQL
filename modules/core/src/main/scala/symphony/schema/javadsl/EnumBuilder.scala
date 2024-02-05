@@ -13,11 +13,11 @@ object EnumBuilder {
 }
 
 final class EnumBuilder[A] private {
-  private var name: String                                      = _
-  private var description: Option[String]                       = None
-  private var serialize: java.util.function.Function[A, String] = _
-  private var values: List[IntrospectionEnumValue]              = List.empty
-  private var directives: List[Directive]                       = List.empty
+  private var name: String                         = _
+  private var description: Option[String]          = None
+  private var serialize: JavaFunction[A, String]   = _
+  private var values: List[IntrospectionEnumValue] = List.empty
+  private var directives: List[Directive]          = List.empty
 
   def name(name: String): this.type = {
     this.name = name
@@ -29,7 +29,7 @@ final class EnumBuilder[A] private {
     this
   }
 
-  def serialize(serialize: java.util.function.Function[A, String]): this.type = {
+  def serialize(serialize: JavaFunction[A, String]): this.type = {
     this.serialize = serialize
     this
   }

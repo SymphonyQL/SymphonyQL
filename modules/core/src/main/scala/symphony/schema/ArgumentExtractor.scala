@@ -13,6 +13,13 @@ import java.util.Optional
 
 trait ArgumentExtractor[T] { self =>
 
+  def default(default: Option[String] = None): Either[ArgumentError, T] =
+    default
+      .map(
+        SymphonyQLParser.parseInputValue(_).flatMap(extract).left.map(e => ArgumentError(e.getMessage()))
+      )
+      .getOrElse(extract(NullValue))
+
   def extract(input: SymphonyQLInputValue): Either[ArgumentError, T]
 
   def map[A](f: T => A): ArgumentExtractor[A] = (input: SymphonyQLInputValue) => self.extract(input).map(f)
