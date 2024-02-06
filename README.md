@@ -49,7 +49,7 @@ For Scala3, we can automatically derive schemas by macros:
 ```scala 3
 // run query
 val graphql: SymphonyQL = SymphonyQL
-  .builder()
+  .newSymphonyQL()
   .addQuery(
       Queries(args =>
         Source.single(Character("abc-" + args.origin.map(_.toString).getOrElse(""), args.origin.getOrElse(Origin.BELT)))
