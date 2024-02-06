@@ -39,7 +39,7 @@ final class SymphonyQL private (rootSchema: SymphonyQLSchema) {
   def runWith(
     request: SymphonyQLRequest
   )(implicit
-    actorSystem: ActorSystem,
+    actorSystem: ActorSystem
   ): Future[SymphonyQLResponse[SymphonyQLError]] =
     import actorSystem.dispatcher
     for {
