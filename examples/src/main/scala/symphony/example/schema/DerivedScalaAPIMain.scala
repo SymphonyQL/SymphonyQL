@@ -2,7 +2,7 @@ package symphony.example.schema
 
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
-import symphony.{ example, * }
+import symphony.*
 import symphony.parser.*
 import symphony.schema.*
 import Users.*

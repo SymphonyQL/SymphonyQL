@@ -5,7 +5,6 @@ import symphony.parser.*
 import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.introspection.*
 import symphony.schema.*
-import symphony.schema.Stage.createObject
 import symphony.schema.javadsl.*
 // for parsing input parameters
 val argumentExtractor: ArgumentExtractor[FilterArgs] = {
