@@ -1,11 +1,12 @@
-package example.schema
+package symphony.example.schema
 
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.*
-import symphony.*
+import symphony.{ example, * }
 import symphony.parser.*
 import symphony.schema.*
 import Users.*
+
 import scala.concurrent.*
 import scala.concurrent.duration.Duration
 

@@ -64,13 +64,13 @@ class SchemaSpec extends AnyFunSpec with Matchers {
       case class A(b: B)
       case class B(c: C)
       case class C(d: Int)
-      hasType(Schema[Queries].lazyTpe(), "BInput", TypeKind.INPUT_OBJECT)
+      hasType(Schema[Queries].lazyType(), "BInput", TypeKind.INPUT_OBJECT)
     }
 
     it("nested types") {
       case class Queries(a: Generic[Option[Double]], b: Generic[Option[Int]])
       case class Generic[T](value: T)
-      hasType(Schema[Queries].lazyTpe(), "GenericOptionDouble", TypeKind.OBJECT)
+      hasType(Schema[Queries].lazyType(), "GenericOptionDouble", TypeKind.OBJECT)
     }
   }
 

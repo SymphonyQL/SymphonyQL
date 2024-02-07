@@ -21,14 +21,21 @@ inThisBuild(
 
 lazy val commonSettings =
   Seq(
+    Test / fork  := true,
+    run / fork   := true,
     scalaVersion := scala3_Version,
     scalacOptions ++= Seq(
       "-language:dynamics",
       "-explain",
-      "unchecked",
+      "-unchecked",
       "-deprecation",
-      "-feature"
-    )
+      "-feature",
+      "-explain-types",
+      "-Ykind-projector",
+      "-language:higherKinds",
+      "-language:existentials",
+      "-Xfatal-warnings"
+    ) ++ Seq("-Xmax-inlines", "100")
   )
 
 lazy val root = (project in file("."))
@@ -101,7 +108,6 @@ lazy val benchmarks = project
   .dependsOn(core)
   .enablePlugins(JmhPlugin)
   .settings(
-    scalacOptions ++= Seq("-Xmax-inlines", "100"),
     libraryDependencies ++= Seq(
       "com.github.ghostdogpr" %% "caliban"       % "2.5.1",
       "org.apache.pekko"      %% "pekko-stream"  % `pekko-core_Version`,

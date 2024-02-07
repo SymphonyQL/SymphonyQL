@@ -4,7 +4,7 @@ import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.EnumValueDefinition
 import symphony.parser.adt.Directive
 
-final case class IntrospectionEnumValue(
+final case class __EnumValue(
   name: String,
   description: Option[String],
   isDeprecated: Boolean,

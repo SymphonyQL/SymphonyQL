@@ -12,11 +12,11 @@ object InputObjectBuilder {
 }
 
 final class InputObjectBuilder[A] private {
-  private var name: String                                                 = _
-  private var description: Option[String]                                  = None
-  private var fields: List[JavaFunction[FieldBuilder, IntrospectionField]] = List.empty
-  private var directives: List[Directive]                                  = List.empty
-  private var isNullable: Boolean                                          = false
+  private var name: String                                      = _
+  private var description: Option[String]                       = None
+  private var fields: List[JavaFunction[FieldBuilder, __Field]] = List.empty
+  private var directives: List[Directive]                       = List.empty
+  private var isNullable: Boolean                               = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -28,13 +28,13 @@ final class InputObjectBuilder[A] private {
     this
   }
 
-  def field(field: JavaFunction[FieldBuilder, IntrospectionField]): this.type = {
+  def field(field: JavaFunction[FieldBuilder, __Field]): this.type = {
     this.fields = fields ::: List(field)
     this
   }
 
   @varargs
-  def fields(fields: JavaFunction[FieldBuilder, IntrospectionField]*): this.type = {
+  def fields(fields: JavaFunction[FieldBuilder, __Field]*): this.type = {
     this.fields = fields.toList
     this
   }

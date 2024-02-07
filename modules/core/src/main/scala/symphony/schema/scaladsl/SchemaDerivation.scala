@@ -18,22 +18,22 @@ trait SchemaDerivation extends BaseDerivation {
       case m: Mirror.SumOf[A]     =>
         lazy val members  = recurse[m.MirroredElemLabels, m.MirroredElemTypes]()
         lazy val info     = Macro.typeInfo[A]
-        lazy val subTypes = members.map(m => m._1 -> m._2.lazyTpe()).sortBy(_._1)
+        lazy val subTypes = members.map(m => m._1 -> m._2.lazyType()).sortBy(_._1)
         lazy val isEnum   = subTypes.forall {
           case (_, t)
-              if t.fields.apply(DeprecatedArgs(Some(true))).forall(_.isEmpty) &&
-                t.inputFields.apply(DeprecatedArgs(Some(true))).forall(_.isEmpty) =>
+              if t.fields.apply(__DeprecatedArgs(Some(true))).forall(_.isEmpty) &&
+                t.inputFields.apply(__DeprecatedArgs(Some(true))).forall(_.isEmpty) =>
             true
           case _ => false
         }
         new Schema[A] {
-          def tpe(isInput: Boolean): IntrospectionType =
+          def tpe(isInput: Boolean): __Type =
             if (isEnum && subTypes.nonEmpty) {
               Types.mkEnum(
                 Some(getName(info)),
                 None,
-                subTypes.collect { case (name, IntrospectionType(_, _, _, _, _, _, _, _, _, _, _, _)) =>
-                  IntrospectionEnumValue(name, None, false, None, None)
+                subTypes.collect { case (name, __Type(_, _, _, _, _, _, _, _, _, _, _, _)) =>
+                  __EnumValue(name, None, false, None, None)
                 },
                 Some(info.full)
               )
@@ -55,18 +55,18 @@ trait SchemaDerivation extends BaseDerivation {
         lazy val fields = recurse[m.MirroredElemLabels, m.MirroredElemTypes]()
         lazy val info   = Macro.typeInfo[A]
         new Schema[A] {
-          def tpe(isInput: Boolean): IntrospectionType =
+          def tpe(isInput: Boolean): __Type =
             if (isInput)
               Types.mkInputObject(
                 Some(customInputTypeName(getName(info))),
                 None,
                 fields.map { case (label, schema, _) =>
-                  IntrospectionInputValue(
+                  __InputValue(
                     label,
                     None,
                     () =>
-                      if (schema.optional) schema.lazyTpe(isInput)
-                      else Types.mkNonNull(schema.lazyTpe(isInput)),
+                      if (schema.optional) schema.lazyType(isInput)
+                      else Types.mkNonNull(schema.lazyType(isInput)),
                     None,
                     false,
                     None,
@@ -80,11 +80,11 @@ trait SchemaDerivation extends BaseDerivation {
                 Some(getName(info)),
                 None,
                 fields.map { case (label, schema, _) =>
-                  IntrospectionField(
+                  __Field(
                     label,
                     None,
-                    (_: DeprecatedArgs) => schema.arguments,
-                    () => if (schema.optional) schema.lazyTpe(isInput) else Types.mkNonNull(schema.lazyTpe(isInput))
+                    (_: __DeprecatedArgs) => schema.arguments,
+                    () => if (schema.optional) schema.lazyType(isInput) else Types.mkNonNull(schema.lazyType(isInput))
                   )
                 },
                 List.empty,

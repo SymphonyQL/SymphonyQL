@@ -7,35 +7,35 @@ import symphony.parser.adt.introspection.*
 
 object Types {
 
-  def mkList(underlying: IntrospectionType): IntrospectionType =
-    IntrospectionType(TypeKind.LIST, ofType = Some(underlying))
+  def mkList(underlying: __Type): __Type =
+    __Type(TypeKind.LIST, ofType = Some(underlying))
 
-  def mkNonNull(underlying: IntrospectionType): IntrospectionType =
-    IntrospectionType(TypeKind.NON_NULL, ofType = Some(underlying))
+  def mkNonNull(underlying: __Type): __Type =
+    __Type(TypeKind.NON_NULL, ofType = Some(underlying))
 
   def mkScalar(
     name: String,
     description: Option[String] = None,
     specifiedBy: Option[String] = None,
     directives: Option[List[Directive]] = None
-  ): IntrospectionType =
-    IntrospectionType(TypeKind.SCALAR, Some(name), description, specifiedBy = specifiedBy, directives = directives)
+  ): __Type =
+    __Type(TypeKind.SCALAR, Some(name), description, specifiedBy = specifiedBy, directives = directives)
 
-  val boolean: IntrospectionType = mkScalar("Boolean")
-  val string: IntrospectionType  = mkScalar("String")
-  val int: IntrospectionType     = mkScalar("Int")
-  val long: IntrospectionType    = mkScalar("Long")
-  val float: IntrospectionType   = mkScalar("Float")
-  val double: IntrospectionType  = mkScalar("Double")
+  val boolean: __Type = mkScalar("Boolean")
+  val string: __Type  = mkScalar("String")
+  val int: __Type     = mkScalar("Int")
+  val long: __Type    = mkScalar("Long")
+  val float: __Type   = mkScalar("Float")
+  val double: __Type  = mkScalar("Double")
 
   def mkEnum(
     name: Option[String],
     description: Option[String],
-    values: List[IntrospectionEnumValue],
+    values: List[__EnumValue],
     origin: Option[String],
     directives: Option[List[Directive]] = None
-  ): IntrospectionType =
-    IntrospectionType(
+  ): __Type =
+    __Type(
       TypeKind.ENUM,
       name,
       description,
@@ -48,12 +48,12 @@ object Types {
   def mkObject(
     name: Option[String],
     description: Option[String],
-    fields: List[IntrospectionField],
+    fields: List[__Field],
     directives: List[Directive],
     origin: Option[String] = None,
-    interfaces: () => Option[List[IntrospectionType]] = () => Some(Nil)
-  ): IntrospectionType =
-    IntrospectionType(
+    interfaces: () => Option[List[__Type]] = () => Some(Nil)
+  ): __Type =
+    __Type(
       TypeKind.OBJECT,
       name,
       description,
@@ -67,13 +67,13 @@ object Types {
   def mkField(
     name: String,
     description: Option[String],
-    arguments: List[IntrospectionInputValue],
-    `type`: () => IntrospectionType,
+    arguments: List[__InputValue],
+    `type`: () => __Type,
     isDeprecated: Boolean = false,
     deprecationReason: Option[String] = None,
     directives: Option[List[Directive]] = None
-  ): IntrospectionField =
-    IntrospectionField(
+  ): __Field =
+    __Field(
       name,
       description,
       args =>
@@ -88,11 +88,11 @@ object Types {
   def mkInputObject(
     name: Option[String],
     description: Option[String],
-    fields: List[IntrospectionInputValue],
+    fields: List[__InputValue],
     origin: Option[String] = None,
     directives: Option[List[Directive]] = None
-  ): IntrospectionType =
-    IntrospectionType(
+  ): __Type =
+    __Type(
       TypeKind.INPUT_OBJECT,
       name,
       description,
@@ -106,11 +106,11 @@ object Types {
   def mkUnion(
     name: Option[String],
     description: Option[String],
-    subTypes: List[IntrospectionType],
+    subTypes: List[__Type],
     origin: Option[String] = None,
     directives: Option[List[Directive]] = None
-  ): IntrospectionType =
-    IntrospectionType(
+  ): __Type =
+    __Type(
       TypeKind.UNION,
       name,
       description,
@@ -122,12 +122,12 @@ object Types {
   def mkInterface(
     name: Option[String],
     description: Option[String],
-    fields: () => List[IntrospectionField],
-    subTypes: List[IntrospectionType],
+    fields: () => List[__Field],
+    subTypes: List[__Type],
     origin: Option[String] = None,
     directives: Option[List[Directive]] = None
-  ): IntrospectionType =
-    IntrospectionType(
+  ): __Type =
+    __Type(
       TypeKind.INTERFACE,
       name,
       description,
@@ -138,7 +138,7 @@ object Types {
       directives = directives
     )
 
-  def collectTypes(t: IntrospectionType, existingTypes: List[IntrospectionType] = Nil): List[IntrospectionType] =
+  def collectTypes(t: __Type, existingTypes: List[__Type] = Nil): List[__Type] =
     t.kind match {
       case TypeKind.SCALAR | TypeKind.ENUM   =>
         t.name.fold(existingTypes)(_ => if (existingTypes.exists(same(t, _))) existingTypes else t :: existingTypes)
@@ -176,22 +176,22 @@ object Types {
     }
 
   @tailrec
-  def same(t1: IntrospectionType, t2: IntrospectionType): Boolean =
+  def same(t1: __Type, t2: __Type): Boolean =
     if (t1.kind == t2.kind && t1.ofType.nonEmpty)
       same(t1.ofType.getOrElse(t1), t2.ofType.getOrElse(t2))
     else
       t1.name == t2.name && t1.kind == t2.kind && (t1.origin.isEmpty || t2.origin.isEmpty || t1.origin == t2.origin)
 
-  def innerType(t: IntrospectionType): IntrospectionType = t.ofType.fold(t)(innerType)
+  def innerType(t: __Type): __Type = t.ofType.fold(t)(innerType)
 
-  def listOf(t: IntrospectionType): Option[IntrospectionType] =
+  def listOf(t: __Type): Option[__Type] =
     t.kind match {
       case TypeKind.LIST     => t.ofType
       case TypeKind.NON_NULL => t.ofType.flatMap(listOf)
       case _                 => None
     }
 
-  def name(t: IntrospectionType): String =
+  def name(t: __Type): String =
     (t.kind match {
       case TypeKind.LIST     => t.ofType.map("ListOf" + name(_))
       case TypeKind.NON_NULL => t.ofType.map(name)

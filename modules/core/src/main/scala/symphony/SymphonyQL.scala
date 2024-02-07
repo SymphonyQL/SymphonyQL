@@ -118,8 +118,8 @@ object SymphonyQL {
 
   private def mergeOperation[R](op: Option[Operation], resolver: R, schema: Schema[R]): Option[Operation] =
     Some(
-      op.fold(Operation(schema.lazyTpe(), schema.analyze(resolver)))(s =>
-        s ++ Operation(schema.lazyTpe(), schema.analyze(resolver))
+      op.fold(Operation(schema.lazyType(), schema.analyze(resolver)))(s =>
+        s ++ Operation(schema.lazyType(), schema.analyze(resolver))
       )
     )
 
@@ -148,9 +148,9 @@ object SymphonyQL {
       rootResolver: SymphonyQLResolver[Q, M, S]
     ): this.type = {
       rootSchema = rootSchema ++ SymphonyQLSchema(
-        rootResolver.queryResolver.map(r => Operation(r._2.lazyTpe(), r._2.analyze(r._1))),
-        rootResolver.mutationResolver.map(r => Operation(r._2.lazyTpe(), r._2.analyze(r._1))),
-        rootResolver.subscriptionResolver.map(r => Operation(r._2.lazyTpe(), r._2.analyze(r._1)))
+        rootResolver.queryResolver.map(r => Operation(r._2.lazyType(), r._2.analyze(r._1))),
+        rootResolver.mutationResolver.map(r => Operation(r._2.lazyType(), r._2.analyze(r._1))),
+        rootResolver.subscriptionResolver.map(r => Operation(r._2.lazyType(), r._2.analyze(r._1)))
       )
       this
     }

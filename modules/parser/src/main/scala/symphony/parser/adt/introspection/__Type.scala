@@ -11,16 +11,16 @@ import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.adt.Type.*
 
-final case class IntrospectionType(
+final case class __Type(
   kind: TypeKind,
   name: Option[String] = None,
   description: Option[String] = None,
-  fields: DeprecatedArgs => Option[List[IntrospectionField]] = _ => None,
-  interfaces: () => Option[List[IntrospectionType]] = () => None,
-  possibleTypes: Option[List[IntrospectionType]] = None,
-  enumValues: DeprecatedArgs => Option[List[IntrospectionEnumValue]] = _ => None,
-  inputFields: DeprecatedArgs => Option[List[IntrospectionInputValue]] = _ => None,
-  ofType: Option[IntrospectionType] = None,
+  fields: __DeprecatedArgs => Option[List[__Field]] = _ => None,
+  interfaces: () => Option[List[__Type]] = () => None,
+  possibleTypes: Option[List[__Type]] = None,
+  enumValues: __DeprecatedArgs => Option[List[__EnumValue]] = _ => None,
+  inputFields: __DeprecatedArgs => Option[List[__InputValue]] = _ => None,
+  ofType: Option[__Type] = None,
   specifiedBy: Option[String] = None,
   directives: Option[List[Directive]] = None,
   origin: Option[String] = None
@@ -28,7 +28,7 @@ final case class IntrospectionType(
   override lazy val hashCode: Int = super.hashCode()
 
   @targetName("add")
-  def ++(that: IntrospectionType): IntrospectionType = IntrospectionType(
+  def ++(that: __Type): __Type = __Type(
     kind,
     (name ++ that.name).reduceOption((_, b) => b),
     (description ++ that.description).reduceOption((_, b) => b),
@@ -103,7 +103,7 @@ final case class IntrospectionType(
             description,
             name.getOrElse(""),
             directives.getOrElse(Nil),
-            enumValues(DeprecatedArgs(Some(true))).getOrElse(Nil).map(_.toEnumValueDefinition)
+            enumValues(__DeprecatedArgs(Some(true))).getOrElse(Nil).map(_.toEnumValueDefinition)
           )
         )
       case TypeKind.INPUT_OBJECT =>
@@ -118,13 +118,13 @@ final case class IntrospectionType(
       case _                     => None
     }
 
-  lazy val list: IntrospectionType = IntrospectionType(TypeKind.LIST, ofType = Some(self))
+  lazy val list: __Type = __Type(TypeKind.LIST, ofType = Some(self))
 
-  lazy val nonNull: IntrospectionType = IntrospectionType(TypeKind.NON_NULL, ofType = Some(self))
+  lazy val nonNull: __Type = __Type(TypeKind.NON_NULL, ofType = Some(self))
 
-  lazy val allFields: List[IntrospectionField] =
-    fields(DeprecatedArgs(Some(true))).getOrElse(Nil)
+  lazy val allFields: List[__Field] =
+    fields(__DeprecatedArgs(Some(true))).getOrElse(Nil)
 
-  lazy val allInputFields: List[IntrospectionInputValue] =
-    inputFields(DeprecatedArgs(Some(true))).getOrElse(Nil)
+  lazy val allInputFields: List[__InputValue] =
+    inputFields(__DeprecatedArgs(Some(true))).getOrElse(Nil)
 }

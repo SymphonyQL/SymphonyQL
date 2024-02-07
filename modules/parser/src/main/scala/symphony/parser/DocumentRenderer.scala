@@ -13,7 +13,7 @@ import symphony.parser.adt.Type.{ innerType, NamedType }
 
 object DocumentRenderer extends SymphonyQLRenderer[Document] {
 
-  def renderType(t: IntrospectionType): String = {
+  def renderType(t: __Type): String = {
     val builder = new StringBuilder
     __typeNameRenderer.unsafeRender(t, None, builder)
     builder.toString()
@@ -63,7 +63,7 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
   lazy val directiveDefinitionsRenderer: SymphonyQLRenderer[List[DirectiveDefinition]] =
     directiveDefinitionRenderer.list(SymphonyQLRenderer.newlineOrSpace)
 
-  lazy val typesRenderer: SymphonyQLRenderer[List[IntrospectionType]] =
+  lazy val typesRenderer: SymphonyQLRenderer[List[__Type]] =
     typeDefinitionsRenderer.contramap(_.flatMap(_.toTypeDefinition))
 
   lazy val directivesRenderer: SymphonyQLRenderer[List[Directive]] =
@@ -119,9 +119,9 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
     fragmentRenderer.list.contramap(_.fragmentDefinitions)
   )
 
-  private lazy val __typeNameRenderer: SymphonyQLRenderer[IntrospectionType] =
-    (value: IntrospectionType, indent: Option[Int], write: StringBuilder) => {
-      def loop(typ: Option[IntrospectionType]): Unit = typ match {
+  private lazy val __typeNameRenderer: SymphonyQLRenderer[__Type] =
+    (value: __Type, indent: Option[Int], write: StringBuilder) => {
+      def loop(typ: Option[__Type]): Unit = typ match {
         case Some(t) =>
           t.kind match {
             case TypeKind.NON_NULL =>

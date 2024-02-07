@@ -9,10 +9,10 @@ final case class SymphonyQLSchema(
   query: Option[Operation],
   mutation: Option[Operation],
   subscription: Option[Operation],
-  additionalTypes: List[IntrospectionType] = Nil
+  additionalTypes: List[__Type] = Nil
 ) {
 
-  def collectTypes: List[IntrospectionType] =
+  def collectTypes: List[__Type] =
     (
       query.map(op => Types.collectTypes(op.opType)).toList.flatten ++
         mutation
@@ -33,7 +33,7 @@ final case class SymphonyQLSchema(
       (subscription ++ that.subscription).reduceOption(_ ++ _)
     )
 
-  def types: List[IntrospectionType] = {
+  def types: List[__Type] = {
     val empty = additionalTypes
     (query.map(_.opType).fold(empty)(Types.collectTypes(_)) ++
       mutation.map(_.opType).fold(empty)(Types.collectTypes(_)) ++

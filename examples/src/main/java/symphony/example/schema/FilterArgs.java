@@ -1,4 +1,4 @@
-package example.schema;
+package symphony.example.schema;
 
 import java.util.Optional;
 

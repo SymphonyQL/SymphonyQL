@@ -30,12 +30,12 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
   describe("Simple Derivation") {
     it("derives simple input schema") {
       val inputSchema = Schema.derived[UserQueryInput]
-      hasType(inputSchema.lazyTpe(true), "UserQueryInputInput", TypeKind.INPUT_OBJECT)
+      hasType(inputSchema.lazyType(true), "UserQueryInputInput", TypeKind.INPUT_OBJECT)
     }
 
     it("derives simple output schema") {
       val outputSchema = Schema.derived[UserOutput]
-      hasType(outputSchema.lazyTpe(), "UserOutput", TypeKind.OBJECT)
+      hasType(outputSchema.lazyType(), "UserOutput", TypeKind.OBJECT)
     }
 
     it("derives simple func schema") {
@@ -44,12 +44,12 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
         Schema[UserQueryInput],
         Schema[UserOutput]
       )
-      hasType(funSchema.lazyTpe(), "UserOutput", TypeKind.OBJECT)
+      hasType(funSchema.lazyType(), "UserOutput", TypeKind.OBJECT)
     }
 
     it("derives simple root schema with simple resolvers") {
       val objectSchema   = Schema.derived[SimpleUserQueryResolver]
-      val pekkoSchemaDoc = DocumentRenderer.renderType(objectSchema.lazyTpe())
+      val pekkoSchemaDoc = DocumentRenderer.renderType(objectSchema.lazyType())
       val resolver       = SimpleUserQueryResolver(
         UserOutput("id", "symphony obj"),
         Future.successful(UserOutput("id", "symphony future"))

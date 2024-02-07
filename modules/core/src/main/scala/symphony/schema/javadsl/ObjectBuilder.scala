@@ -14,11 +14,11 @@ object ObjectBuilder {
 }
 
 final class ObjectBuilder[A] private {
-  private var name: String                                                                           = _
-  private var description: Option[String]                                                            = None
-  private var fields: List[(JavaFunction[FieldBuilder, IntrospectionField], JavaFunction[A, Stage])] = List.empty
-  private var directives: List[Directive]                                                            = List.empty
-  private var isNullable: Boolean                                                                    = false
+  private var name: String                                                                = _
+  private var description: Option[String]                                                 = None
+  private var fields: List[(JavaFunction[FieldBuilder, __Field], JavaFunction[A, Stage])] = List.empty
+  private var directives: List[Directive]                                                 = List.empty
+  private var isNullable: Boolean                                                         = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -31,7 +31,16 @@ final class ObjectBuilder[A] private {
   }
 
   def field(
-    field: JavaFunction[FieldBuilder, IntrospectionField],
+    field: JavaFunction[FieldBuilder, __Field]
+  ): this.type = {
+    this.fields = fields ::: List(field -> new JavaFunction[A, Stage] {
+      override def apply(t: A): Stage = Stage.createNull()
+    })
+    this
+  }
+
+  def fieldWithArg(
+    field: JavaFunction[FieldBuilder, __Field],
     stage: JavaFunction[A, Stage]
   ): this.type = {
     this.fields = fields ::: List(field -> stage)

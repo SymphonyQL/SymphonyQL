@@ -1,19 +1,18 @@
-package example.schema;
-
-import org.apache.pekko.actor.*;
-import org.apache.pekko.stream.javadsl.*;
+package symphony.example.schema;
 
 import scala.Option;
 import scala.util.Left;
 import scala.util.Right;
+
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.stream.javadsl.Source;
 
 import symphony.SymphonyQL;
 import symphony.SymphonyQLRequest;
 import symphony.parser.SymphonyQLError;
 import symphony.parser.SymphonyQLInputValue;
 import symphony.parser.SymphonyQLValue;
-import symphony.parser.adt.introspection.IntrospectionEnumValue;
-import symphony.parser.adt.introspection.IntrospectionField;
+import symphony.parser.adt.introspection.*;
 import symphony.schema.ArgumentExtractor;
 import symphony.schema.Schema;
 import symphony.schema.Stage;
@@ -22,7 +21,6 @@ import symphony.schema.javadsl.FieldBuilder;
 import symphony.schema.javadsl.InputObjectBuilder;
 import symphony.schema.javadsl.ObjectBuilder;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -43,16 +41,16 @@ public class JavaAPIMain {
                 .name("Origin")
                 .serialize((Function<Origin, String>) Enum::name)
                 .values(
-                        IntrospectionEnumValue.apply("EARTH", Option.empty(), false, Option.empty(), Option.empty()),
-                        IntrospectionEnumValue.apply("MARS", Option.empty(), false, Option.empty(), Option.empty()),
-                        IntrospectionEnumValue.apply("BELT", Option.empty(), false, Option.empty(), Option.empty())
+                        __EnumValue.apply("EARTH", Option.empty(), false, Option.empty(), Option.empty()),
+                        __EnumValue.apply("MARS", Option.empty(), false, Option.empty(), Option.empty()),
+                        __EnumValue.apply("BELT", Option.empty(), false, Option.empty(), Option.empty())
                 ).build();
     }
 
     public static Schema<FilterArgs> inputSchema(Schema<Origin> enumSchema) {
         return InputObjectBuilder.<FilterArgs>newInputObject()
                 .name("FilterArgs")
-                .field((Function<FieldBuilder, IntrospectionField>) builder -> builder.name("name").schema(Schema.createOptional(enumSchema)).build())
+                .field((Function<FieldBuilder, __Field>) builder -> builder.name("name").schema(Schema.createOptional(enumSchema)).build())
                 .build();
     }
 
@@ -60,35 +58,22 @@ public class JavaAPIMain {
         return ObjectBuilder
                 .<CharacterOutput>newObject()
                 .name("CharacterOutput")
-                .field(
-                        (Function<FieldBuilder, IntrospectionField>) builder -> builder.name("name").schema(Schema.StringSchema()).build(),
-                        (Function<CharacterOutput, Stage>) character -> Stage.createNull()
-                ).field(
-                        (Function<FieldBuilder, IntrospectionField>) builder -> builder.name("origin").schema(enumSchema).build(),
-                        (Function<CharacterOutput, Stage>) character -> Stage.createNull()
-                ).build();
+                .field((Function<FieldBuilder, __Field>) builder -> builder.name("name").schema(Schema.StringSchema()).build())
+                .field((Function<FieldBuilder, __Field>) builder -> builder.name("origin").schema(enumSchema).build())
+                .build();
     }
 
     public static Schema<Queries> queriesSchema(ArgumentExtractor<FilterArgs> argumentExtractor, Schema<FilterArgs> inputSchema, Schema<CharacterOutput> outputSchema) {
         return ObjectBuilder.<Queries>newObject()
                 .name("Queries")
-                .field(
-                        (Function<FieldBuilder, IntrospectionField>) builder -> builder
+                .fieldWithArg(
+                        (Function<FieldBuilder, __Field>) builder -> builder
                                 .name("characters")
                                 .hasArgs(true)
                                 .schema(Schema.createFunction(argumentExtractor, inputSchema, Schema.createSource(outputSchema)))
                                 .build()
                         ,
-                        (Function<Queries, Stage>) queries -> Stage.createFunction(input -> {
-                            var args = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue.apply(input)).toOption().get();
-                            var source = queries.characters().apply(args).map(character -> Stage.createObject(
-                                    "CharacterOutput", Map.of(
-                                            "name", Stage.createPure(SymphonyQLValue.StringValue.apply(character.name())),
-                                            "origin", Stage.createPure(SymphonyQLValue.EnumValue.apply(character.origin().name()))
-                                    )
-                            ));
-                            return Stage.createJavaSource(source);
-                        })
+                        (Function<Queries, Stage>) queries -> Stage.derivesStageByReflection(argumentExtractor, args -> queries.characters().apply(args))
 
                 ).build();
     }

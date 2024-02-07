@@ -1,10 +1,10 @@
-package example.schema
+package symphony.example.schema
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.*
 
 object Users {
-  enum Origin extends Enum[Origin] {
+  enum Origin {
     case EARTH, MARS, BELT
   }
 

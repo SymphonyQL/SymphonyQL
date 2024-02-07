@@ -91,6 +91,17 @@ trait GenericArgExtractor extends ArgExtractorDerivation {
     case other               => Left(ArgumentError(s"Cannot build a Boolean from input $other"))
   }
 
+  implicit lazy val BigInt: ArgumentExtractor[BigInt] = {
+    case value: IntValue => Right(value.toBigInt)
+    case other           => Left(ArgumentError(s"Cannot build a BigInt from input $other"))
+  }
+
+  implicit lazy val BigDecimal: ArgumentExtractor[BigDecimal] = {
+    case value: IntValue   => Right(scala.math.BigDecimal(value.toBigInt))
+    case value: FloatValue => Right(value.toBigDecimal)
+    case other             => Left(ArgumentError(s"Cannot build a BigDecimal from input $other"))
+  }
+
   implicit def mkOption[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Option[A]] = {
     case SymphonyQLValue.NullValue => Right(None)
     case value                     => ae.extract(value).map(Some(_))

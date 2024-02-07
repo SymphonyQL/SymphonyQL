@@ -4,11 +4,11 @@ import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.adt.Directive
 
-final case class IntrospectionField(
+final case class __Field(
   name: String,
   description: Option[String],
-  args: DeprecatedArgs => List[IntrospectionInputValue],
-  tpe: () => IntrospectionType,
+  args: __DeprecatedArgs => List[__InputValue],
+  tpe: () => __Type,
   isDeprecated: Boolean = false,
   deprecationReason: Option[String] = None,
   directives: Option[List[Directive]] = None
@@ -30,9 +30,9 @@ final case class IntrospectionField(
   def toInputValueDefinition: InputValueDefinition =
     InputValueDefinition(description, name, _type.toType(), None, directives.getOrElse(Nil))
 
-  lazy val allArgs: List[IntrospectionInputValue] =
-    args(DeprecatedArgs(Some(true)))
+  lazy val allArgs: List[__InputValue] =
+    args(__DeprecatedArgs(Some(true)))
 
-  private[symphony] lazy val _type: IntrospectionType = tpe()
+  private[symphony] lazy val _type: __Type = tpe()
 
 }

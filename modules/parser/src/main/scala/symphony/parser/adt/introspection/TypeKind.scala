@@ -23,6 +23,6 @@ object TypeKind {
     case TypeKind.OBJECT       => 8
   }
 
-  implicit val typeOrdering: Ordering[IntrospectionType] =
+  implicit val typeOrdering: Ordering[__Type] =
     Ordering.by(o => (o.kind, o.name.getOrElse("")))
 }

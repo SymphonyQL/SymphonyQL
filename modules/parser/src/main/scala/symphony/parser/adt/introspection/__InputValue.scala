@@ -8,10 +8,10 @@ import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.InputValueDefinition
 import symphony.parser.adt.Directive
 
-final case class IntrospectionInputValue(
+final case class __InputValue(
   name: String,
   description: Option[String],
-  tpe: () => IntrospectionType,
+  tpe: () => __Type,
   defaultValue: Option[String],
   isDeprecated: Boolean = false,
   deprecationReason: Option[String] = None,
@@ -31,5 +31,5 @@ final case class IntrospectionInputValue(
     InputValueDefinition(description, name, _type.toType(), default, allDirectives)
   }
 
-  private[symphony] lazy val _type: IntrospectionType = tpe()
+  private[symphony] lazy val _type: __Type = tpe()
 }

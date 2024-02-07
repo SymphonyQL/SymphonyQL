@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers.shouldEqual
 import symphony.parser.adt.introspection.*
 import symphony.schema.Types
 
-def hasType(tpe: IntrospectionType, name: String, kind: TypeKind): Assertion = {
+def hasType(tpe: __Type, name: String, kind: TypeKind): Assertion = {
   val allTypes                         = Types.collectTypes(tpe)
   val nameKinds: Map[String, TypeKind] = allTypes.map(t => t.name.getOrElse("") -> t.kind).toMap
   val has                              = nameKinds.get(name).contains(kind)

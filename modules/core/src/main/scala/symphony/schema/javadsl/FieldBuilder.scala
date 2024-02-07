@@ -57,12 +57,12 @@ final class FieldBuilder private {
     this
   }
 
-  def build(): IntrospectionField =
+  def build(): __Field =
     Types.mkField(
       name,
       description,
       if (hasArgs) schema.arguments else List.empty,
-      () => if (schema.optional) schema.lazyTpe() else Types.mkNonNull(schema.lazyTpe()),
+      () => if (schema.optional) schema.lazyType() else Types.mkNonNull(schema.lazyType()),
       isDeprecated,
       deprecationReason,
       Option(directives)

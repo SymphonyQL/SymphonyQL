@@ -2,11 +2,14 @@ package symphony.schema
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.{ javadsl, scaladsl }
+import symphony.SymphonyQLSchema
 import symphony.parser.*
 import symphony.parser.SymphonyQLError.*
 import symphony.parser.SymphonyQLOutputValue.*
 import symphony.parser.SymphonyQLValue.*
-import symphony.parser.adt.Directive
+import symphony.parser.adt.*
+import symphony.parser.adt.Definition.ExecutableDefinition.*
+import symphony.parser.adt.Selection.Field
 import symphony.parser.adt.introspection.*
 import symphony.schema.Stage.*
 import symphony.schema.scaladsl.*
@@ -18,25 +21,35 @@ import scala.jdk.FutureConverters.*
 import scala.jdk.OptionConverters.*
 
 trait Schema[T] { self =>
-  private lazy val tpe: IntrospectionType      = tpe()
-  private lazy val inputTpe: IntrospectionType = tpe(true)
+  private lazy val tpe: __Type      = tpe()
+  private lazy val inputTpe: __Type = tpe(true)
 
-  def optional: Boolean                                    = false
-  def tpe(isInput: Boolean = false): IntrospectionType
-  def lazyTpe(isInput: Boolean = false): IntrospectionType = if (isInput) inputTpe else tpe
-  def arguments: List[IntrospectionInputValue]             = Nil
+  def optional: Boolean                          = false
+  def tpe(isInput: Boolean = false): __Type
+  def lazyType(isInput: Boolean = false): __Type = if (isInput) inputTpe else tpe
+  def arguments: List[__InputValue]              = Nil
   def analyze(value: T): Stage
 
   def contramap[A](f: A => T): Schema[A] = new Schema[A] {
-    override def optional: Boolean                        = self.optional
-    override def arguments: List[IntrospectionInputValue] = self.arguments
-    override def tpe(isInput: Boolean): IntrospectionType = self.lazyTpe(isInput)
-    override def analyze(value: A): Stage                 = self.analyze(f(value))
+    override def optional: Boolean             = self.optional
+    override def arguments: List[__InputValue] = self.arguments
+    override def tpe(isInput: Boolean): __Type = self.lazyType(isInput)
+    override def analyze(value: A): Stage      = self.analyze(f(value))
   }
 }
 
 object Schema extends GenericSchema with SchemaJavaAPI {
   def apply[T](implicit schema: Schema[T]): Schema[T] = schema
+}
+
+trait IntrospectionSchemaDerivation {
+
+  implicit lazy val __inputValueSchema: Schema[SymphonyQLInputValue] = Schema.gen
+  implicit lazy val __introspectionEnumValue: Schema[__EnumValue]    = Schema.gen
+  implicit lazy val __introspectionField: Schema[__Field]            = Schema.gen
+  implicit lazy val __introspectionType: Schema[__Type]              = Schema.gen
+  implicit lazy val __introspectionSchema: Schema[__Schema]          = Schema.gen
+  val introspection: Schema[__Introspection]                         = Schema.gen
 }
 
 trait SchemaJavaAPI {
@@ -51,6 +64,14 @@ trait SchemaJavaAPI {
     toOutput: java.util.function.Function[A, SymphonyQLOutputValue]
   ): Schema[A] =
     mkScalar(name, description.toScala, toOutput.asScala)
+
+  /**
+   * Java API
+   */
+  def createFunctionUnitSchema[A](
+    schema: Schema[A]
+  ): Schema[java.util.function.Supplier[A]] =
+    mkFunctionUnitSchema(schema).contramap(_.asScala)
 
   /**
    * Java API
@@ -72,12 +93,24 @@ trait SchemaJavaAPI {
 
   /**
    * Java API
+   */
+  def createMapSchema[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[java.util.Map[A, B]] =
+    mkMapSchema[A, B](keySchema, valueSchema).contramap(kv => kv.asScala.toMap)
+
+    /**
+     * Java API
+     */
+  def createTuple2Schema[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)]           =
+    mkTuple2Schema[A, B](keySchema, valueSchema)
+
+  /**
+   * Java API
    * Unsafe Nullable
    */
   def createNullable[A](schema: Schema[A]): Schema[A] = new Schema[A] {
-    override def optional: Boolean                        = true
-    override def tpe(isInput: Boolean): IntrospectionType = schema.lazyTpe(isInput)
-    override def analyze(value: A): Stage                 = schema.analyze(value)
+    override def optional: Boolean             = true
+    override def tpe(isInput: Boolean): __Type = schema.lazyType(isInput)
+    override def analyze(value: A): Stage      = schema.analyze(value)
   }
 
   /**
@@ -107,25 +140,28 @@ trait SchemaJavaAPI {
 }
 trait GenericSchema extends SchemaDerivation {
 
-  implicit val UnitSchema: Schema[Unit]       = mkScalar("Unit", None, _ => ObjectValue(Nil))
-  implicit val BooleanSchema: Schema[Boolean] = mkScalar("Boolean", None, BooleanValue.apply)
-  implicit val StringSchema: Schema[String]   = mkScalar("String", None, StringValue.apply)
-  implicit val IntSchema: Schema[Int]         = mkScalar("Int", None, IntValue(_))
-  implicit val LongSchema: Schema[Long]       = mkScalar("Long", None, IntValue(_))
-  implicit val DoubleSchema: Schema[Double]   = mkScalar("Float", None, FloatValue(_))
-  implicit val FloatSchema: Schema[Float]     = mkScalar("Float", None, FloatValue(_))
+  implicit val UnitSchema: Schema[Unit]             = mkScalar("Unit", None, _ => ObjectValue(Nil))
+  implicit val BooleanSchema: Schema[Boolean]       = mkScalar("Boolean", None, BooleanValue.apply)
+  implicit val StringSchema: Schema[String]         = mkScalar("String", None, StringValue.apply)
+  implicit val IntSchema: Schema[Int]               = mkScalar("Int", None, IntValue(_))
+  implicit val LongSchema: Schema[Long]             = mkScalar("Long", None, IntValue(_))
+  implicit val DoubleSchema: Schema[Double]         = mkScalar("Float", None, FloatValue(_))
+  implicit val FloatSchema: Schema[Float]           = mkScalar("Float", None, FloatValue(_))
+  implicit val ShortSchema: Schema[Short]           = mkScalar("Short", None, IntValue(_))
+  implicit val BigIntSchema: Schema[BigInt]         = mkScalar("BigInt", None, IntValue(_))
+  implicit val BigDecimalSchema: Schema[BigDecimal] = mkScalar("BigDecimal", None, FloatValue(_))
 
   def mkEnum[A](
     name: String,
     description: Option[String] = None,
-    values: List[IntrospectionEnumValue],
+    values: List[__EnumValue],
     repr: A => String,
     directives: List[Directive] = List.empty
   ): Schema[A] = new Schema[A] {
-    private val validEnumValues                           = values.map(_.name).toSet
-    override def tpe(isInput: Boolean): IntrospectionType =
+    private val validEnumValues                = values.map(_.name).toSet
+    override def tpe(isInput: Boolean): __Type =
       Types.mkEnum(Some(name), description, values, None, if (directives.nonEmpty) Some(directives) else None)
-    override def analyze(value: A): Stage                 = {
+    override def analyze(value: A): Stage      = {
       val asString = repr(value)
       if (validEnumValues.contains(asString)) PureStage(EnumValue(asString))
       else Stage.FutureStage(Future.failed(SymphonyQLError.ExecutionError(s"Invalid enum value '$asString'")))
@@ -134,25 +170,25 @@ trait GenericSchema extends SchemaDerivation {
 
   def mkScalar[A](name: String, description: Option[String], toOutput: A => SymphonyQLOutputValue): Schema[A] =
     new Schema[A] {
-      override def tpe(isInput: Boolean): IntrospectionType = Types.mkScalar(name, description)
-      override def analyze(value: A): Stage                 = PureStage(toOutput(value))
+      override def tpe(isInput: Boolean): __Type = Types.mkScalar(name, description)
+      override def analyze(value: A): Stage      = PureStage(toOutput(value))
     }
 
   def mkObject[A](
     name: String,
     description: Option[String],
-    fields: Boolean => List[(IntrospectionField, A => Stage)],
+    fields: Boolean => List[(__Field, A => Stage)],
     directives: List[Directive] = List.empty
   ): Schema[A] =
     new Schema[A] {
-      override def tpe(isInput: Boolean): IntrospectionType =
+      override def tpe(isInput: Boolean): __Type =
         if (isInput)
           Types.mkInputObject(
             Some(if (name.endsWith("Input")) name else s"${name}Input"),
             description,
             fields(isInput)
               .map(_._1)
-              .map(f => IntrospectionInputValue(f.name, f.description, f.tpe, None, directives = f.directives)),
+              .map(f => __InputValue(f.name, f.description, f.tpe, None, directives = f.directives)),
             directives = Some(directives)
           )
         else
@@ -163,9 +199,9 @@ trait GenericSchema extends SchemaDerivation {
     }
 
   implicit def mkOption[A](implicit schema: Schema[A]): Schema[Option[A]] = new Schema[Option[A]] {
-    override def optional: Boolean                        = true
-    override def tpe(isInput: Boolean): IntrospectionType = schema.lazyTpe(isInput)
-    override def analyze(value: Option[A]): Stage         =
+    override def optional: Boolean                = true
+    override def tpe(isInput: Boolean): __Type    = schema.lazyType(isInput)
+    override def analyze(value: Option[A]): Stage =
       value match {
         case Some(value) => schema.analyze(value)
         case None        => NullStage
@@ -180,11 +216,11 @@ trait GenericSchema extends SchemaDerivation {
   implicit def mkSeq[A](implicit schema: Schema[A]): Schema[Seq[A]] = mkList[A](schema).contramap(_.toList)
 
   implicit def mkList[A](implicit schema: Schema[A]): Schema[List[A]] = new Schema[List[A]] {
-    override def tpe(isInput: Boolean): IntrospectionType = {
-      val t = schema.lazyTpe(isInput)
+    override def tpe(isInput: Boolean): __Type  = {
+      val t = schema.lazyType(isInput)
       (if (schema.optional) t else t.nonNull).list
     }
-    override def analyze(value: List[A]): Stage           = ListStage(value.map(schema.analyze))
+    override def analyze(value: List[A]): Stage = ListStage(value.map(schema.analyze))
   }
 
   implicit def mkFuture[A](implicit schema: Schema[A]): Schema[Future[A]] =
@@ -196,27 +232,27 @@ trait GenericSchema extends SchemaDerivation {
     outputSchema: Schema[B]
   ): Schema[A => B] =
     new Schema[A => B] {
-      private lazy val inputType                                    = inputSchema.lazyTpe(true)
-      override def arguments: List[IntrospectionInputValue]         = {
+      private lazy val inputType                         = inputSchema.lazyType(true)
+      override def arguments: List[__InputValue]         = {
         val input = inputType.allInputFields
         if (input.nonEmpty) input
         else
           inputType.kind match {
             case TypeKind.SCALAR | TypeKind.ENUM | TypeKind.LIST =>
               List(
-                IntrospectionInputValue(
+                __InputValue(
                   "value",
                   None,
                   () => if (inputSchema.optional) inputType else inputType.nonNull,
                   None
                 )
               )
-            case _                                               => List.empty[IntrospectionInputValue]
+            case _                                               => List.empty[__InputValue]
           }
       }
-      override def optional: Boolean                                = outputSchema.optional
-      override def tpe(isInput: Boolean = false): IntrospectionType = outputSchema.lazyTpe(isInput)
-      override def analyze(value: A => B): Stage                    =
+      override def optional: Boolean                     = outputSchema.optional
+      override def tpe(isInput: Boolean = false): __Type = outputSchema.lazyType(isInput)
+      override def analyze(value: A => B): Stage         =
         FunctionStage { args =>
           val builder    = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args))
           val fixBuilder = inputType.kind match {
@@ -237,9 +273,117 @@ trait GenericSchema extends SchemaDerivation {
   implicit def mkSource[A](implicit schema: Schema[A]): Schema[scaladsl.Source[A, NotUsed]] =
     new Schema[scaladsl.Source[A, NotUsed]] {
       override def optional: Boolean                                  = true
-      override def tpe(isInput: Boolean): IntrospectionType           =
-        val t = schema.lazyTpe(isInput)
+      override def tpe(isInput: Boolean): __Type                      =
+        val t = schema.lazyType(isInput)
         (if (schema.optional) t else t.nonNull).list
       override def analyze(value: scaladsl.Source[A, NotUsed]): Stage = ScalaSourceStage(value.map(schema.analyze))
     }
+
+  implicit def mkMapSchema[A, B](implicit keySchema: Schema[A], valueSchema: Schema[B]): Schema[Map[A, B]] =
+    new Schema[Map[A, B]] {
+      private lazy val typeAName: String   = Types.name(keySchema.lazyType())
+      private lazy val typeBName: String   = Types.name(valueSchema.lazyType())
+      private lazy val name: String        = s"KV$typeAName$typeBName"
+      private lazy val description: String = s"A key-value pair of $typeAName and $typeBName"
+
+      private lazy val kvSchema: Schema[(A, B)] =
+        Schema.mkObject[(A, B)](
+          name,
+          Some(description),
+          isInput =>
+            List(
+              __Field(
+                "key",
+                Some("Key"),
+                _ => List.empty,
+                () => if (keySchema.optional) keySchema.lazyType(isInput) else keySchema.lazyType(isInput).nonNull
+              ) -> (kv => keySchema.analyze(kv._1)),
+              __Field(
+                "value",
+                Some("Value"),
+                _ => List.empty,
+                () => if (valueSchema.optional) valueSchema.lazyType(isInput) else valueSchema.lazyType(isInput).nonNull
+              ) -> (kv => valueSchema.analyze(kv._2))
+            )
+        )
+
+      override def tpe(isInput: Boolean): __Type =
+        kvSchema.lazyType(isInput).nonNull.list
+
+      override def analyze(value: Map[A, B]): Stage = ListStage(value.toList.map(kvSchema.analyze))
+    }
+
+  implicit def mkTuple2Schema[A, B](implicit keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)] = {
+    val typeAName: String   = Types.name(keySchema.lazyType())
+    val typeBName: String   = Types.name(valueSchema.lazyType())
+    val name: String        = s"Tuple${typeAName}And$typeBName"
+    val description: String = s"A tuple of $typeAName and $typeBName"
+    Schema.mkObject[(A, B)](
+      name,
+      Some(description),
+      isInput =>
+        List(
+          __Field(
+            "_1",
+            Some("First element of the tuple"),
+            _ => List.empty,
+            () => if (keySchema.optional) keySchema.lazyType(isInput) else keySchema.lazyType(isInput).nonNull
+          ) -> (kv => keySchema.analyze(kv._1)),
+          __Field(
+            "_2",
+            Some("Second element of the tuple"),
+            _ => List.empty,
+            () => if (valueSchema.optional) valueSchema.lazyType(isInput) else valueSchema.lazyType(isInput).nonNull
+          ) -> (kv => valueSchema.analyze(kv._2))
+        )
+    )
+  }
+
+  implicit def mkFunctionUnitSchema[A](implicit schema: Schema[A]): Schema[() => A] =
+    new Schema[() => A] {
+      override def optional: Boolean              = schema.optional
+      override def tpe(isInput: Boolean): __Type  = schema.lazyType(isInput)
+      override def analyze(value: () => A): Stage = FunctionStage(_ => schema.analyze(value()))
+    }
+
+  implicit def mkEitherSchema[A, B](implicit
+    leftSchema: Schema[A],
+    rightSchema: Schema[B]
+  ): Schema[Either[A, B]] = {
+    val typeAName: String   = Types.name(leftSchema.lazyType())
+    val typeBName: String   = Types.name(rightSchema.lazyType())
+    val name: String        = s"Either${typeAName}Or$typeBName"
+    val description: String = s"Either $typeAName or $typeBName"
+
+    implicit val _leftSchema: Schema[A]  = new Schema[A] {
+      override def optional: Boolean             = true
+      override def tpe(isInput: Boolean): __Type = leftSchema.lazyType(isInput)
+      override def analyze(value: A): Stage      = leftSchema.analyze(value)
+    }
+    implicit val _rightSchema: Schema[B] = new Schema[B] {
+      override def optional: Boolean             = true
+      override def tpe(isInput: Boolean): __Type = rightSchema.lazyType(isInput)
+      override def analyze(value: B): Stage      = rightSchema.analyze(value)
+    }
+
+    Schema.mkObject[Either[A, B]](
+      name,
+      Some(description),
+      isInput =>
+        List(
+          __Field(
+            "left",
+            Some("Left element of the Either"),
+            _ => List.empty,
+            () => _leftSchema.lazyType(isInput)
+          ) -> (either => either.map(_ => NullStage).fold(_leftSchema.analyze, identity)),
+          __Field(
+            "right",
+            Some("Right element of the Either"),
+            _ => List.empty,
+            () => _rightSchema.lazyType(isInput)
+          ) -> (either => either.swap.map(_ => NullStage).fold(_rightSchema.analyze, identity))
+        )
+    )
+  }
 }
