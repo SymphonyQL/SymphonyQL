@@ -238,7 +238,7 @@ trait GenericSchema extends SchemaDerivation {
         if (input.nonEmpty) input
         else
           inputType.kind match {
-            case TypeKind.SCALAR | TypeKind.ENUM | TypeKind.LIST =>
+            case __TypeKind.SCALAR | __TypeKind.ENUM | __TypeKind.LIST =>
               List(
                 __InputValue(
                   "value",
@@ -247,7 +247,7 @@ trait GenericSchema extends SchemaDerivation {
                   None
                 )
               )
-            case _                                               => List.empty[__InputValue]
+            case _                                                     => List.empty[__InputValue]
           }
       }
       override def optional: Boolean                     = outputSchema.optional
@@ -256,12 +256,12 @@ trait GenericSchema extends SchemaDerivation {
         FunctionStage { args =>
           val builder    = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args))
           val fixBuilder = inputType.kind match {
-            case TypeKind.SCALAR | TypeKind.ENUM | TypeKind.LIST =>
+            case __TypeKind.SCALAR | __TypeKind.ENUM | __TypeKind.LIST =>
               builder.fold(
                 error => args.get("value").fold[Either[ArgumentError, A]](Left(error))(argumentExtractor.extract),
                 Right(_)
               )
-            case _                                               => builder
+            case _                                                     => builder
           }
           fixBuilder.fold(
             error => ScalaSourceStage(scaladsl.Source.failed(error)),

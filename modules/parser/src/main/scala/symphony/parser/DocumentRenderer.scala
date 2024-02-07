@@ -124,14 +124,14 @@ object DocumentRenderer extends SymphonyQLRenderer[Document] {
       def loop(typ: Option[__Type]): Unit = typ match {
         case Some(t) =>
           t.kind match {
-            case TypeKind.NON_NULL =>
+            case __TypeKind.NON_NULL =>
               loop(t.ofType)
               write append '!'
-            case TypeKind.LIST     =>
+            case __TypeKind.LIST     =>
               write append '['
               loop(t.ofType)
               write append ']'
-            case _                 =>
+            case _                   =>
               write append t.name.getOrElse("null")
           }
         case None    =>

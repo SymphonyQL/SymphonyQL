@@ -6,7 +6,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
 import symphony.*
 import symphony.parser.*
-import symphony.parser.adt.introspection.TypeKind
+import symphony.parser.adt.introspection.__TypeKind
 import symphony.schema.*
 
 import scala.concurrent.Future
@@ -30,12 +30,12 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
   describe("Simple Derivation") {
     it("derives simple input schema") {
       val inputSchema = Schema.derived[UserQueryInput]
-      hasType(inputSchema.lazyType(true), "UserQueryInputInput", TypeKind.INPUT_OBJECT)
+      hasType(inputSchema.lazyType(true), "UserQueryInputInput", __TypeKind.INPUT_OBJECT)
     }
 
     it("derives simple output schema") {
       val outputSchema = Schema.derived[UserOutput]
-      hasType(outputSchema.lazyType(), "UserOutput", TypeKind.OBJECT)
+      hasType(outputSchema.lazyType(), "UserOutput", __TypeKind.OBJECT)
     }
 
     it("derives simple func schema") {
@@ -44,7 +44,7 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
         Schema[UserQueryInput],
         Schema[UserOutput]
       )
-      hasType(funSchema.lazyType(), "UserOutput", TypeKind.OBJECT)
+      hasType(funSchema.lazyType(), "UserOutput", __TypeKind.OBJECT)
     }
 
     it("derives simple root schema with simple resolvers") {

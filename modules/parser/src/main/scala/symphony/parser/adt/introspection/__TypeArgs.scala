@@ -1,3 +1,3 @@
 package symphony.parser.adt.introspection
 
-final case class TypeArgs(name: String)
+final case class __TypeArgs(name: String)

@@ -12,7 +12,7 @@ import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.adt.Type.*
 
 final case class __Type(
-  kind: TypeKind,
+  kind: __TypeKind,
   name: Option[String] = None,
   description: Option[String] = None,
   fields: __DeprecatedArgs => Option[List[__Field]] = _ => None,
@@ -47,16 +47,16 @@ final case class __Type(
     ofType match {
       case Some(of) =>
         kind match {
-          case TypeKind.LIST     => ListType(of.toType(), nonNull)
-          case TypeKind.NON_NULL => of.toType(true)
-          case _                 => NamedType(name.getOrElse(""), nonNull)
+          case __TypeKind.LIST     => ListType(of.toType(), nonNull)
+          case __TypeKind.NON_NULL => of.toType(true)
+          case _                   => NamedType(name.getOrElse(""), nonNull)
         }
       case None     => NamedType(name.getOrElse(""), nonNull)
     }
 
   def toTypeDefinition: Option[TypeDefinition] =
     kind match {
-      case TypeKind.SCALAR       =>
+      case __TypeKind.SCALAR       =>
         Some(
           ScalarTypeDefinition(
             description,
@@ -68,7 +68,7 @@ final case class __Type(
                 .toList
           )
         )
-      case TypeKind.OBJECT       =>
+      case __TypeKind.OBJECT       =>
         Some(
           ObjectTypeDefinition(
             description,
@@ -78,7 +78,7 @@ final case class __Type(
             allFields.map(_.toFieldDefinition)
           )
         )
-      case TypeKind.INTERFACE    =>
+      case __TypeKind.INTERFACE    =>
         Some(
           InterfaceTypeDefinition(
             description,
@@ -88,7 +88,7 @@ final case class __Type(
             allFields.map(_.toFieldDefinition)
           )
         )
-      case TypeKind.UNION        =>
+      case __TypeKind.UNION        =>
         Some(
           UnionTypeDefinition(
             description,
@@ -97,7 +97,7 @@ final case class __Type(
             possibleTypes.getOrElse(Nil).flatMap(_.name)
           )
         )
-      case TypeKind.ENUM         =>
+      case __TypeKind.ENUM         =>
         Some(
           EnumTypeDefinition(
             description,
@@ -106,7 +106,7 @@ final case class __Type(
             enumValues(__DeprecatedArgs(Some(true))).getOrElse(Nil).map(_.toEnumValueDefinition)
           )
         )
-      case TypeKind.INPUT_OBJECT =>
+      case __TypeKind.INPUT_OBJECT =>
         Some(
           InputObjectTypeDefinition(
             description,
@@ -115,12 +115,12 @@ final case class __Type(
             allInputFields.map(_.toInputValueDefinition)
           )
         )
-      case _                     => None
+      case _                       => None
     }
 
-  lazy val list: __Type = __Type(TypeKind.LIST, ofType = Some(self))
+  lazy val list: __Type = __Type(__TypeKind.LIST, ofType = Some(self))
 
-  lazy val nonNull: __Type = __Type(TypeKind.NON_NULL, ofType = Some(self))
+  lazy val nonNull: __Type = __Type(__TypeKind.NON_NULL, ofType = Some(self))
 
   lazy val allFields: List[__Field] =
     fields(__DeprecatedArgs(Some(true))).getOrElse(Nil)

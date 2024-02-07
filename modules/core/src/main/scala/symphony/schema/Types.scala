@@ -8,10 +8,10 @@ import symphony.parser.adt.introspection.*
 object Types {
 
   def mkList(underlying: __Type): __Type =
-    __Type(TypeKind.LIST, ofType = Some(underlying))
+    __Type(__TypeKind.LIST, ofType = Some(underlying))
 
   def mkNonNull(underlying: __Type): __Type =
-    __Type(TypeKind.NON_NULL, ofType = Some(underlying))
+    __Type(__TypeKind.NON_NULL, ofType = Some(underlying))
 
   def mkScalar(
     name: String,
@@ -19,7 +19,7 @@ object Types {
     specifiedBy: Option[String] = None,
     directives: Option[List[Directive]] = None
   ): __Type =
-    __Type(TypeKind.SCALAR, Some(name), description, specifiedBy = specifiedBy, directives = directives)
+    __Type(__TypeKind.SCALAR, Some(name), description, specifiedBy = specifiedBy, directives = directives)
 
   val boolean: __Type = mkScalar("Boolean")
   val string: __Type  = mkScalar("String")
@@ -36,7 +36,7 @@ object Types {
     directives: Option[List[Directive]] = None
   ): __Type =
     __Type(
-      TypeKind.ENUM,
+      __TypeKind.ENUM,
       name,
       description,
       enumValues =
@@ -54,7 +54,7 @@ object Types {
     interfaces: () => Option[List[__Type]] = () => Some(Nil)
   ): __Type =
     __Type(
-      TypeKind.OBJECT,
+      __TypeKind.OBJECT,
       name,
       description,
       fields =
@@ -93,7 +93,7 @@ object Types {
     directives: Option[List[Directive]] = None
   ): __Type =
     __Type(
-      TypeKind.INPUT_OBJECT,
+      __TypeKind.INPUT_OBJECT,
       name,
       description,
       inputFields = args =>
@@ -111,7 +111,7 @@ object Types {
     directives: Option[List[Directive]] = None
   ): __Type =
     __Type(
-      TypeKind.UNION,
+      __TypeKind.UNION,
       name,
       description,
       possibleTypes = Some(subTypes),
@@ -128,7 +128,7 @@ object Types {
     directives: Option[List[Directive]] = None
   ): __Type =
     __Type(
-      TypeKind.INTERFACE,
+      __TypeKind.INTERFACE,
       name,
       description,
       fields =
@@ -140,11 +140,11 @@ object Types {
 
   def collectTypes(t: __Type, existingTypes: List[__Type] = Nil): List[__Type] =
     t.kind match {
-      case TypeKind.SCALAR | TypeKind.ENUM   =>
+      case __TypeKind.SCALAR | __TypeKind.ENUM   =>
         t.name.fold(existingTypes)(_ => if (existingTypes.exists(same(t, _))) existingTypes else t :: existingTypes)
-      case TypeKind.LIST | TypeKind.NON_NULL =>
+      case __TypeKind.LIST | __TypeKind.NON_NULL =>
         t.ofType.fold(existingTypes)(collectTypes(_, existingTypes))
-      case _                                 =>
+      case _                                     =>
         val list1         =
           t.name.fold(existingTypes)(_ =>
             if (existingTypes.exists(same(t, _))) {
@@ -186,15 +186,15 @@ object Types {
 
   def listOf(t: __Type): Option[__Type] =
     t.kind match {
-      case TypeKind.LIST     => t.ofType
-      case TypeKind.NON_NULL => t.ofType.flatMap(listOf)
-      case _                 => None
+      case __TypeKind.LIST     => t.ofType
+      case __TypeKind.NON_NULL => t.ofType.flatMap(listOf)
+      case _                   => None
     }
 
   def name(t: __Type): String =
     (t.kind match {
-      case TypeKind.LIST     => t.ofType.map("ListOf" + name(_))
-      case TypeKind.NON_NULL => t.ofType.map(name)
-      case _                 => t.name
+      case __TypeKind.LIST     => t.ofType.map("ListOf" + name(_))
+      case __TypeKind.NON_NULL => t.ofType.map(name)
+      case _                   => t.name
     }).getOrElse("")
 }
