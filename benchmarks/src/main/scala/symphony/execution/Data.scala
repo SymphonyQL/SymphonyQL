@@ -1,7 +1,7 @@
 package symphony.execution
 
 object Data {
-  enum Origin {
+  enum Origin extends Enum[Origin] {
     case MARS, EARTH, BELT
   }
 

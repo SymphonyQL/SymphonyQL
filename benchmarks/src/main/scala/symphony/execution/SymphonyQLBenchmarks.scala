@@ -1,18 +1,20 @@
 package symphony.execution
 
 import io.circe.Json
-
 import org.apache.pekko.*
 import org.apache.pekko.actor.*
 import org.openjdk.jmh.annotations.*
 import symphony.*
 import zio.{ Executor as _, Scope as _, * }
-import sangria.execution._
-import sangria.marshalling.circe._
+import sangria.execution.*
+import sangria.marshalling.circe.*
 import sangria.parser.QueryParser
+
 import java.util.concurrent.TimeUnit
 import scala.concurrent.*
 import scala.concurrent.duration.*
+import graphql.{ ExecutionInput, ExecutionResult }
+import scala.jdk.FutureConverters.*
 
 @State(Scope.Thread)
 @BenchmarkMode(Array(Mode.Throughput))
@@ -49,6 +51,20 @@ class SymphonyQLBenchmarks {
   def simpleSymphonyQL(): Unit = {
     val future = Symphony.graphql.runWith(SymphonyQLRequest(Some(simpleQuery)))
     Await.result(future, scala.concurrent.duration.Duration.create(1, TimeUnit.MINUTES))
+    ()
+  }
+
+  @Benchmark
+  def simpleGraphQLJava(): Unit = {
+    val executionResult = GraphQLJava.build
+      .executeAsync(
+        ExecutionInput
+          .newExecutionInput()
+          .query(simpleQuery)
+          .build()
+      )
+      .asScala
+    Await.result(executionResult, scala.concurrent.duration.Duration.create(1, TimeUnit.MINUTES))
     ()
   }
 

@@ -108,6 +108,7 @@ lazy val benchmarks = project
       "org.parboiled"         %% "parboiled"     % `parboiled_Version`,
       "org.sangria-graphql"   %% "sangria"       % "4.1.0",
       "org.sangria-graphql"   %% "sangria-circe" % "1.3.2",
-      "io.circe"              %% "circe-parser"  % "0.14.6"
+      "io.circe"              %% "circe-parser"  % "0.14.6",
+      "com.graphql-java"       % "graphql-java"  % "21.3"
     )
   )
