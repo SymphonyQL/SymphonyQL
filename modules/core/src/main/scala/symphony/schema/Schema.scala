@@ -185,7 +185,7 @@ trait GenericSchema extends SchemaDerivation {
             description,
             fields(isInput)
               .map(_._1)
-              .map(f => __InputValue(f.name, f.description, f.tpe, None, directives = f.directives)),
+              .map(f => __InputValue(f.name, f.description, f.`type`, None, directives = f.directives)),
             directives = Some(directives)
           )
         else

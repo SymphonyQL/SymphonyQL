@@ -8,7 +8,7 @@ final case class __Field(
   name: String,
   description: Option[String],
   args: __DeprecatedArgs => List[__InputValue],
-  tpe: () => __Type,
+  `type`: () => __Type,
   isDeprecated: Boolean = false,
   deprecationReason: Option[String] = None,
   directives: Option[List[Directive]] = None
@@ -33,6 +33,6 @@ final case class __Field(
   lazy val allArgs: List[__InputValue] =
     args(__DeprecatedArgs(Some(true)))
 
-  private[symphony] lazy val _type: __Type = tpe()
+  private[symphony] lazy val _type: __Type = `type`()
 
 }

@@ -11,7 +11,7 @@ import symphony.parser.adt.Directive
 final case class __InputValue(
   name: String,
   description: Option[String],
-  tpe: () => __Type,
+  `type`: () => __Type,
   defaultValue: Option[String],
   isDeprecated: Boolean = false,
   deprecationReason: Option[String] = None,
@@ -31,5 +31,5 @@ final case class __InputValue(
     InputValueDefinition(description, name, _type.toType(), default, allDirectives)
   }
 
-  private[symphony] lazy val _type: __Type = tpe()
+  private[symphony] lazy val _type: __Type = `type`()
 }
