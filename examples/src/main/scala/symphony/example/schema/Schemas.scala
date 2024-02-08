@@ -13,7 +13,7 @@ val argumentExtractor: ArgumentExtractor[FilterArgs] = {
   case _                                        => Left(SymphonyQLError.ArgumentError("error"))
 }
 // Schema DSL
-// or create enum schema by `Schema.mkEnum`
+// create enum by EnumBuilder
 val enumSchema                                       = EnumBuilder
   .newEnum[Origin]()
   .name("Origin")
@@ -41,7 +41,7 @@ val outputSchema: Schema[Character] = ObjectBuilder
   .field(builder => builder.name("origin").schema(enumSchema).build())
   .build()
 
-// create object (resolver) schema by ObjectBuilder with `hasArgs`
+// create object (resolver) schema by ObjectBuilder
 val queriesSchema: Schema[Queries] = ObjectBuilder
   .newObject[Queries]()
   .name("Queries")

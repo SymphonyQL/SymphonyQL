@@ -14,12 +14,12 @@ object ObjectBuilder {
 }
 
 final class ObjectBuilder[A] private {
-  private var name: String                                                                = _
-  private var description: Option[String]                                                 = None
-  private var fields: List[(JavaFunction[FieldBuilder, __Field], JavaFunction[A, Stage])] = List.empty
-  private var directives: List[Directive]                                                 = List.empty
-  private var isNullable: Boolean                                                         = false
-  private var hasArg                                                                      = false
+  private var name: String                                                                       = _
+  private var description: Option[String]                                                        = None
+  private var fieldWithArgs: List[(JavaFunction[FieldBuilder, __Field], JavaFunction[A, Stage])] = List.empty
+  private var fields: List[(JavaFunction[FieldBuilder, __Field], JavaFunction[A, Stage])]        = List.empty
+  private var directives: List[Directive]                                                        = List.empty
+  private var isNullable: Boolean                                                                = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -34,10 +34,7 @@ final class ObjectBuilder[A] private {
   def field(
     builder: JavaFunction[FieldBuilder, __Field]
   ): this.type = {
-    hasArg = false
-    this.fields = fields ::: List(builder -> new JavaFunction[A, Stage] {
-      override def apply(t: A): Stage = Stage.createNull()
-    })
+    this.fields = builder -> ((_: A) => Stage.createNull()) :: fields
     this
   }
 
@@ -45,8 +42,7 @@ final class ObjectBuilder[A] private {
     builder: JavaFunction[FieldBuilder, __Field],
     stage: JavaFunction[A, Stage]
   ): this.type = {
-    hasArg = true
-    this.fields = fields ::: List(builder -> stage)
+    this.fieldWithArgs = builder -> stage :: fieldWithArgs
     this
   }
 
@@ -67,7 +63,9 @@ final class ObjectBuilder[A] private {
         Schema.mkObject(
           name,
           description,
-          _ => fields.map(kv => kv._1(FieldBuilder.newField().hasArgs(hasArg)) -> kv._2.asScala),
+          _ =>
+            fieldWithArgs.reverse.map(kv => kv._1(FieldBuilder.newField().hasArgs(true)) -> kv._2.asScala) ++
+              fields.reverse.map(kv => kv._1(FieldBuilder.newField().hasArgs(false)) -> kv._2.asScala),
           directives
         )
       )
@@ -75,7 +73,9 @@ final class ObjectBuilder[A] private {
       Schema.mkObject(
         name,
         description,
-        _ => fields.map(kv => kv._1(FieldBuilder.newField().hasArgs(hasArg)) -> kv._2.asScala),
+        _ =>
+          fieldWithArgs.reverse.map(kv => kv._1(FieldBuilder.newField().hasArgs(true)) -> kv._2.asScala) ++
+            fields.reverse.map(kv => kv._1(FieldBuilder.newField().hasArgs(false)) -> kv._2.asScala),
         directives
       )
 

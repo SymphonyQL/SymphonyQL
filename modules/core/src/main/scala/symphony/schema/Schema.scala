@@ -2,14 +2,11 @@ package symphony.schema
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.{ javadsl, scaladsl }
-import symphony.SymphonyQLSchema
 import symphony.parser.*
 import symphony.parser.SymphonyQLError.*
 import symphony.parser.SymphonyQLOutputValue.*
 import symphony.parser.SymphonyQLValue.*
 import symphony.parser.adt.*
-import symphony.parser.adt.Definition.ExecutableDefinition.*
-import symphony.parser.adt.Selection.Field
 import symphony.parser.adt.introspection.*
 import symphony.schema.Stage.*
 import symphony.schema.scaladsl.*
