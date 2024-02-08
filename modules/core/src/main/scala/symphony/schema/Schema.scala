@@ -137,16 +137,18 @@ trait SchemaJavaAPI {
 }
 trait GenericSchema extends SchemaDerivation {
 
-  implicit val UnitSchema: Schema[Unit]             = mkScalar("Unit", None, _ => ObjectValue(Nil))
-  implicit val BooleanSchema: Schema[Boolean]       = mkScalar("Boolean", None, BooleanValue.apply)
-  implicit val StringSchema: Schema[String]         = mkScalar("String", None, StringValue.apply)
-  implicit val IntSchema: Schema[Int]               = mkScalar("Int", None, IntValue(_))
-  implicit val LongSchema: Schema[Long]             = mkScalar("Long", None, IntValue(_))
-  implicit val DoubleSchema: Schema[Double]         = mkScalar("Float", None, FloatValue(_))
-  implicit val FloatSchema: Schema[Float]           = mkScalar("Float", None, FloatValue(_))
-  implicit val ShortSchema: Schema[Short]           = mkScalar("Short", None, IntValue(_))
-  implicit val BigIntSchema: Schema[BigInt]         = mkScalar("BigInt", None, IntValue(_))
-  implicit val BigDecimalSchema: Schema[BigDecimal] = mkScalar("BigDecimal", None, FloatValue(_))
+  implicit val UnitSchema: Schema[Unit]                           = mkScalar("Unit", None, _ => ObjectValue(Nil))
+  implicit val BooleanSchema: Schema[Boolean]                     = mkScalar("Boolean", None, BooleanValue.apply)
+  implicit val StringSchema: Schema[String]                       = mkScalar("String", None, StringValue.apply)
+  implicit val IntSchema: Schema[Int]                             = mkScalar("Int", None, IntValue(_))
+  implicit val LongSchema: Schema[Long]                           = mkScalar("Long", None, IntValue(_))
+  implicit val DoubleSchema: Schema[Double]                       = mkScalar("Float", None, FloatValue(_))
+  implicit val FloatSchema: Schema[Float]                         = mkScalar("Float", None, FloatValue(_))
+  implicit val ShortSchema: Schema[Short]                         = mkScalar("Short", None, IntValue(_))
+  implicit val BigIntSchema: Schema[BigInt]                       = mkScalar("BigInt", None, IntValue(_))
+  implicit val BigIntegerSchema: Schema[java.math.BigInteger]     = mkScalar("BigInt", None, IntValue(_))
+  implicit val BigDecimalSchema: Schema[BigDecimal]               = mkScalar("BigDecimal", None, FloatValue(_))
+  implicit val JavaBigDecimalSchema: Schema[java.math.BigDecimal] = mkScalar("BigDecimal", None, FloatValue(_))
 
   def mkEnum[A](
     name: String,

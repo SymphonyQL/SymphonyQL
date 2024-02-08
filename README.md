@@ -73,6 +73,9 @@ Defining API using Java21 record classes:
 record FilterArgs(Optional<Origin> origin) {
 }
 
+record CharacterOutput(String name, Origin origin) {
+}
+
 enum Origin {
     EARTH, MARS, BELT;
 }

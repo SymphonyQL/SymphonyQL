@@ -117,9 +117,10 @@ object SymphonyQLValue {
   }
 
   object IntValue {
-    def apply(v: Int): IntValue    = IntNumber(v)
-    def apply(v: Long): IntValue   = LongNumber(v)
-    def apply(v: BigInt): IntValue = BigIntNumber(v)
+    def apply(v: Int): IntValue                  = IntNumber(v)
+    def apply(v: Long): IntValue                 = LongNumber(v)
+    def apply(v: BigInt): IntValue               = BigIntNumber(v)
+    def apply(v: java.math.BigInteger): IntValue = BigIntNumber(BigInt(v))
 
     @throws[NumberFormatException]("if the string is not a valid representation of an integer")
     def stringToIntValue(s: String): IntValue =
@@ -157,10 +158,11 @@ object SymphonyQLValue {
   }
 
   object FloatValue {
-    def apply(v: Float): FloatValue      = FloatNumber(v)
-    def apply(v: Double): FloatValue     = DoubleNumber(v)
-    def apply(v: BigDecimal): FloatValue = BigDecimalNumber(v)
-    def apply(s: String): FloatValue     = BigDecimalNumber(BigDecimal(s))
+    def apply(v: Float): FloatValue                = FloatNumber(v)
+    def apply(v: Double): FloatValue               = DoubleNumber(v)
+    def apply(v: BigDecimal): FloatValue           = BigDecimalNumber(v)
+    def apply(v: java.math.BigDecimal): FloatValue = BigDecimalNumber(BigDecimal.apply(v))
+    def apply(s: String): FloatValue               = BigDecimalNumber(BigDecimal(s))
 
     final case class FloatNumber(value: Float) extends FloatValue {
       override def toFloat: Float           = value
