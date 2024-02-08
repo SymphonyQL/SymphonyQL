@@ -7,9 +7,7 @@ import symphony.parser.SymphonyQLInputValue.*
 import symphony.parser.SymphonyQLValue.*
 import symphony.schema.scaladsl.ArgExtractorDerivation
 
-import java.util
 import scala.jdk.javaapi.CollectionConverters
-import java.util.Optional
 
 trait ArgumentExtractor[T] { self =>
 
@@ -38,8 +36,8 @@ trait ArgExtractorJavaAPI { self: GenericArgExtractor =>
   /**
    * Java API
    */
-  def createOption[A](ae: ArgumentExtractor[A]): ArgumentExtractor[Optional[A]] =
-    (input: SymphonyQLInputValue) => ae.extract(input).map(Optional.of)
+  def createOption[A](ae: ArgumentExtractor[A]): ArgumentExtractor[java.util.Optional[A]] =
+    (input: SymphonyQLInputValue) => ae.extract(input).map(java.util.Optional.of)
 
   /**
    * Java API
@@ -58,7 +56,7 @@ trait ArgExtractorJavaAPI { self: GenericArgExtractor =>
    */
   def createVector[A](ae: ArgumentExtractor[A]): ArgumentExtractor[java.util.Vector[A]] =
     (input: SymphonyQLInputValue) =>
-      mkVector(ae).extract(input).map(a => new util.Vector[A](CollectionConverters.asJava(a)))
+      mkVector(ae).extract(input).map(a => new java.util.Vector[A](CollectionConverters.asJava(a)))
 }
 trait GenericArgExtractor extends ArgExtractorDerivation {
 

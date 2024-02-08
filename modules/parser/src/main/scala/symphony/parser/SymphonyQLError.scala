@@ -59,6 +59,9 @@ object SymphonyQLError {
     locationInfo: Option[LocationInfo] = None,
     extensions: Option[ObjectValue] = None
   ) extends SymphonyQLError {
+
+    def this(msg: String) =
+      this(msg, None, None)
     override def toString: String = s"ArgumentError Error: $msg"
 
     def toOutputValue: SymphonyQLOutputValue =

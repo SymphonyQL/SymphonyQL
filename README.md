@@ -89,7 +89,7 @@ public static ArgumentExtractor<FilterArgs> argumentExtractor() {
             var org = Optional.of(Origin.valueOf(((SymphonyQLValue.StringValue) a.fields().get("origin").get()).value()));
             yield Right.apply(new FilterArgs(org));
         }
-        default -> Left.apply(SymphonyQLError.ArgumentError.apply("error", Option.empty(), Option.empty()));
+        default -> Left.apply(new SymphonyQLError.ArgumentError("error"));
     };
 }
 
@@ -97,11 +97,10 @@ public static Schema<Origin> originSchema() {
     return EnumBuilder.<Origin>newEnum()
             .name("Origin")
             .serialize((Function<Origin, String>) Enum::name)
-            .values(
-                    __EnumValue.apply("EARTH", Option.empty(), false, Option.empty(), Option.empty()),
-                    __EnumValue.apply("MARS", Option.empty(), false, Option.empty(), Option.empty()),
-                    __EnumValue.apply("BELT", Option.empty(), false, Option.empty(), Option.empty())
-            ).build();
+            .value((Function<EnumValueBuilder, __EnumValue>) enumValueBuilder -> enumValueBuilder.name("EARTH").build())
+            .value((Function<EnumValueBuilder, __EnumValue>) enumValueBuilder -> enumValueBuilder.name("MARS").build())
+            .value((Function<EnumValueBuilder, __EnumValue>) enumValueBuilder -> enumValueBuilder.name("BELT").build())
+            .build();
 }
 
 public static Schema<FilterArgs> inputSchema(Schema<Origin> enumSchema) {
@@ -120,21 +119,24 @@ public static Schema<CharacterOutput> outputSchema(Schema<Origin> enumSchema) {
             .build();
 }
 
-public static Schema<Queries> queriesSchema(ArgumentExtractor<FilterArgs> argumentExtractor, Schema<FilterArgs> inputSchema, Schema<CharacterOutput> outputSchema) {
+public static Schema<Queries> queriesSchema(
+        ArgumentExtractor<FilterArgs> argumentExtractor,
+        Schema<FilterArgs> inputSchema,
+        Schema<CharacterOutput> outputSchema
+) {
     return ObjectBuilder.<Queries>newObject()
             .name("Queries")
             .fieldWithArg(
                     (Function<FieldBuilder, __Field>) builder -> builder
                             .name("characters")
-                            .hasArgs(true)
                             .schema(Schema.createFunction(argumentExtractor, inputSchema, Schema.createSource(outputSchema)))
                             .build()
                     ,
-                    // for testing, use reflection to create stages
                     (Function<Queries, Stage>) queries -> Stage.derivesStageByReflection(argumentExtractor, args -> queries.characters().apply(args))
 
             ).build();
 }
+
 
 public static void main(String[] args) {
     var enumSchema = originSchema();

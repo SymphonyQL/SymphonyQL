@@ -18,9 +18,9 @@ val enumSchema                                       = EnumBuilder
   .newEnum[Origin]()
   .name("Origin")
   .values(
-    __EnumValue("EARTH", None, false, None, None),
-    __EnumValue("MARS", None, false, None, None),
-    __EnumValue("BELT", None, false, None, None)
+    builder => builder.name("EARTH").isDeprecated(false).build(),
+    builder => builder.name("MARS").isDeprecated(false).build(),
+    builder => builder.name("BELT").isDeprecated(false).build()
   )
   .serialize(new JavaFunction[Origin, String]() {
     override def apply(t: Origin): String = t.toString
@@ -49,7 +49,6 @@ val queriesSchema: Schema[Queries] = ObjectBuilder
     builder =>
       builder
         .name("characters")
-        .hasArgs(true)
         .schema(
           Schema.mkFunction(
             argumentExtractor,

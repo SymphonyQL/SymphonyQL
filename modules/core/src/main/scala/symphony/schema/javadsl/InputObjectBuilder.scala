@@ -28,14 +28,14 @@ final class InputObjectBuilder[A] private {
     this
   }
 
-  def field(field: JavaFunction[FieldBuilder, __Field]): this.type = {
-    this.fields = fields ::: List(field)
+  def field(builder: JavaFunction[FieldBuilder, __Field]): this.type = {
+    this.fields = fields ::: List(builder)
     this
   }
 
   @varargs
-  def fields(fields: JavaFunction[FieldBuilder, __Field]*): this.type = {
-    this.fields = fields.toList
+  def fields(builder: JavaFunction[FieldBuilder, __Field]*): this.type = {
+    this.fields = builder.toList
     this
   }
 
