@@ -134,6 +134,27 @@ trait SchemaJavaAPI {
   def createCompletionStage[A](schema: Schema[A]): Schema[java.util.concurrent.CompletionStage[A]] =
     mkFuture[A](schema).contramap(_.asScala)
 
+  def getSchema(typeName: String): Schema[_] =
+    typeName match
+      case "java.lang.Boolean"    => Schema.BooleanSchema
+      case "java.lang.String"     => Schema.StringSchema
+      case "java.lang.Integer"    => Schema.IntSchema
+      case "java.lang.Long"       => Schema.LongSchema
+      case "java.lang.Double"     => Schema.DoubleSchema
+      case "java.lang.Float"      => Schema.FloatSchema
+      case "java.lang.Short"      => Schema.ShortSchema
+      case "java.math.BigInteger" => Schema.BigIntegerSchema
+      case "java.math.BigDecimal" => Schema.JavaBigDecimalSchema
+      case "java.lang.Void"       => Schema.UnitSchema
+      case "boolean"              => Schema.createNullable(Schema.BooleanSchema)
+      case "int"                  => Schema.createNullable(Schema.IntSchema)
+      case "long"                 => Schema.createNullable(Schema.LongSchema)
+      case "double"               => Schema.createNullable(Schema.DoubleSchema)
+      case "float"                => Schema.createNullable(Schema.FloatSchema)
+      case "short"                => Schema.createNullable(Schema.ShortSchema)
+      case "void"                 => Schema.createNullable(Schema.UnitSchema)
+      case _                      => throw new IllegalArgumentException(s"Schema instance for $typeName is not available")
+
 }
 trait GenericSchema extends SchemaDerivation {
 

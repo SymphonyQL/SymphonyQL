@@ -3,7 +3,7 @@ import Dependencies.Versions.*
 inThisBuild(
   List(
     scalaVersion           := scala3_Version,
-    organization           := "symphonyql.org",
+    organization           := "org.symphonyql",
     sonatypeCredentialHost := "s01.oss.sonatype.org",
     sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
     homepage               := Some(url("https://github.com/SymphonyQL")),
@@ -44,6 +44,7 @@ lazy val root = (project in file("."))
     parser,
     server,
     validator,
+    `java-apt`,
     examples,
     benchmarks
   )
@@ -81,7 +82,7 @@ lazy val core = (project in file("modules/core"))
     libraryDependencies ++= Dependencies.Deps.core.value
   )
 
-lazy val server = (project in file("modules/server"))
+lazy val server     = (project in file("modules/server"))
   .dependsOn(core)
   .settings(
     publish / skip := false,
@@ -90,13 +91,31 @@ lazy val server = (project in file("modules/server"))
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.server.value
   )
+lazy val `java-apt` = (project in file("modules/java-apt"))
+  .settings(
+    publish / skip := false,
+    name           := "symphony-java-apt",
+    commands ++= Commands.value,
+    libraryDependencies ++= Dependencies.Deps.apt.value
+  )
 
 lazy val examples = (project in file("examples"))
-  .dependsOn(server, core)
+  .dependsOn(server, core, `java-apt`)
   .settings(
     publish / skip := true,
     commonSettings,
-    commands ++= Commands.value
+    commands ++= Commands.value,
+    Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed",
+    libraryDependencies ++= Seq(
+      "javax.annotation" % "javax.annotation-api" % "1.3.2"
+    ),
+    Compile / javacOptions ++= Seq(
+      "-processor",
+      "symphony.apt.SymphonyQLProcessor",
+      "-s",
+      ((Compile / crossTarget).value / "src_managed").getAbsolutePath,
+      "-XprintRounds"
+    )
   )
 
 lazy val benchmarks = project

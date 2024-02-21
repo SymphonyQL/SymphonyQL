@@ -8,7 +8,7 @@ import scala.annotation.varargs
 import scala.jdk.OptionConverters.*
 
 object InputObjectBuilder {
-  def newInputObject[A](): InputObjectBuilder[A] = new InputObjectBuilder[A]
+  def newObject[A](): InputObjectBuilder[A] = new InputObjectBuilder[A]
 }
 
 final class InputObjectBuilder[A] private {

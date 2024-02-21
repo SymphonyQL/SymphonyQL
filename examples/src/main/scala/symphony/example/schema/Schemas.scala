@@ -29,7 +29,7 @@ val enumSchema                                       = EnumBuilder
 
 // create input schema by InputObjectBuilder
 val inputSchema: Schema[FilterArgs] = InputObjectBuilder
-  .newInputObject[FilterArgs]()
+  .newObject[FilterArgs]()
   .name("FilterArgs")
   .fields(builder => builder.name("name").schema(Schema.mkOption(enumSchema)).build())
   .build()

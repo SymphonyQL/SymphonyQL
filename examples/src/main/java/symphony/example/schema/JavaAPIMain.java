@@ -47,7 +47,7 @@ public class JavaAPIMain {
     }
 
     public static Schema<FilterArgs> inputSchema(Schema<Origin> enumSchema) {
-        return InputObjectBuilder.<FilterArgs>newInputObject()
+        return InputObjectBuilder.<FilterArgs>newObject()
                 .name("FilterArgs")
                 .field((Function<FieldBuilder, __Field>) builder -> builder.name("name").schema(Schema.createOptional(enumSchema)).build())
                 .build();
