@@ -1,6 +1,7 @@
 package symphony.example.schema;
 
 
+import symphony.apt.annotation.ArgExtractor;
 import symphony.apt.annotation.EnumSchema;
 import symphony.apt.annotation.InputSchema;
 import symphony.apt.annotation.ObjectSchema;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @EnumSchema
+@ArgExtractor
 enum OriginEnum {
     EARTH, MARS, BELT;
 }
@@ -51,6 +53,7 @@ record OutputObject(
 }
 
 @InputSchema
+@ArgExtractor
 record InputObject(
         Optional<OriginEnum> optionalEnum,
         Optional<String> optionalString,

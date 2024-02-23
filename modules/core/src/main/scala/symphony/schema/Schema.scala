@@ -11,6 +11,7 @@ import symphony.parser.adt.introspection.*
 import symphony.schema.Stage.*
 import symphony.schema.scaladsl.*
 
+import scala.annotation.{ nowarn, unused }
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.*
 import scala.jdk.FunctionConverters.*
@@ -55,6 +56,7 @@ trait SchemaJavaAPI {
   /**
    * Java API
    */
+  @unused
   def createScalar[A](
     name: String,
     description: java.util.Optional[String],
@@ -65,6 +67,7 @@ trait SchemaJavaAPI {
   /**
    * Java API
    */
+  @unused
   def createFunctionUnitSchema[A](
     schema: Schema[A]
   ): Schema[java.util.function.Supplier[A]] =
@@ -73,6 +76,7 @@ trait SchemaJavaAPI {
   /**
    * Java API
    */
+  @unused
   def createFunction[A, B](
     argumentExtractor: ArgumentExtractor[A],
     inputSchema: Schema[A],
@@ -80,23 +84,27 @@ trait SchemaJavaAPI {
   ): Schema[java.util.function.Function[A, B]] =
     mkFunction(argumentExtractor, inputSchema, outputSchema).contramap(_.asScala)
 
+  @unused
   def createSource[A](schema: Schema[A]): Schema[javadsl.Source[A, NotUsed]] =
     mkSource(schema).contramap(_.asScala)
 
   /**
    * Java API
    */
+  @unused
   def createOptional[A](schema: Schema[A]): Schema[java.util.Optional[A]] = mkOption[A](schema).contramap(_.toScala)
 
   /**
    * Java API
    */
+  @unused
   def createMapSchema[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[java.util.Map[A, B]] =
     mkMapSchema[A, B](keySchema, valueSchema).contramap(kv => kv.asScala.toMap)
 
     /**
      * Java API
      */
+  @unused
   def createTuple2Schema[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)]           =
     mkTuple2Schema[A, B](keySchema, valueSchema)
 
@@ -104,6 +112,7 @@ trait SchemaJavaAPI {
    * Java API
    * Unsafe Nullable
    */
+  @unused
   def createNullable[A](schema: Schema[A]): Schema[A] = new Schema[A] {
     override def optional: Boolean             = true
     override def tpe(isInput: Boolean): __Type = schema.lazyType(isInput)
@@ -113,27 +122,35 @@ trait SchemaJavaAPI {
   /**
    * Java API
    */
+  @unused
   def createVector[A](schema: Schema[A]): Schema[java.util.Vector[A]] =
     mkVector[A](schema).contramap(_.asScala.toVector)
 
   /**
    * Java API
    */
+  @unused
   def createSet[A](schema: Schema[A]): Schema[java.util.Set[A]] =
     mkSet[A](schema).contramap(_.asScala.toSet)
 
   /**
    * Java API
    */
+  @unused
   def createList[A](schema: Schema[A]): Schema[java.util.List[A]]                                  =
     mkList[A](schema).contramap(_.asScala.toList)
 
     /**
      * Java API
      */
+  @unused
   def createCompletionStage[A](schema: Schema[A]): Schema[java.util.concurrent.CompletionStage[A]] =
     mkFuture[A](schema).contramap(_.asScala)
 
+  /**
+   * Using in APT
+   */
+  @unused
   def getSchema(typeName: String): Schema[_] =
     typeName match
       case "java.lang.Boolean"    => Schema.BooleanSchema
@@ -153,7 +170,7 @@ trait SchemaJavaAPI {
       case "float"                => Schema.createNullable(Schema.FloatSchema)
       case "short"                => Schema.createNullable(Schema.ShortSchema)
       case "void"                 => Schema.createNullable(Schema.UnitSchema)
-      case _                      => throw new IllegalArgumentException(s"Schema instance for $typeName is not available")
+      case _                      => throw new IllegalArgumentException(s"Method 'Schema.getSchema' is not support for $typeName")
 
 }
 trait GenericSchema extends SchemaDerivation {

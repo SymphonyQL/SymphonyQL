@@ -1,5 +1,6 @@
 package symphony.example.schema;
 
+import scala.util.Either;
 import scala.util.Left;
 import scala.util.Right;
 
@@ -20,19 +21,26 @@ import symphony.schema.javadsl.EnumValueBuilder;
 import symphony.schema.javadsl.FieldBuilder;
 import symphony.schema.javadsl.InputObjectBuilder;
 import symphony.schema.javadsl.ObjectBuilder;
+import scala.jdk.javaapi.OptionConverters;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Function;
 
 public class JavaAPIMain {
 
     public static ArgumentExtractor<FilterArgs> argumentExtractor() {
-        return input -> switch (input) {
-            case SymphonyQLInputValue.ObjectValue a -> {
-                var org = Optional.of(Origin.valueOf(((SymphonyQLValue.StringValue) a.fields().get("origin").get()).value()));
-                yield Right.apply(new FilterArgs(org));
+        return new ArgumentExtractor<>() {
+            @Override
+            public Either<SymphonyQLError.ArgumentError, FilterArgs> extract(SymphonyQLInputValue input) {
+                return switch (input) {
+                    case SymphonyQLInputValue.ObjectValue a -> {
+                        var org = OptionConverters.toJava(a.fields().get("origin").map(f -> ((SymphonyQLValue.StringValue) f).value()).map(Origin::valueOf));
+                        yield Right.apply(new FilterArgs(org));
+                    }
+                    default -> Left.apply(new SymphonyQLError.ArgumentError("Expected ObjectValue"));
+                };
             }
-            default -> Left.apply(new SymphonyQLError.ArgumentError("error"));
         };
     }
 

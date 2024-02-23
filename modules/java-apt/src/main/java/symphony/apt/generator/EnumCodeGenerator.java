@@ -5,8 +5,8 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 import symphony.apt.annotation.EnumSchema;
-import symphony.apt.function.AddSuffix;
 import symphony.apt.util.MessageUtils;
+import symphony.apt.util.ModelUtils;
 import symphony.apt.util.SourceTextUtils;
 import symphony.apt.util.TypeUtils;
 
@@ -28,10 +28,9 @@ public class EnumCodeGenerator extends GeneratedCodeGenerator {
     protected final void generateBody(final CodeGeneratorContext context, final TypeSpec.Builder builder) {
         var typeElement = context.getTypeElement();
         var annotation = typeElement.getAnnotation(EnumSchema.class);
-        var modifiers = typeElement.getModifiers();
         var kind = typeElement.getKind();
 
-        if (annotation != null && !modifiers.contains(Modifier.ABSTRACT) && (kind == ElementKind.ENUM)) {
+        if (annotation != null && kind == ElementKind.ENUM) {
             generateMethod(builder, typeElement);
         } else {
             MessageUtils.message(Diagnostic.Kind.WARNING, "@EnumSchema only support on enum class: " + typeElement);
@@ -39,10 +38,8 @@ public class EnumCodeGenerator extends GeneratedCodeGenerator {
     }
 
     private void generateMethod(final TypeSpec.Builder builder, final TypeElement typeElement) {
-        var methodName = SUFFIX.toLowerCase();
-        var variables = typeElement.getEnclosedElements().stream().filter(t -> t.getKind().equals(ElementKind.ENUM_CONSTANT)).toList();
-
-        var schemaClass = ClassName.get(PACKAGE, "Schema");
+        var variables = ModelUtils.getEnumTypes(typeElement).values();
+        var schemaClass = ClassName.get(SCHEMA_PACKAGE, "Schema");
         var parameterizedTypeName = TypeUtils.getTypeName(typeElement);
         var returnType = ParameterizedTypeName.get(schemaClass, parameterizedTypeName);
         var enumBuilderClass = ClassName.get(BUILDER_PACKAGE, "EnumBuilder");
@@ -52,8 +49,8 @@ public class EnumCodeGenerator extends GeneratedCodeGenerator {
         var stringClass = ClassName.get(String.class);
         var serializeFunctionType = ParameterizedTypeName.get(ClassName.get(Function.class), parameterizedTypeName, stringClass);
 
-        var builderSchema = MethodSpec.methodBuilder(methodName)
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        var builderSchema = MethodSpec.methodBuilder(SCHEMA_METHOD_NAME)
+                .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .returns(returnType)
                 .addStatement("$T<$T> newEnum = $T.newEnum()", enumBuilderClass, parameterizedTypeName, enumBuilderClass)
                 .addStatement("newEnum.name($S)", TypeUtils.getName(typeElement));
@@ -82,6 +79,7 @@ public class EnumCodeGenerator extends GeneratedCodeGenerator {
         builderSchema.addStatement("return newEnum.build()");
 
         builder.addMethod(builderSchema.build());
+        builder.addField(assignFieldSpec(returnType, SCHEMA_METHOD_NAME));
     }
 
 }

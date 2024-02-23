@@ -7,6 +7,7 @@ import symphony.apt.model.MethodInfo;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -21,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public final class ModelUtils {
 
@@ -32,7 +34,7 @@ public final class ModelUtils {
     public static String getName(final AnnotationMirror annotation) {
         return annotation.getAnnotationType().toString();
     }
-    
+
     public static Predicate<Element> createHasFieldPredicate(final TypeElement typeElement) {
         final Collection<MethodInfo> methods = findImplementedMethods(typeElement);
         return element -> {
@@ -47,22 +49,43 @@ public final class ModelUtils {
         };
     }
 
-    public static Map<String, TypeName> getVariables(
-            final TypeElement typeElement, final Predicate<Element> predicate
+    public static Map<String, Element> getEnumTypes(final TypeElement typeElement) {
+        var variables = typeElement.getEnclosedElements().stream().filter(t -> t.getKind().equals(ElementKind.ENUM_CONSTANT)).toList();
+        final Map<String, Element> result = new LinkedHashMap<>();
+        for (var variable : variables) {
+            final String variableName = TypeUtils.getName(variable);
+            result.put(variableName, variable);
+        }
+        return result;
+    }
+
+    public static Map<String, VariableElement> getVariableTypes(
+            final TypeElement typeElement,
+            final Predicate<Element> predicate
     ) {
         final List<? extends Element> elements = typeElement.getEnclosedElements();
         final List<VariableElement> variables = ElementFilter.fieldsIn(elements);
-        final Map<String, TypeName> result = new LinkedHashMap<>();
+        final Map<String, VariableElement> result = new LinkedHashMap<>();
 
         for (final VariableElement variable : variables) {
             if (predicate.test(variable)) {
                 final String variableName = TypeUtils.getName(variable);
-                final TypeName variableType = TypeUtils.getTypeName(variable);
-                result.put(variableName, variableType);
+                result.put(variableName, variable);
             }
         }
 
         return result;
+    }
+
+    public static Map<String, TypeName> getVariables(
+            final TypeElement typeElement, final Predicate<Element> predicate
+    ) {
+        return getVariableTypes(typeElement, predicate)
+                .entrySet().
+                stream()
+                .map(entry -> Map.entry(entry.getKey(), TypeUtils.getTypeName(entry.getValue())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
     }
 
     public static Pair<Collection<MethodInfo>, Collection<MethodInfo>> calculateMethodInfo(

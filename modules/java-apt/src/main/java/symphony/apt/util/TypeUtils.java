@@ -9,6 +9,7 @@ import symphony.apt.AnnotatedElementCallback;
 import symphony.apt.context.ProcessorContext;
 import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.context.ProcessorSourceContext;
+import symphony.apt.model.TypeCategory;
 import symphony.apt.model.TypeInfo;
 
 import javax.lang.model.element.Element;
@@ -190,25 +191,71 @@ public final class TypeUtils {
         return false;
     }
 
-    public static boolean isWrappedType(TypeName typeName) {
-        var wrappedList = List.of(
-                "java.util.Optional",
-                "java.util.Map",
-                "java.util.List",
-                "java.util.Vector",
-                "java.util.Set",
-                "java.util.concurrent.CompletionStage"
-        );
-        return wrappedList.contains(getRawTypeName(typeName).toString());
+    private final static List<String> twoWrappedList = List.of(
+            "java.util.Map"
+    );
+
+    private final static List<String> oneWrappedList = List.of(
+            "java.util.Optional",
+            "java.util.List",
+            "java.util.Vector",
+            "java.util.Set",
+            "java.util.concurrent.CompletionStage"
+    );
+
+    private final static List<String> scalarList = List.of(
+            "java.lang.String",
+            "java.math.BigInteger",
+            "java.math.BigDecimal"
+    );
+
+    private final static List<String> primitiveTypes = List.of(
+            "java.lang.Boolean",
+            "java.lang.String",
+            "java.lang.Integer",
+            "java.lang.Long",
+            "java.lang.Double",
+            "java.lang.Float",
+            "java.lang.Short",
+            "java.math.BigInteger",
+            "java.math.BigDecimal",
+            "java.lang.Void",
+            "boolean",
+            "int",
+            "long",
+            "float",
+            "double",
+            "short",
+            "void"
+    );
+
+    public static boolean existsTwoParameterizedTypes(TypeName typeName) {
+        return twoWrappedList.contains(getRawTypeName(typeName).toString());
     }
 
+    public static boolean existsOneParameterizedType(TypeName typeName) {
+        return oneWrappedList.contains(getRawTypeName(typeName).toString());
+    }
+    
+    public static TypeCategory getTypeCategory(TypeName typeName) {
+        if (isPrimitiveType(typeName)) {
+            return TypeCategory.SYSTEM_TYPE;
+        }
+        if (existsOneParameterizedType(typeName)) {
+            return TypeCategory.ONE_PARAMETERIZED_TYPE;
+        }
+        if (existsTwoParameterizedTypes(typeName)) {
+            return TypeCategory.TWO_PARAMETERIZED_TYPES;
+        }
+        if (isCustomObjectType(typeName)) {
+            return TypeCategory.CUSTOM_OBJECT_TYPE;
+        }
+
+        return TypeCategory.CUSTOM_OBJECT_TYPE;
+                
+    }
 
     public static boolean isPrimitiveType(TypeName typeName) {
-        var scalarList = List.of(
-                "java.lang.String",
-                "java.math.BigInteger",
-                "java.math.BigDecimal"
-        );
         return typeName.isPrimitive() || typeName.isBoxedPrimitive() || scalarList.contains(typeName.toString());
     }
 
@@ -232,9 +279,9 @@ public final class TypeUtils {
         };
     }
 
-    public static boolean isCustomType(TypeName typeName) {
+    public static boolean isCustomObjectType(TypeName typeName) {
         var isPrimitiveType = isPrimitiveType(typeName);
-        var isWrappedType = isWrappedType(typeName);
+        var isWrappedType = existsOneParameterizedType(typeName) || existsTwoParameterizedTypes(typeName);
         return !isPrimitiveType && !isWrappedType;
     }
 
@@ -256,26 +303,6 @@ public final class TypeUtils {
 
         return typeDesc;
     }
-
-    public static List<String> primitiveTypes = List.of(
-            "java.lang.Boolean",
-            "java.lang.String",
-            "java.lang.Integer",
-            "java.lang.Long",
-            "java.lang.Double",
-            "java.lang.Float",
-            "java.lang.Short",
-            "java.math.BigInteger",
-            "java.math.BigDecimal",
-            "java.lang.Void",
-            "boolean",
-            "int",
-            "long",
-            "float",
-            "double",
-            "short",
-            "void"
-    );
 
     public static String getWrappedCallString(TypeInfo info) {
         StringBuilder sb = new StringBuilder();
@@ -302,7 +329,7 @@ public final class TypeUtils {
                     sb.append("$T.createCompletionStage(");
                     break;
                 default:
-                    return "$T.$N()";
+                    return "$T.$N";
             }
         }
         if (info.getParameterizedTypes() != null && !info.getParameterizedTypes().isEmpty()) {
