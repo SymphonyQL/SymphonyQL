@@ -29,13 +29,13 @@ public final class ProcessorContextHolder {
   }
 
   public static ProcessorContext getContext() {
-    final ProcessorContext processorContext = CONTEXT.get();
+    var processorContext = CONTEXT.get();
     Validate.notNull(processorContext, "Processor context is not setup");
     return processorContext;
   }
 
   public static ProcessingEnvironment getProcessingEnvironment() {
-    final ProcessorContext processorContext = getContext();
+    var processorContext = getContext();
     return processorContext.getProcessingEnvironment();
   }
 }

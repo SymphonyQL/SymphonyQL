@@ -11,14 +11,11 @@ import symphony.apt.util.ReflectionUtils;
 import symphony.apt.util.TypeUtils;
 
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
 
 public class ProcessorSourceContext {
 
@@ -42,20 +39,20 @@ public class ProcessorSourceContext {
 
     public final List<TypeElement> getElements() {
         final List<TypeElement> elements = new ArrayList<>();
-        final List<Pair<TypeElement, String>> info = getElementInfo();
+        final var info = getElementInfo();
 
-        for (final Pair<TypeElement, String> pair : info) {
-            final TypeElement element = pair.getLeft();
+        for (var pair : info) {
+            var element = pair.getLeft();
             elements.add(element);
         }
         return elements;
     }
 
     public static TypeElement guessOriginElement(final Collection<ProcessorSourceContext> contexts, final String className) {
-        for (final ProcessorSourceContext context : contexts) {
-            final List<Pair<TypeElement, String>> elementsInfo = context.getElementInfo();
-            for (final Pair<TypeElement, String> elementInfo : elementsInfo) {
-                final String classNameInfo = elementInfo.getRight();
+        for (var context : contexts) {
+            var elementsInfo = context.getElementInfo();
+            for (var elementInfo : elementsInfo) {
+                var classNameInfo = elementInfo.getRight();
                 if (StringUtils.equals(classNameInfo, className)) {
                     return elementInfo.getLeft();
                 }
@@ -65,10 +62,10 @@ public class ProcessorSourceContext {
     }
 
     public static Collection<ProcessorSourceContext> calculate(final RoundEnvironment roundEnv, final Collection<? extends TypeElement> annotations) {
-        final List<ProcessorSourceContext> contexts = new ArrayList<>();
+        var contexts = new ArrayList<ProcessorSourceContext>();
 
         try {
-            for (final TypeElement annotation : annotations) {
+            for (var annotation : annotations) {
                 contexts.add(calculate(roundEnv, annotation));
             }
         } catch (final Exception ex) {
@@ -81,19 +78,19 @@ public class ProcessorSourceContext {
 
     @SuppressWarnings("unchecked")
     private static ProcessorSourceContext calculate(final RoundEnvironment roundEnv, final TypeElement annotation) throws Exception {
-        final String annotationName = annotation.getQualifiedName().toString();
+        var annotationName = annotation.getQualifiedName().toString();
         final Class<? extends Annotation> annotationClass = ReflectionUtils.getClass(annotationName);
 
-        final Set<? extends Element> allElements = roundEnv.getElementsAnnotatedWith(annotation);
-        final Collection<? extends Element> filteredElement = TypeUtils.filterWithAnnotation(allElements, annotationClass);
+        var allElements = roundEnv.getElementsAnnotatedWith(annotation);
+        var filteredElement = TypeUtils.filterWithAnnotation(allElements, annotationClass);
 
-        final Collection<TypeElement> typeElements = TypeUtils.foldToTypeElements(filteredElement);
+        var typeElements = TypeUtils.foldToTypeElements(filteredElement);
 
-        final CodeGenerator generator = SourceCodeGeneratorRegistry.find(annotationName);
-        final List<Pair<TypeElement, String>> classes = new ArrayList<>();
+        var generator = SourceCodeGeneratorRegistry.find(annotationName);
+        var classes = new ArrayList<Pair<TypeElement, String>>();
 
-        for (final TypeElement element : typeElements) {
-            final String className = getClassName(generator, element);
+        for (var element : typeElements) {
+            var className = getClassName(generator, element);
             classes.add(Pair.of(element, className));
         }
 
@@ -102,8 +99,8 @@ public class ProcessorSourceContext {
 
     private static String getClassName(final CodeGenerator generator, final TypeElement element) {
         if (generator instanceof GeneratedCodeGenerator gcGenerator) {
-            final Function<String, String> nameModifier = gcGenerator.getNameModifier();
-            final String originClassName = TypeUtils.getName(element);
+            var nameModifier = gcGenerator.getNameModifier();
+            var originClassName = TypeUtils.getName(element);
             return nameModifier.apply(originClassName);
         }
         return null;

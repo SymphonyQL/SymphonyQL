@@ -26,7 +26,7 @@ public final class ProcessorContextFactory {
   }
 
   public static ProcessorContext create(final ProcessingEnvironment env) {
-    final Map<String, String> options = env.getOptions();
+    var options = env.getOptions();
 
     return new ProcessorContext(env)
         .setAddSuppressWarningsAnnotation(
@@ -41,7 +41,7 @@ public final class ProcessorContextFactory {
 
   private static boolean getBool(
       final Map<String, String> options, final String key, final boolean defaultValue) {
-    final String value = options.get(key);
+    var value = options.get(key);
     return StringUtils.isBlank(value) ? defaultValue : Boolean.parseBoolean(value);
   }
 }

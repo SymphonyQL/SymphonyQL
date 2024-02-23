@@ -16,19 +16,17 @@ public final class SourceTextUtils {
 
   public static String indent(final int n) {
     final StringBuilder result = new StringBuilder();
-    for (int i = 0; i < n; i++) {
-      result.append(INDENT);
-    }
+    result.append(INDENT.repeat(Math.max(0, n)));
     return result.toString();
   }
 
   public static String lines(final String... lines) {
-    final StringBuilder result = new StringBuilder();
-    final int length = ArrayUtils.getLength(lines);
-    int indent = 0;
+    final var result = new StringBuilder();
+    final var length = ArrayUtils.getLength(lines);
+    var indent = 0;
 
     for (int i = 0; i < length; i++) {
-      final String line = lines[i];
+      final var line = lines[i];
 
       if (line.startsWith(BRACKET_CLOSE)) {
         indent--;

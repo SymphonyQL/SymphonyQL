@@ -19,7 +19,7 @@ public final class CodeGeneratorContext {
   public static CodeGeneratorContext create(final TypeElement typeElement) {
     Validate.notNull(typeElement, "Type element must be defined");
 
-    final String packageName = ProcessorUtils.packageName(typeElement);
+    var packageName = ProcessorUtils.packageName(typeElement);
     return new CodeGeneratorContext(typeElement, packageName);
   }
 

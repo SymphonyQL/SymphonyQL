@@ -57,8 +57,8 @@ public final class TypeUtils {
     public static <T extends Annotation> T getAnnotation(
             final Class<T> annotationClass, final Element... elements
     ) {
-        for (final Element element : elements) {
-            final T annotation = element.getAnnotation(annotationClass);
+        for (final var element : elements) {
+            final var annotation = element.getAnnotation(annotationClass);
             if (annotation != null) {
                 return annotation;
             }
@@ -67,8 +67,8 @@ public final class TypeUtils {
     }
 
     public static boolean hasAnyType(final TypeMirror typeMirror, Class<?>... types) {
-        final String typeName = typeMirror.toString();
-        for (final Class<?> type : types) {
+        final var typeName = typeMirror.toString();
+        for (final var type : types) {
             if (StringUtils.equals(type.getCanonicalName(), typeName)) {
                 return true;
             }
@@ -79,9 +79,9 @@ public final class TypeUtils {
     public static <T extends Element> Collection<T> filterWithoutAnnotation(
             final Collection<T> elements, final Class<? extends Annotation> annotationClass
     ) {
-        final Collection<T> result = new ArrayList<>();
-        for (final T element : elements) {
-            final Annotation annotation = element.getAnnotation(annotationClass);
+        final var result = new ArrayList<T>();
+        for (final var element : elements) {
+            final var annotation = element.getAnnotation(annotationClass);
             if (annotation == null) {
                 result.add(element);
             }
@@ -93,8 +93,8 @@ public final class TypeUtils {
             final TypeElement typeElement, final Collection<? extends Element> elements,
             final Class<T> annotationClass, final AnnotatedElementCallback<T> callback
     ) throws Exception {
-        for (final Element element : elements) {
-            final T annotation = getAnnotation(annotationClass, element, typeElement);
+        for (final var element : elements) {
+            final var annotation = getAnnotation(annotationClass, element, typeElement);
 
             if (annotation != null) {
                 callback.process(element, annotation);
@@ -105,10 +105,10 @@ public final class TypeUtils {
     public static <T extends Annotation> List<? extends Element> filterWithAnnotation(
             final Collection<? extends Element> elements, final Class<T> annotationClass
     ) {
-        final List<Element> result = new ArrayList<>();
+        final var result = new ArrayList<Element>();
 
-        for (final Element element : elements) {
-            final T annotation = element.getAnnotation(annotationClass);
+        for (final var element : elements) {
+            final var annotation = element.getAnnotation(annotationClass);
             if (annotation != null) {
                 result.add(element);
             }
@@ -118,20 +118,20 @@ public final class TypeUtils {
     }
 
     public static TypeElement getSuperclass(final TypeElement root) {
-        final String objectClassName = Object.class.getCanonicalName();
-        final TypeMirror superclass = root.getSuperclass();
-        final TypeElement superclassElement = ProcessorUtils.getWrappedType(superclass);
+        final var objectClassName = Object.class.getCanonicalName();
+        final var superclass = root.getSuperclass();
+        final var superclassElement = ProcessorUtils.getWrappedType(superclass);
 
         if (superclassElement != null) {
-            final String rootClassName = String.valueOf(superclassElement.getQualifiedName());
+            final var rootClassName = String.valueOf(superclassElement.getQualifiedName());
             return rootClassName.equals(objectClassName) ? null : superclassElement;
         }
         return null;
     }
 
     public static List<TypeMirror> asTypes(final Collection<? extends Element> elements) {
-        final List<TypeMirror> types = new ArrayList<>();
-        for (final Element element : elements) {
+        final var types = new ArrayList<TypeMirror>();
+        for (final var element : elements) {
             types.add(element.asType());
         }
         return types;
@@ -146,18 +146,18 @@ public final class TypeUtils {
     }
 
     public static TypeName getTypeName(final Element element, final boolean wrap) {
-        final TypeMirror typeMirror = getTypeMirror(element);
-        final TypeKind kind = typeMirror.getKind();
+        final var typeMirror = getTypeMirror(element);
+        final var kind = typeMirror.getKind();
 
         if (kind == TypeKind.ERROR) {
-            final ProcessorContext context = ProcessorContextHolder.getContext();
-            final Collection<ProcessorSourceContext> sourceContexts = context.getSourceContexts();
+            final var context = ProcessorContextHolder.getContext();
+            final var sourceContexts = context.getSourceContexts();
 
-            final String typeName = String.valueOf(typeMirror);
-            final TypeElement originElement = ProcessorSourceContext.guessOriginElement(sourceContexts, typeName);
+            final var typeName = String.valueOf(typeMirror);
+            final var originElement = ProcessorSourceContext.guessOriginElement(sourceContexts, typeName);
 
             if (originElement != null) {
-                final String packageName = ProcessorUtils.packageName(originElement);
+                final var packageName = ProcessorUtils.packageName(originElement);
                 return ClassName.get(packageName, typeName);
             }
             return ClassName.bestGuess(typeName);
@@ -176,14 +176,14 @@ public final class TypeUtils {
     }
 
     public static boolean hasAnyModifier(final Element element, Modifier... modifiers) {
-        final Set<Modifier> elementModifiers = element.getModifiers();
+        final var elementModifiers = element.getModifiers();
         return hasAnyModifier(elementModifiers, modifiers);
     }
 
     public static boolean hasAnyModifier(
             final Collection<Modifier> element, final Modifier... modifiers
     ) {
-        for (final Modifier modifier : modifiers) {
+        for (final var modifier : modifiers) {
             if (element.contains(modifier)) {
                 return true;
             }
@@ -305,7 +305,7 @@ public final class TypeUtils {
     }
 
     public static String getWrappedCallString(TypeInfo info) {
-        StringBuilder sb = new StringBuilder();
+        final var sb = new StringBuilder();
         if (primitiveTypes.contains(info.getName())) {
             sb.append("$T.getSchema($S)");
         } else {

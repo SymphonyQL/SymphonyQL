@@ -2,8 +2,6 @@ package symphony.apt.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 import java.util.ServiceLoader;
 
 public final class ServiceLoaderUtils {
@@ -13,11 +11,11 @@ public final class ServiceLoaderUtils {
   }
 
   public static <T> Collection<T> load(final Class<T> beanClass) {
-    final ClassLoader classLoader = ServiceLoaderUtils.class.getClassLoader();
-    final ServiceLoader<T> loader = ServiceLoader.load(beanClass, classLoader);
-    final Iterator<T> iterator = loader.iterator();
+    final var classLoader = ServiceLoaderUtils.class.getClassLoader();
+    final var loader = ServiceLoader.load(beanClass, classLoader);
+    final var iterator = loader.iterator();
 
-    final List<T> list = new ArrayList<>();
+    final var list = new ArrayList<T>();
     while (iterator.hasNext()) {
       list.add(iterator.next());
     }

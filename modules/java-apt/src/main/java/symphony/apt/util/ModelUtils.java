@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -36,11 +35,11 @@ public final class ModelUtils {
   public static Predicate<Element> createHasFieldPredicate(final TypeElement typeElement) {
     final Collection<MethodInfo> methods = findImplementedMethods(typeElement);
     return element -> {
-      final String name = TypeUtils.getName(element);
-      final MethodInfo m = MethodInfo.find(methods, name, Collections.emptyList());
+      final var name = TypeUtils.getName(element);
+      final var m = MethodInfo.find(methods, name, Collections.emptyList());
 
       if (m != null) {
-        final ExecutableElement mElement = m.getElement();
+        final var mElement = m.getElement();
         return TypeUtils.hasAnyModifier(mElement, Modifier.PUBLIC);
       }
       return false;
@@ -52,9 +51,9 @@ public final class ModelUtils {
         typeElement.getEnclosedElements().stream()
             .filter(t -> t.getKind().equals(ElementKind.ENUM_CONSTANT))
             .toList();
-    final Map<String, Element> result = new LinkedHashMap<>();
+    final var result = new LinkedHashMap<String, Element>();
     for (var variable : variables) {
-      final String variableName = TypeUtils.getName(variable);
+      final var variableName = TypeUtils.getName(variable);
       result.put(variableName, variable);
     }
     return result;
@@ -63,12 +62,12 @@ public final class ModelUtils {
   public static Map<String, VariableElement> getVariableTypes(
       final TypeElement typeElement, final Predicate<Element> predicate) {
     final List<? extends Element> elements = typeElement.getEnclosedElements();
-    final List<VariableElement> variables = ElementFilter.fieldsIn(elements);
-    final Map<String, VariableElement> result = new LinkedHashMap<>();
+    final var variables = ElementFilter.fieldsIn(elements);
+    final var result = new LinkedHashMap<String, VariableElement>();
 
-    for (final VariableElement variable : variables) {
+    for (final var variable : variables) {
       if (predicate.test(variable)) {
-        final String variableName = TypeUtils.getName(variable);
+        final var variableName = TypeUtils.getName(variable);
         result.put(variableName, variable);
       }
     }
@@ -85,13 +84,13 @@ public final class ModelUtils {
 
   public static Pair<Collection<MethodInfo>, Collection<MethodInfo>> calculateMethodInfo(
       final TypeElement rootElement) {
-    final Collection<MethodInfo> unimplementedMethods = new LinkedHashSet<>();
-    final Collection<MethodInfo> implementedMethods = new LinkedHashSet<>();
-    TypeElement root = rootElement;
+    final var unimplementedMethods = new LinkedHashSet<MethodInfo>();
+    final var implementedMethods = new LinkedHashSet<MethodInfo>();
+    var root = rootElement;
 
     while (root != null) {
-      final List<ExecutableElement> methods = ElementFilter.methodsIn(root.getEnclosedElements());
-      for (final ExecutableElement method : methods) {
+      final var methods = ElementFilter.methodsIn(root.getEnclosedElements());
+      for (final var method : methods) {
         if (TypeUtils.hasAnyModifier(method, Modifier.ABSTRACT)) {
           unimplementedMethods.add(MethodInfo.create(method));
         } else {
@@ -99,12 +98,11 @@ public final class ModelUtils {
         }
       }
 
-      final List<TypeElement> interfaces = getInterfaces(rootElement);
-      for (final TypeElement element : interfaces) {
-        final List<ExecutableElement> interfaceMethods =
-            ElementFilter.methodsIn(element.getEnclosedElements());
+      final var interfaces = getInterfaces(rootElement);
+      for (final var element : interfaces) {
+        final var interfaceMethods = ElementFilter.methodsIn(element.getEnclosedElements());
 
-        for (final ExecutableElement method : interfaceMethods) {
+        for (final var method : interfaceMethods) {
           unimplementedMethods.add(MethodInfo.create(method));
         }
       }
@@ -118,16 +116,15 @@ public final class ModelUtils {
   }
 
   public static Collection<MethodInfo> findImplementedMethods(final TypeElement rootElement) {
-    final Pair<Collection<MethodInfo>, Collection<MethodInfo>> methodInfo =
-        calculateMethodInfo(rootElement);
+    final var methodInfo = calculateMethodInfo(rootElement);
     return methodInfo.getLeft();
   }
 
   public static List<TypeElement> getInterfaces(final TypeElement root) {
     final List<? extends TypeMirror> interfaces = root.getInterfaces();
-    final List<TypeElement> result = new ArrayList<>();
+    final var result = new ArrayList<TypeElement>();
 
-    for (final TypeMirror interfaceMirror : interfaces) {
+    for (final var interfaceMirror : interfaces) {
       result.add(ProcessorUtils.getWrappedType(interfaceMirror));
     }
     return result;

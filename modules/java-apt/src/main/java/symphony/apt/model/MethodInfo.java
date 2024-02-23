@@ -46,8 +46,8 @@ public class MethodInfo {
 
   public static MethodInfo find(
       final Collection<MethodInfo> info, final String name, final Collection<TypeMirror> types) {
-    for (final MethodInfo method : info) {
-      final String methodName = method.getName();
+    for (var method : info) {
+      var  methodName = method.getName();
       if (StringUtils.equals(methodName, name)
           && Objects.equals(method.getParameterTypes(), types)) {
         return method;
@@ -79,9 +79,8 @@ public class MethodInfo {
 
   @Override
   public final boolean equals(final Object obj) {
-    if (obj instanceof MethodInfo) {
-      final MethodInfo other = (MethodInfo) obj;
-      return Objects.equals(other.getName(), getName())
+    if (obj instanceof MethodInfo other) {
+        return Objects.equals(other.getName(), getName())
           && Objects.equals(other.getParameterTypes(), getParameterTypes())
           && Objects.equals(other.getReturnType(), getReturnType());
     }

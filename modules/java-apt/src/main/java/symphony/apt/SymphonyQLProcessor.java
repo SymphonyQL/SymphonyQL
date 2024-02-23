@@ -1,7 +1,5 @@
 package symphony.apt;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -26,14 +24,13 @@ public class SymphonyQLProcessor extends AbstractProcessor {
   @Override
   public final boolean process(
       final Set<? extends TypeElement> annotations, final RoundEnvironment roundEnv) {
-    final boolean needToProcess = !(roundEnv.processingOver() || annotations.isEmpty());
+    final var needToProcess = !(roundEnv.processingOver() || annotations.isEmpty());
 
     if (needToProcess) {
       ProcessorContextHolder.withContext(
           processorContext,
           () -> {
-            final Collection<ProcessorSourceContext> sourceContexts =
-                ProcessorSourceContext.calculate(roundEnv, annotations);
+            var sourceContexts = ProcessorSourceContext.calculate(roundEnv, annotations);
 
             processorContext.setSourceContexts(sourceContexts);
 
@@ -59,11 +56,11 @@ public class SymphonyQLProcessor extends AbstractProcessor {
   }
 
   private void process() {
-    final Collection<ProcessorSourceContext> sourceContexts = processorContext.getSourceContexts();
+    var sourceContexts = processorContext.getSourceContexts();
 
-    for (final ProcessorSourceContext sourceContext : sourceContexts) {
-      final List<TypeElement> elements = sourceContext.getElements();
-      final String annotationName = sourceContext.getAnnotationClassName();
+    for (final var sourceContext : sourceContexts) {
+      final var elements = sourceContext.getElements();
+      final var annotationName = sourceContext.getAnnotationClassName();
 
       if (!SourceCodeGenerator.generate(annotationName, elements)) {
         break;

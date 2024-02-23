@@ -1,7 +1,6 @@
 package symphony.apt;
 
 import java.lang.annotation.Annotation;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -25,12 +24,12 @@ public final class SourceCodeGeneratorRegistry {
   }
 
   private static Map<String, ? extends CodeGenerator> createCodeWriterMap() {
-    final Map<String, CodeGenerator> map = new LinkedHashMap<>();
-    final Collection<CodeGenerator> generators = ServiceLoaderUtils.load(CodeGenerator.class);
+    var map = new LinkedHashMap<String, CodeGenerator>();
+    var generators = ServiceLoaderUtils.load(CodeGenerator.class);
 
-    for (final CodeGenerator generator : generators) {
+    for (var generator : generators) {
       final Class<? extends Annotation> annotation = generator.getAnnotation();
-      final String annotationName = annotation.getName();
+      var annotationName = annotation.getName();
       map.put(annotationName, generator);
     }
 

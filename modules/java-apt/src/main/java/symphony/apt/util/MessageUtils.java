@@ -1,7 +1,6 @@
 package symphony.apt.util;
 
 import javax.annotation.processing.Messager;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
 import symphony.apt.context.ProcessorContextHolder;
@@ -26,12 +25,12 @@ public final class MessageUtils {
 
   public static void message(
       final Diagnostic.Kind type, final String message, final Element element) {
-    final Messager messager = getMessager();
+    final var messager = getMessager();
     messager.printMessage(type, message, element);
   }
 
   private static Messager getMessager() {
-    final ProcessingEnvironment env = ProcessorContextHolder.getProcessingEnvironment();
+    final var env = ProcessorContextHolder.getProcessingEnvironment();
     return env.getMessager();
   }
 }

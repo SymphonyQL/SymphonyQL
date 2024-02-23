@@ -16,10 +16,10 @@ public final class SourceCodeGenerator {
   public static boolean generate(
       final String annotationClassName, final Collection<TypeElement> elements) {
     try {
-      final CodeGenerator generator = SourceCodeGeneratorRegistry.find(annotationClassName);
+      var generator = SourceCodeGeneratorRegistry.find(annotationClassName);
       generator.onStart();
 
-      for (final TypeElement element : elements) {
+      for (var element : elements) {
         generate(generator, element);
       }
       generator.onFinish();
@@ -33,7 +33,7 @@ public final class SourceCodeGenerator {
   private static void generate(final CodeGenerator generator, final TypeElement element)
       throws Exception {
     final Class<? extends CodeGenerator> generatorClass = generator.getClass();
-    final String generatorName = generatorClass.getSimpleName();
+    var generatorName = generatorClass.getSimpleName();
 
     MessageUtils.note(String.format("Detected %s on %s", generatorName, element));
     generator.generate(CodeGeneratorContext.create(element));
