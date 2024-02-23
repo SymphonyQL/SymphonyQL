@@ -93,8 +93,8 @@ lazy val server     = (project in file("modules/server"))
   )
 lazy val `java-apt` = (project in file("modules/java-apt"))
   .settings(
-    publish / skip := false,
-    name           := "symphony-java-apt",
+    publish / skip   := false,
+    name             := "symphony-java-apt",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.apt.value,
     javafmtOnCompile := true

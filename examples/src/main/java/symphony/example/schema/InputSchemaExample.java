@@ -18,6 +18,7 @@ enum OriginEnum {
 
 @ObjectSchema
 record OutputNestedObject(
+        OriginEnum originEnum,
         Optional<OriginEnum> optionalEnum,
         Optional<String> optionalString,
         List<List<Optional<OriginEnum>>> ssOptionalEnum,
@@ -35,6 +36,7 @@ record OutputNestedObject(
 
 @ObjectSchema
 record OutputObject(
+        OriginEnum originEnum,
         Optional<OriginEnum> optionalEnum,
         Optional<String> optionalString,
         List<List<Optional<OriginEnum>>> ssOptionalEnum,
@@ -55,6 +57,7 @@ record OutputObject(
 @InputSchema
 @ArgExtractor
 record InputObject(
+        OriginEnum originEnum,
         Optional<OriginEnum> optionalEnum,
         Optional<String> optionalString,
         List<List<Optional<OriginEnum>>> ssOptionalEnum,

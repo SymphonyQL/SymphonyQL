@@ -175,9 +175,11 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
             var fieldName = element.getKey();
             var optionalValueName = fieldName + "Optional";
             var eitherValueName = fieldName + "Either";
+            CodeBlock code = null;
+            var exceptedObjectName = getNameModifier().apply(fieldTypeName.toString());
             switch (TypeUtils.getTypeCategory(fieldTypeName)) {
                 case SYSTEM_TYPE -> {
-                    var code = CodeBlock.builder().add(
+                    code = CodeBlock.builder().add(
                             String.format(createFieldTemplate, "var $L = $T.getArgumentExtractor($S).extract($L.get());"), // line 5
                             optionalValueName, fieldName, // line 1
                             optionalValueName, // line 2 
@@ -187,16 +189,31 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                             RIGHT_CLASS, SYMPHONYQL_ERROR_CLASS, // line 7
                             fieldTypeName, // line 8
                             LEFT_CLASS, SYMPHONYQL_ERROR_CLASS, // line 10
-                            "Cannot build field " + fieldName + " from input, expected type: " + fieldTypeName.toString() // line 11
+                            "Cannot build field " + fieldName + " from input, expected type: " + fieldTypeName // line 11
                     ).build();
-                    fieldCodes.put(fieldName, code);
                 }
                 case CUSTOM_OBJECT_TYPE -> {
+                    var exceptedObjectType = ClassName.get("", exceptedObjectName);
+                    code = CodeBlock.builder().add(
+                            String.format(createFieldTemplate, "var $L = $T.$N.extract($L.get());"), // line 5
+                            optionalValueName, fieldName, // line 1
+                            optionalValueName, // line 2 
+                            "Field " + fieldName + " is not present in input", // line 3
+                            eitherValueName, exceptedObjectType, EXTRACTOR_METHOD_NAME, optionalValueName, // line 5
+                            fieldName, eitherValueName, // line 6
+                            RIGHT_CLASS, SYMPHONYQL_ERROR_CLASS, // line 7
+                            fieldTypeName, // line 8
+                            LEFT_CLASS, SYMPHONYQL_ERROR_CLASS, // line 10
+                            "Cannot build field " + fieldName + " from input, expected type: " + fieldTypeName.toString() // line 11
+                    ).build();
                 }
                 case ONE_PARAMETERIZED_TYPE -> {
                 }
                 case TWO_PARAMETERIZED_TYPES -> {
                 }
+            }
+            if (code!=null) {
+                fieldCodes.put(fieldName, code);
             }
         }
         var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), SYMPHONYQL_OBJECT_VALUE_CLASS, typeName);

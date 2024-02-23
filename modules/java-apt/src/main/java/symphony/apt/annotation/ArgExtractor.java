@@ -79,7 +79,7 @@ import java.lang.annotation.Target;
  *                     case SymphonyQLValue.StringValue obj ->  {
  *                         yield Right.apply(function.apply(obj));
  *                     }
- *                     default -> Left.apply(new SymphonyQLError.ArgumentError("Expected ObjectValue"));
+ *                     default -> Left.apply(new SymphonyQLError.ArgumentError("Expected EnumValue or StringValue"));
  *                 };
  *             }
  *         };

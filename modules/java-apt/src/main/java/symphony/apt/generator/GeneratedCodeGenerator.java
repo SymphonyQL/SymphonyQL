@@ -191,9 +191,9 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
                     );
                 }
                 case CUSTOM_OBJECT_TYPE -> {
-                    ClassName objectValueType = ClassName.get("", getNameModifier().apply(type.toString()));
+                    ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(type.toString()));
                     var args = new ArrayList<>(list);
-                    args.addAll(List.of(objectValueType, SCHEMA_METHOD_NAME));
+                    args.addAll(List.of(expectedObjectType, SCHEMA_METHOD_NAME));
                     builderSchema.addCode(SourceTextUtils.lines(String.format(addFieldMethodTemplate, "$T.$N")), args.toArray());
                 }
                 case ONE_PARAMETERIZED_TYPE -> {
@@ -208,8 +208,8 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
                     if (TypeUtils.isPrimitiveType(firstName)) {
                         args.addAll(List.of(SCHEMA_CLASS, firstName));
                     } else {
-                        ClassName objectValueType = ClassName.get("", getNameModifier().apply(firstName.toString()));
-                        args.addAll(List.of(objectValueType, SCHEMA_METHOD_NAME));
+                        ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(firstName.toString()));
+                        args.addAll(List.of(expectedObjectType, SCHEMA_METHOD_NAME));
                     }
 
                     builderSchema.addCode(SourceTextUtils.lines(String.format(addFieldMethodTemplate, buildSchemaString)), args.toArray());
