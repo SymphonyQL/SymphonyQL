@@ -7,17 +7,20 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * <p>@EnumSchema creates a class with schema method for SymphonyQL Enum Type.
- * <p>
- * <br/> Original class OriginEnum:
+ * &#64;EnumSchema creates a class with schema method for SymphonyQL Enum Type.
+ *
+ * <p><br>
+ * Original class OriginEnum:
+ *
  * <pre>{@code
  * @EnumSchema
  * enum OriginEnum {
  *     EARTH, MARS, BELT;
  * }
  * }</pre>
- * <p>
- * Generated class OriginEnumSchema:
+ *
+ * <p>Generated class OriginEnumSchema:
+ *
  * <pre>{@code
  * import java.util.function.Function;
  * import javax.annotation.Generated;
@@ -68,6 +71,4 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE})
-public @interface EnumSchema {
-
-}
+public @interface EnumSchema {}

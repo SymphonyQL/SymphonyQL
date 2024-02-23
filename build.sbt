@@ -96,7 +96,8 @@ lazy val `java-apt` = (project in file("modules/java-apt"))
     publish / skip := false,
     name           := "symphony-java-apt",
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.apt.value
+    libraryDependencies ++= Dependencies.Deps.apt.value,
+    javafmtOnCompile := true
   )
 
 lazy val examples = (project in file("examples"))

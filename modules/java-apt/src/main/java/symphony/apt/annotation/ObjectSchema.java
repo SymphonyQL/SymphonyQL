@@ -7,9 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * <p>@ObjectSchema creates a class with schema method for SymphonyQL Object Type.
- * <p>
- * <br/> Original class OutputObject:
+ * &#64;ObjectSchema creates a class with schema method for SymphonyQL Object Type.
+ *
+ * <p><br>
+ * Original class OutputObject:
+ *
  * <pre>{@code
  * @InputSchema
  * record OutputObject(
@@ -18,8 +20,9 @@ import java.lang.annotation.Target;
  * ) {
  * }
  * }</pre>
- * <p>
- * Generated class OutputObjectSchema:
+ *
+ * <p>Generated class OutputObjectSchema:
+ *
  * <pre>{@code
  * import java.util.function.Function;
  * import javax.annotation.Generated;
@@ -59,5 +62,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE})
 public @interface ObjectSchema {
-    boolean withArgs() default false;
+  boolean withArgs() default false;
 }

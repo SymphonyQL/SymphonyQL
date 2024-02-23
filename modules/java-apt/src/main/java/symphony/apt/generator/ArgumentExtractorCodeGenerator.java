@@ -28,16 +28,18 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
     private final static String EXTRACTOR_SUFFIX = "Extractor";
     private final static String CREATE_OBJECT_FUNCTION = "function";
     protected static final String EXTRACTOR_METHOD_NAME = EXTRACTOR_SUFFIX.toLowerCase();
-    protected static final ClassName ARGUMENT_EXTRACTOR_CLASS = ClassName.get(SCHEMA_PACKAGE, "ArgumentExtractor");
-    protected static final ClassName SYMPHONYQL_INPUTVALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLInputValue");
-    protected static final ClassName SYMPHONYQL_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue");
+    // scala classes
     protected static final ClassName EITHER_CLASS = ClassName.get("scala.util", "Either");
     protected static final ClassName LEFT_CLASS = ClassName.get("scala.util", "Left");
     protected static final ClassName RIGHT_CLASS = ClassName.get("scala.util", "Right");
-    protected static final ClassName ERROR_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLError", "ArgumentError");
-    protected static final ClassName OBJECT_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLInputValue", "ObjectValue");
-    protected static final ClassName ENUM_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue", "EnumValue");
-    protected static final ClassName STRING_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue", "StringValue");
+    // symphonyql classes
+    protected static final ClassName SYMPHONYQL_EXTRACTOR_CLASS = ClassName.get(SCHEMA_PACKAGE, "ArgumentExtractor");
+    protected static final ClassName SYMPHONYQL_INPUTVALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLInputValue");
+    protected static final ClassName SYMPHONYQL_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue");
+    protected static final ClassName SYMPHONYQL_ERROR_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLError", "ArgumentError");
+    protected static final ClassName SYMPHONYQL_OBJECT_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLInputValue", "ObjectValue");
+    protected static final ClassName SYMPHONYQL_ENUM_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue", "EnumValue");
+    protected static final ClassName SYMPHONYQL_STRING_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue", "StringValue");
 
     @Override
     public final Class<ArgExtractor> getAnnotation() {
@@ -84,7 +86,6 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
             """;
 
     private void generateEnum(final TypeSpec.Builder builder, final TypeElement typeElement) {
-        var variables = typeElement.getEnclosedElements().stream().filter(t -> t.getKind().equals(ElementKind.ENUM_CONSTANT)).toList();
         var typeName = TypeUtils.getTypeName(typeElement);
         var fieldCodes = new LinkedHashMap<String, CodeBlock>();
         var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), SYMPHONYQL_VALUE_CLASS, typeName);
@@ -113,18 +114,18 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                             }
                         };
                         """,
-                ENUM_VALUE_CLASS, // line 1
-                eitherValueName, ARGUMENT_EXTRACTOR_CLASS, // line 2
+                SYMPHONYQL_ENUM_VALUE_CLASS, // line 1
+                eitherValueName, SYMPHONYQL_EXTRACTOR_CLASS, // line 2
                 eitherValueName, // line 3
-                RIGHT_CLASS, ERROR_CLASS, // line 4
+                RIGHT_CLASS, SYMPHONYQL_ERROR_CLASS, // line 4
                 type, type, // line 5
-                LEFT_CLASS, ERROR_CLASS, // line 7
+                LEFT_CLASS, SYMPHONYQL_ERROR_CLASS, // line 7
                 "Cannot build enum " + typeName + " from input", // line 8
-                eitherValueName, ARGUMENT_EXTRACTOR_CLASS, // line 12
+                eitherValueName, SYMPHONYQL_EXTRACTOR_CLASS, // line 12
                 eitherValueName, // line 13
-                RIGHT_CLASS, ERROR_CLASS, // line 14
+                RIGHT_CLASS, SYMPHONYQL_ERROR_CLASS, // line 14
                 type, type, // line 15
-                LEFT_CLASS, ERROR_CLASS, // line 17
+                LEFT_CLASS, SYMPHONYQL_ERROR_CLASS, // line 17
                 "Cannot build enum " + typeName + " from input" // line 18
 
         ).build();
@@ -137,30 +138,29 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                         .addSuperinterface(functionType)
                         .addMethod(generateEnumApplyMethod(fieldCodes, typeName)).build())
                 .build();
-        generateObjectBody(builder, typeName, CodeBlock.builder().add("""
-                                return switch (input) {
-                                    case $T obj ->  {
-                                        yield $T.apply($L.apply(obj));
-                                    }
-                                    case $T obj ->  {
-                                        yield $T.apply($L.apply(obj));
-                                    }
-                                    default -> $T.apply(new $T($S));
-                                };
-                                """, List.of(
-                                ENUM_VALUE_CLASS,
-                                RIGHT_CLASS,
-                                CREATE_OBJECT_FUNCTION,
-                                STRING_VALUE_CLASS,
-                                RIGHT_CLASS,
-                                CREATE_OBJECT_FUNCTION,
-                                LEFT_CLASS,
-                                ERROR_CLASS,
-                                "Expected EnumValue or StringValue"
-                        ).toArray()
-                ).build(),
-                fieldSpec
-        );
+        var applyCode = CodeBlock.builder().add("""
+                        return switch (input) {
+                            case $T obj ->  {
+                                yield $T.apply($L.apply(obj));
+                            }
+                            case $T obj ->  {
+                                yield $T.apply($L.apply(obj));
+                            }
+                            default -> $T.apply(new $T($S));
+                        };
+                        """, List.of(
+                        SYMPHONYQL_ENUM_VALUE_CLASS,
+                        RIGHT_CLASS,
+                        CREATE_OBJECT_FUNCTION,
+                        SYMPHONYQL_STRING_VALUE_CLASS,
+                        RIGHT_CLASS,
+                        CREATE_OBJECT_FUNCTION,
+                        LEFT_CLASS,
+                        SYMPHONYQL_ERROR_CLASS,
+                        "Expected EnumValue or StringValue"
+                ).toArray()
+        ).build();
+        generateObjectBody(builder, typeName, applyCode, fieldSpec);
     }
 
     protected void generateObject(
@@ -182,11 +182,11 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                             optionalValueName, fieldName, // line 1
                             optionalValueName, // line 2 
                             "Field " + fieldName + " is not present in input", // line 3
-                            eitherValueName, ARGUMENT_EXTRACTOR_CLASS, fieldTypeName, optionalValueName, // line 5
+                            eitherValueName, SYMPHONYQL_EXTRACTOR_CLASS, fieldTypeName, optionalValueName, // line 5
                             fieldName, eitherValueName, // line 6
-                            RIGHT_CLASS, ERROR_CLASS, // line 7
+                            RIGHT_CLASS, SYMPHONYQL_ERROR_CLASS, // line 7
                             fieldTypeName, // line 8
-                            LEFT_CLASS, ERROR_CLASS, // line 10
+                            LEFT_CLASS, SYMPHONYQL_ERROR_CLASS, // line 10
                             "Cannot build field " + fieldName + " from input, expected type: " + fieldTypeName.toString() // line 11
                     ).build();
                     fieldCodes.put(fieldName, code);
@@ -199,31 +199,30 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                 }
             }
         }
-        var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), SYMPHONYQL_INPUTVALUE_CLASS, typeName);
+        var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), SYMPHONYQL_OBJECT_VALUE_CLASS, typeName);
+        var applyCode = CodeBlock.builder().add("""
+                        return switch (input) {
+                            case $T obj ->  {
+                                yield $T.apply($L.apply(obj));
+                            }
+                            default -> $T.apply(new $T($S));
+                        };
+                        """, List.of(
+                        SYMPHONYQL_OBJECT_VALUE_CLASS,
+                        RIGHT_CLASS,
+                        CREATE_OBJECT_FUNCTION,
+                        LEFT_CLASS,
+                        SYMPHONYQL_ERROR_CLASS,
+                        "Expected ObjectValue"
+                ).toArray()
+        ).build();
         var fieldSpec = FieldSpec
                 .builder(functionType, CREATE_OBJECT_FUNCTION, Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
                 .initializer("$L", TypeSpec.anonymousClassBuilder("")
                         .addSuperinterface(functionType)
                         .addMethod(generateObjectApplyMethod(fieldCodes, typeName)).build())
                 .build();
-        generateObjectBody(builder, typeName, CodeBlock.builder().add("""
-                                return switch (input) {
-                                    case $T obj ->  {
-                                        yield $T.apply($L.apply(obj));
-                                    }
-                                    default -> $T.apply(new $T($S));
-                                };
-                                """, List.of(
-                                OBJECT_VALUE_CLASS,
-                                RIGHT_CLASS,
-                                CREATE_OBJECT_FUNCTION,
-                                LEFT_CLASS,
-                                ERROR_CLASS,
-                                "Expected ObjectValue"
-                        ).toArray()
-                ).build(),
-                fieldSpec
-        );
+        generateObjectBody(builder, typeName, applyCode, fieldSpec);
     }
 
     private MethodSpec generateEnumApplyMethod(
@@ -250,7 +249,7 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
         var applyMethod = MethodSpec.methodBuilder("apply")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(OBJECT_VALUE_CLASS, "obj")
+                .addParameter(SYMPHONYQL_OBJECT_VALUE_CLASS, "obj")
                 .returns(typeName);
 
         var join = new StringJoiner(",");
@@ -268,15 +267,16 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
             final FieldSpec fieldSpec
 
     ) {
-        var returnType = ParameterizedTypeName.get(ARGUMENT_EXTRACTOR_CLASS, typeName);
+        var returnType = ParameterizedTypeName.get(SYMPHONYQL_EXTRACTOR_CLASS, typeName);
         // new ArgumentExtractor<T>
         var extractAnonymousObject = TypeSpec.anonymousClassBuilder("")
-                .addSuperinterface(ParameterizedTypeName.get(ARGUMENT_EXTRACTOR_CLASS, typeName))
+                .addSuperinterface(ParameterizedTypeName.get(SYMPHONYQL_EXTRACTOR_CLASS, typeName))
+                // public Either<SymphonyQLError.ArgumentError, InputObject> extract(SymphonyQLInputValue input)
                 .addMethod(MethodSpec.methodBuilder("extract")
                         .addAnnotation(Override.class)
                         .addModifiers(Modifier.PUBLIC)
                         .addParameter(SYMPHONYQL_INPUTVALUE_CLASS, "input")
-                        .returns(ParameterizedTypeName.get(EITHER_CLASS, ERROR_CLASS, typeName))
+                        .returns(ParameterizedTypeName.get(EITHER_CLASS, SYMPHONYQL_ERROR_CLASS, typeName))
                         .addCode(applyCode).build()
                 );
 
@@ -286,8 +286,8 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
         // public static final ArgumentExtractor<T> extractor = extractor(); 
         builder.addField(assignFieldSpec(returnType, EXTRACTOR_METHOD_NAME));
 
-        // private static ArgumentExtractor<T> extractor(){ };
         builder.addMethod(
+                // private static ArgumentExtractor<T> extractor(){ };
                 MethodSpec.methodBuilder(EXTRACTOR_SUFFIX.toLowerCase())
                         .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                         .addStatement("return $L", extractAnonymousObject.build())

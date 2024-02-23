@@ -7,9 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * <p>@InputSchema creates a class with schema method for SymphonyQL Input Type.
- * <p>
- * <br/> Original class InputObject:
+ * &#64;InputSchema creates a class with schema method for SymphonyQL Input Type.
+ *
+ * <p><br>
+ * Original class InputObject:
+ *
  * <pre>{@code
  * @InputSchema
  * record InputObject(
@@ -18,8 +20,9 @@ import java.lang.annotation.Target;
  * ) {
  * }
  * }</pre>
- * <p>
- * Generated class InputObjectSchema:
+ *
+ * <p>Generated class InputObjectSchema:
+ *
  * <pre>{@code
  * import java.util.function.Function;
  * import javax.annotation.Generated;
@@ -58,6 +61,4 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE})
-public @interface InputSchema {
-
-}
+public @interface InputSchema {}

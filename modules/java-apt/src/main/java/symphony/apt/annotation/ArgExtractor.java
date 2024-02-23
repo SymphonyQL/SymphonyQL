@@ -7,17 +7,20 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * <p>@ArgExtractor creates a class with extractor method for SymphonyQL Enum Type.
- * <p>
- * <br/> Original enum class OriginEnumExtractor:
+ * &#64;ArgExtractor creates a class with extractor method for SymphonyQL Enum Type.
+ *
+ * <p><br>
+ * Original enum class OriginEnumExtractor:
+ *
  * <pre>{@code
  * @EnumSchema
  * enum OriginEnum {
  *     EARTH, MARS, BELT;
  * }
  * }</pre>
- * <p>
- * Generated enum class OriginEnumExtractor:
+ *
+ * <p>Generated enum class OriginEnumExtractor:
+ *
  * <pre>{@code
  * import java.util.function.Function;
  * import javax.annotation.Generated;
@@ -87,6 +90,4 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE})
-public @interface ArgExtractor {
-
-}
+public @interface ArgExtractor {}
