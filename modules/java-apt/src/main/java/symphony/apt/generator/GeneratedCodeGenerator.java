@@ -37,9 +37,10 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
     protected static final String BUILDER_PACKAGE = "symphony.schema.javadsl";
     protected static final String SCHEMA_SUFFIX = "Schema";
     protected static final String SCHEMA_METHOD_NAME = SCHEMA_SUFFIX.toLowerCase();
-    protected static final ClassName SCHEMA_CLASS = ClassName.get(SCHEMA_PACKAGE, "Schema");
-    protected static final ClassName FIELD_BUILDER_CLASS = ClassName.get(BUILDER_PACKAGE, "FieldBuilder");
-    protected static final ClassName FIELD_CLASS = ClassName.get(ADT_PACKAGE, "__Field");
+    // symphonyql classes
+    protected static final ClassName SYMPHONYQL_SCHEMA_CLASS = ClassName.get(SCHEMA_PACKAGE, "Schema");
+    protected static final ClassName SYMPHONYQL_FIELD_BUILDER_CLASS = ClassName.get(BUILDER_PACKAGE, "FieldBuilder");
+    protected static final ClassName SYMPHONYQL_FIELD_CLASS = ClassName.get(ADT_PACKAGE, "__Field");
 
     private final Function<String, String> nameModifier = new AddSuffix(SCHEMA_SUFFIX);
 
@@ -165,9 +166,9 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         var variables = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
 
         var parameterizedTypeName = TypeUtils.getTypeName(typeElement);
-        var returnType = ParameterizedTypeName.get(SCHEMA_CLASS, parameterizedTypeName);
+        var returnType = ParameterizedTypeName.get(SYMPHONYQL_SCHEMA_CLASS, parameterizedTypeName);
         var objectBuilderClass = ClassName.get(BUILDER_PACKAGE, builderName);
-        var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), FIELD_BUILDER_CLASS, FIELD_CLASS);
+        var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), SYMPHONYQL_FIELD_BUILDER_CLASS, SYMPHONYQL_FIELD_CLASS);
 
         var builderSchema = objectMethodBuilder(returnType, objectBuilderClass, typeElement);
 
@@ -179,11 +180,11 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         for (final var entry : variables.entrySet()) {
             var name = entry.getKey();
             var type = TypeUtils.getTypeName(entry.getValue());
-            var list = new ArrayList<>(List.of(functionType, FIELD_CLASS, FIELD_BUILDER_CLASS, name));
+            var list = new ArrayList<>(List.of(functionType, SYMPHONYQL_FIELD_CLASS, SYMPHONYQL_FIELD_BUILDER_CLASS, name));
             switch (TypeUtils.getTypeCategory(type)) {
                 case SYSTEM_TYPE -> {
                     var args = new ArrayList<>(list);
-                    args.addAll(List.of(SCHEMA_CLASS,
+                    args.addAll(List.of(SYMPHONYQL_SCHEMA_CLASS,
                             ClassName.get("", type.toString())));
                     builderSchema.addCode(
                             SourceTextUtils.lines(String.format(addFieldMethodTemplate, "$T.getSchema($S)")),
@@ -198,15 +199,15 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
                 }
                 case ONE_PARAMETERIZED_TYPE -> {
                     var typeInfo = TypeUtils.getTypeInfo(type, 1);
-                    var buildSchemaString = TypeUtils.getWrappedCallString(typeInfo);
+                    var buildSchemaString = TypeUtils.getSchemaWrappedString(typeInfo);
                     var firstName = TypeUtils.getFirstNestedParameterizedTypeName(type);
                     var maxDepth = TypeInfo.calculateMaxDepth(typeInfo);
                     var args = new ArrayList<>(list);
                     for (int i = 0; i < maxDepth - 1; i++) {
-                        args.add(SCHEMA_CLASS);
+                        args.add(SYMPHONYQL_SCHEMA_CLASS);
                     }
                     if (TypeUtils.isPrimitiveType(firstName)) {
-                        args.addAll(List.of(SCHEMA_CLASS, firstName));
+                        args.addAll(List.of(SYMPHONYQL_SCHEMA_CLASS, firstName));
                     } else {
                         ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(firstName.toString()));
                         args.addAll(List.of(expectedObjectType, SCHEMA_METHOD_NAME));

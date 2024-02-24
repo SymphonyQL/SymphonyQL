@@ -13,7 +13,7 @@ import java.util.Optional;
 @EnumSchema
 @ArgExtractor
 enum OriginEnum {
-    EARTH, MARS, BELT;
+    EARTH, MARS, BELT
 }
 
 @ObjectSchema

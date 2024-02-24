@@ -38,7 +38,7 @@ trait ArgExtractorJavaAPI { self: GenericArgExtractor =>
    * Java API
    */
   @unused
-  def createOption[A](ae: ArgumentExtractor[A]): ArgumentExtractor[java.util.Optional[A]] =
+  def createOptional[A](ae: ArgumentExtractor[A]): ArgumentExtractor[java.util.Optional[A]] =
     (input: SymphonyQLInputValue) => ae.extract(input).map(java.util.Optional.of)
 
   /**
@@ -89,7 +89,7 @@ trait ArgExtractorJavaAPI { self: GenericArgExtractor =>
    * Using in APT
    */
   @unused
-  def getArgumentExtractor(typeName: String): ArgumentExtractor[_] =
+  def getArgumentExtractor(typeName: String): ArgumentExtractor[?] =
     typeName match
       case "java.lang.Boolean"    => ArgumentExtractor.BooleanArg
       case "java.lang.String"     => ArgumentExtractor.StringArg

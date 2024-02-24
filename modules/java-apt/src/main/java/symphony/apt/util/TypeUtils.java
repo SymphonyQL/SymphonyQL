@@ -6,7 +6,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.apache.commons.lang3.StringUtils;
 import symphony.apt.AnnotatedElementCallback;
-import symphony.apt.context.ProcessorContext;
 import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.context.ProcessorSourceContext;
 import symphony.apt.model.TypeCategory;
@@ -24,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public final class TypeUtils {
 
@@ -236,7 +234,7 @@ public final class TypeUtils {
     public static boolean existsOneParameterizedType(TypeName typeName) {
         return oneWrappedList.contains(getRawTypeName(typeName).toString());
     }
-    
+
     public static TypeCategory getTypeCategory(TypeName typeName) {
         if (isPrimitiveType(typeName)) {
             return TypeCategory.SYSTEM_TYPE;
@@ -252,7 +250,7 @@ public final class TypeUtils {
         }
 
         return TypeCategory.CUSTOM_OBJECT_TYPE;
-                
+
     }
 
     public static boolean isPrimitiveType(TypeName typeName) {
@@ -304,7 +302,7 @@ public final class TypeUtils {
         return typeDesc;
     }
 
-    public static String getWrappedCallString(TypeInfo info) {
+    public static String getSchemaWrappedString(TypeInfo info) {
         final var sb = new StringBuilder();
         if (primitiveTypes.contains(info.getName())) {
             sb.append("$T.getSchema($S)");
@@ -335,7 +333,45 @@ public final class TypeUtils {
         if (info.getParameterizedTypes() != null && !info.getParameterizedTypes().isEmpty()) {
             for (int i = 0; i < info.getParameterizedTypes().size(); i++) {
                 TypeInfo argInfo = info.getParameterizedTypes().get(i);
-                sb.append(getWrappedCallString(argInfo));
+                sb.append(getSchemaWrappedString(argInfo));
+                if (i < info.getParameterizedTypes().size() - 1) {
+                    sb.append(", ");
+                }
+            }
+        }
+
+        if (!primitiveTypes.contains(info.getName())) {
+            sb.append(")");
+        }
+        return sb.toString();
+    }
+
+    public static String getExtractorWrappedString(TypeInfo info) {
+        final var sb = new StringBuilder();
+        if (primitiveTypes.contains(info.getName())) {
+            sb.append("($T)$T.getArgumentExtractor($S)");
+        } else {
+            switch (info.getName()) {
+                case "java.util.List":
+                    sb.append("$T.createList(");
+                    break;
+                case "java.util.Set":
+                    sb.append("$T.createSet(");
+                    break;
+                case "java.util.Vector":
+                    sb.append("$T.createVector(");
+                    break;
+                case "java.util.Optional":
+                    sb.append("$T.createOptional(");
+                    break;
+                default:
+                    return "$T.$N";
+            }
+        }
+        if (info.getParameterizedTypes() != null && !info.getParameterizedTypes().isEmpty()) {
+            for (int i = 0; i < info.getParameterizedTypes().size(); i++) {
+                TypeInfo argInfo = info.getParameterizedTypes().get(i);
+                sb.append(getExtractorWrappedString(argInfo));
                 if (i < info.getParameterizedTypes().size() - 1) {
                     sb.append(", ");
                 }

@@ -151,7 +151,7 @@ trait SchemaJavaAPI {
    * Using in APT
    */
   @unused
-  def getSchema(typeName: String): Schema[_] =
+  def getSchema(typeName: String): Schema[?] =
     typeName match
       case "java.lang.Boolean"    => Schema.BooleanSchema
       case "java.lang.String"     => Schema.StringSchema
