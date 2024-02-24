@@ -68,7 +68,7 @@ trait SchemaJavaAPI {
    * Java API
    */
   @unused
-  def createFunctionUnitSchema[A](
+  def createFunctionUnit[A](
     schema: Schema[A]
   ): Schema[java.util.function.Supplier[A]] =
     mkFunctionUnitSchema(schema).contramap(_.asScala)
@@ -98,14 +98,14 @@ trait SchemaJavaAPI {
    * Java API
    */
   @unused
-  def createMapSchema[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[java.util.Map[A, B]] =
+  def createMap[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[java.util.Map[A, B]] =
     mkMapSchema[A, B](keySchema, valueSchema).contramap(kv => kv.asScala.toMap)
 
     /**
      * Java API
      */
   @unused
-  def createTuple2Schema[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)]           =
+  def createTuple2[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)]           =
     mkTuple2Schema[A, B](keySchema, valueSchema)
 
   /**

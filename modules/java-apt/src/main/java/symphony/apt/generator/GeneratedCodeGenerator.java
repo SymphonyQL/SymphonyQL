@@ -174,7 +174,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
     protected List<?> getOneParameterizedTypeArgs(String fieldName, TypeName fieldTypeName, ClassName className, TypeInfo typeInfo) {
         var args = new ArrayList<>();
         var eitherValueName = fieldName + "Either";
-        var firstName = TypeUtils.getFirstNestedParameterizedTypeName(fieldTypeName);
+        var firstName = TypeUtils.getOneFinalParameterizedTypeName(fieldTypeName);
         var maxDepth = TypeInfo.calculateMaxDepth(typeInfo);
         if (className.equals(SYMPHONYQL_EXTRACTOR_CLASS)) {
             args.add(eitherValueName);

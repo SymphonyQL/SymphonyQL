@@ -5,6 +5,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import symphony.apt.AnnotatedElementCallback;
 import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.context.ProcessorSourceContext;
@@ -264,11 +265,11 @@ public final class TypeUtils {
         };
     }
 
-    public static TypeName getFirstNestedParameterizedTypeName(final TypeName typeName) {
+    public static TypeName getOneFinalParameterizedTypeName(final TypeName typeName) {
         return switch (typeName) {
             case ParameterizedTypeName p -> {
                 if (!p.typeArguments.isEmpty()) {
-                    yield getFirstNestedParameterizedTypeName(p.typeArguments.getFirst());
+                    yield getOneFinalParameterizedTypeName(p.typeArguments.getFirst());
                 } else {
                     yield p;
                 }
@@ -276,6 +277,22 @@ public final class TypeUtils {
             default -> typeName;
         };
     }
+
+    public static Pair<TypeName, TypeName> getTwoFinalParameterizedTypes(final TypeName typeName) {
+        if (typeName instanceof ParameterizedTypeName parameterizedTypeName) {
+            if (parameterizedTypeName.typeArguments.size() == 2) {
+                TypeName keyType = parameterizedTypeName.typeArguments.get(0);
+                TypeName valueType = parameterizedTypeName.typeArguments.get(1);
+
+                TypeName finalKeyType = getOneFinalParameterizedTypeName(keyType);
+                TypeName finalValueType = getOneFinalParameterizedTypeName(valueType);
+
+                return Pair.of(finalKeyType, finalValueType);
+            }
+        }
+        return Pair.of(typeName, typeName);
+    }
+
 
     public static boolean isCustomObjectType(TypeName typeName) {
         var isPrimitiveType = isPrimitiveType(typeName);
@@ -308,6 +325,9 @@ public final class TypeUtils {
             sb.append("$T.getSchema($S)");
         } else {
             switch (info.getName()) {
+                case "java.util.Map":
+                    sb.append("$T.createMap(");
+                    break;
                 case "java.util.List":
                     sb.append("$T.createList(");
                     break;
