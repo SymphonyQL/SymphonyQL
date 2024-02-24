@@ -2,6 +2,7 @@ package symphony.apt.generator;
 
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -32,15 +33,25 @@ import java.util.function.Function;
 
 public abstract class GeneratedCodeGenerator implements CodeGenerator {
 
+    protected static final String PARSER_PACKAGE = "symphony.parser";
     protected static final String SCHEMA_PACKAGE = "symphony.schema";
     protected static final String ADT_PACKAGE = "symphony.parser.adt.introspection";
     protected static final String BUILDER_PACKAGE = "symphony.schema.javadsl";
     protected static final String SCHEMA_SUFFIX = "Schema";
-    protected static final String SCHEMA_METHOD_NAME = SCHEMA_SUFFIX.toLowerCase();
-    // symphonyql classes
+    protected static final String SCHEMA_METHOD_NAME = "schema";
+    protected static final String EXTRACTOR_METHOD_NAME = "extractor";
+    // symphonyql schema classes
     protected static final ClassName SYMPHONYQL_SCHEMA_CLASS = ClassName.get(SCHEMA_PACKAGE, "Schema");
     protected static final ClassName SYMPHONYQL_FIELD_BUILDER_CLASS = ClassName.get(BUILDER_PACKAGE, "FieldBuilder");
     protected static final ClassName SYMPHONYQL_FIELD_CLASS = ClassName.get(ADT_PACKAGE, "__Field");
+    // symphonyql classes
+    protected static final ClassName SYMPHONYQL_EXTRACTOR_CLASS = ClassName.get(SCHEMA_PACKAGE, "ArgumentExtractor");
+    protected static final ClassName SYMPHONYQL_INPUTVALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLInputValue");
+    protected static final ClassName SYMPHONYQL_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue");
+    protected static final ClassName SYMPHONYQL_ERROR_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLError", "ArgumentError");
+    protected static final ClassName SYMPHONYQL_OBJECT_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLInputValue", "ObjectValue");
+    protected static final ClassName SYMPHONYQL_ENUM_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue", "EnumValue");
+    protected static final ClassName SYMPHONYQL_STRING_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue", "StringValue");
 
     private final Function<String, String> nameModifier = new AddSuffix(SCHEMA_SUFFIX);
 
@@ -139,7 +150,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
             newObject.field(new $T() {
                 @Override
                 public $T apply($T builder) {
-                    return builder.name($S).schema(%s).build(); 
+                    return builder.name($S).schema(%s).build();
                 }
             });
             """;
@@ -157,6 +168,35 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
                 .addStatement("$T<$T> newObject = $T.newObject()", objectBuilderClass, parameterizedTypeName, objectBuilderClass)
                 .addStatement("newObject.name($S)", TypeUtils.getName(typeElement));
     }
+
+    // 集合类型都是 Schema.createXX、ArgumentExtractor.createXX 包装而成的
+    // 根据 getSchemaWrappedString 和 getExtractorWrappedString 可以计算出所需的 Schema 或 ArgumentExtractor 的数量 
+    protected List<?> getOneParameterizedTypeArgs(String fieldName, TypeName fieldTypeName, ClassName className, TypeInfo typeInfo) {
+        var args = new ArrayList<>();
+        var eitherValueName = fieldName + "Either";
+        var firstName = TypeUtils.getFirstNestedParameterizedTypeName(fieldTypeName);
+        var maxDepth = TypeInfo.calculateMaxDepth(typeInfo);
+        if (className.equals(SYMPHONYQL_EXTRACTOR_CLASS)) {
+            args.add(eitherValueName);
+        }
+        for (int i = 0; i < maxDepth - 1; i++) {
+            args.add(className);
+        }
+        if (TypeUtils.isPrimitiveType(firstName)) {
+            if (className.equals(SYMPHONYQL_EXTRACTOR_CLASS)) {
+                var castType = ParameterizedTypeName.get(className, firstName);
+                args.addAll(List.of(castType, className, firstName));
+            } else {
+                args.addAll(List.of(className, firstName));
+            }
+        } else {
+            ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(firstName.toString()));
+            var methodName = className.equals(SYMPHONYQL_EXTRACTOR_CLASS) ? EXTRACTOR_METHOD_NAME : SCHEMA_METHOD_NAME;
+            args.addAll(List.of(expectedObjectType, methodName));
+        }
+        return args;
+    }
+
 
     protected void generateObject(
             final String builderName,
@@ -198,22 +238,11 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
                     builderSchema.addCode(SourceTextUtils.lines(String.format(addFieldMethodTemplate, "$T.$N")), args.toArray());
                 }
                 case ONE_PARAMETERIZED_TYPE -> {
+                    var args = new ArrayList<>(list);
                     var typeInfo = TypeUtils.getTypeInfo(type, 1);
                     var buildSchemaString = TypeUtils.getSchemaWrappedString(typeInfo);
-                    var firstName = TypeUtils.getFirstNestedParameterizedTypeName(type);
-                    var maxDepth = TypeInfo.calculateMaxDepth(typeInfo);
-                    var args = new ArrayList<>(list);
-                    for (int i = 0; i < maxDepth - 1; i++) {
-                        args.add(SYMPHONYQL_SCHEMA_CLASS);
-                    }
-                    if (TypeUtils.isPrimitiveType(firstName)) {
-                        args.addAll(List.of(SYMPHONYQL_SCHEMA_CLASS, firstName));
-                    } else {
-                        ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(firstName.toString()));
-                        args.addAll(List.of(expectedObjectType, SCHEMA_METHOD_NAME));
-                    }
-
-                    builderSchema.addCode(SourceTextUtils.lines(String.format(addFieldMethodTemplate, buildSchemaString)), args.toArray());
+                    args.addAll(getOneParameterizedTypeArgs(name, type, SYMPHONYQL_SCHEMA_CLASS, typeInfo));
+                    builderSchema.addCode(CodeBlock.builder().add(String.format(addFieldMethodTemplate, buildSchemaString), args.toArray()).build());
                 }
                 case TWO_PARAMETERIZED_TYPES -> {
                 }

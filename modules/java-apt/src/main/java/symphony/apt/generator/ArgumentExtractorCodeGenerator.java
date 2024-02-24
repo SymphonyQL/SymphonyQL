@@ -9,7 +9,6 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import symphony.apt.annotation.ArgExtractor;
 import symphony.apt.function.AddSuffix;
-import symphony.apt.model.TypeInfo;
 import symphony.apt.util.MessageUtils;
 import symphony.apt.util.ModelUtils;
 import symphony.apt.util.TypeUtils;
@@ -27,22 +26,12 @@ import java.util.function.Function;
 
 public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
 
-    protected static final String PARSER_PACKAGE = "symphony.parser";
     private final static String EXTRACTOR_SUFFIX = "Extractor";
     private final static String CREATE_OBJECT_FUNCTION = "function";
-    protected static final String EXTRACTOR_METHOD_NAME = EXTRACTOR_SUFFIX.toLowerCase();
     // scala classes
     protected static final ClassName EITHER_CLASS = ClassName.get("scala.util", "Either");
-    protected static final ClassName LEFT_CLASS = ClassName.get("scala.util", "Left");
     protected static final ClassName RIGHT_CLASS = ClassName.get("scala.util", "Right");
     // symphonyql classes
-    protected static final ClassName SYMPHONYQL_EXTRACTOR_CLASS = ClassName.get(SCHEMA_PACKAGE, "ArgumentExtractor");
-    protected static final ClassName SYMPHONYQL_INPUTVALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLInputValue");
-    protected static final ClassName SYMPHONYQL_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue");
-    protected static final ClassName SYMPHONYQL_ERROR_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLError", "ArgumentError");
-    protected static final ClassName SYMPHONYQL_OBJECT_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLInputValue", "ObjectValue");
-    protected static final ClassName SYMPHONYQL_ENUM_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue", "EnumValue");
-    protected static final ClassName SYMPHONYQL_STRING_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue", "StringValue");
 
     @Override
     public final Class<ArgExtractor> getAnnotation() {
@@ -194,26 +183,14 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                     code = CodeBlock.builder().add(String.format(createObjectFieldTemplate, "var $L = $T.$N.extract($L.get());"), args.toArray()).build();
                 }
                 case ONE_PARAMETERIZED_TYPE -> {
-                    var args = new LinkedList<>();
-                    args.addAll(beforeExtractArgs);
                     var typeInfo = TypeUtils.getTypeInfo(fieldTypeName, 1);
                     var buildExtractorString = TypeUtils.getExtractorWrappedString(typeInfo);
-                    var firstName = TypeUtils.getFirstNestedParameterizedTypeName(fieldTypeName);
-                    var maxDepth = TypeInfo.calculateMaxDepth(typeInfo);
-                    args.add(eitherValueName);
-                    for (int i = 0; i < maxDepth - 1; i++) {
-                        args.add(SYMPHONYQL_EXTRACTOR_CLASS);
-                    }
-                    if (TypeUtils.isPrimitiveType(firstName)) {
-                        var castType = ParameterizedTypeName.get(SYMPHONYQL_EXTRACTOR_CLASS, firstName);
-                        args.addAll(List.of(castType, SYMPHONYQL_EXTRACTOR_CLASS, firstName));
-                    } else {
-                        ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(firstName.toString()));
-                        args.addAll(List.of(expectedObjectType, EXTRACTOR_METHOD_NAME));
-                    }
+                    var extractMethodString = String.format("var $L = %s.extract($L.get());", buildExtractorString);
+                    var args = new LinkedList<>();
+                    args.addAll(beforeExtractArgs);
+                    args.addAll(getOneParameterizedTypeArgs(fieldName, fieldTypeName, SYMPHONYQL_EXTRACTOR_CLASS, typeInfo));
                     args.add(optionalValueName);
                     args.addAll(afterExtractArgs);
-                    var extractMethodString = String.format("var $L = %s.extract($L.get());", buildExtractorString);
                     code = CodeBlock.builder().add(String.format(createObjectFieldTemplate, extractMethodString), args.toArray()).build();
                 }
                 case TWO_PARAMETERIZED_TYPES -> {
