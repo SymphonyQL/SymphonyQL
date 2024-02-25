@@ -278,7 +278,7 @@ public final class TypeUtils {
         };
     }
 
-    public static Pair<TypeName, TypeName> getTwoFinalParameterizedTypes(final TypeName typeName) {
+    public static Pair<TypeName, TypeName> getFinalParameterizedTypes(final TypeName typeName) {
         if (typeName instanceof ParameterizedTypeName parameterizedTypeName) {
             if (parameterizedTypeName.typeArguments.size() == 2) {
                 TypeName keyType = parameterizedTypeName.typeArguments.get(0);
@@ -288,6 +288,9 @@ public final class TypeUtils {
                 TypeName finalValueType = getOneFinalParameterizedTypeName(valueType);
 
                 return Pair.of(finalKeyType, finalValueType);
+            } else {
+                var name= getOneFinalParameterizedTypeName(parameterizedTypeName.typeArguments.getFirst());
+                return Pair.of(name, name);
             }
         }
         return Pair.of(typeName, typeName);
@@ -319,41 +322,50 @@ public final class TypeUtils {
         return typeDesc;
     }
 
-    public static String getSchemaWrappedString(TypeInfo info) {
+    public static String getSchemaWrappedString(TypeInfo info, List<TypeCategory> typeCategories) {
         final var sb = new StringBuilder();
         if (primitiveTypes.contains(info.getName())) {
+            typeCategories.add(TypeCategory.SYSTEM_TYPE);
             sb.append("$T.getSchema($S)");
         } else {
             switch (info.getName()) {
                 case "java.util.Map":
+                    typeCategories.add(TypeCategory.TWO_PARAMETERIZED_TYPES);
                     sb.append("$T.createMap(");
                     break;
                 case "java.util.List":
+                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
                     sb.append("$T.createList(");
                     break;
                 case "java.util.Set":
+                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
                     sb.append("$T.createSet(");
                     break;
                 case "java.util.Vector":
+                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
                     sb.append("$T.createVector(");
                     break;
                 case "java.util.Optional":
+                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
                     sb.append("$T.createOptional(");
                     break;
                 case "org.apache.pekko.stream.javadsl.Source":
+                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
                     sb.append("$T.createSource(");
                     break;
                 case "java.util.concurrent.CompletionStage":
+                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
                     sb.append("$T.createCompletionStage(");
                     break;
                 default:
+                    typeCategories.add(TypeCategory.CUSTOM_OBJECT_TYPE);
                     return "$T.$N";
             }
         }
         if (info.getParameterizedTypes() != null && !info.getParameterizedTypes().isEmpty()) {
             for (int i = 0; i < info.getParameterizedTypes().size(); i++) {
                 TypeInfo argInfo = info.getParameterizedTypes().get(i);
-                sb.append(getSchemaWrappedString(argInfo));
+                sb.append(getSchemaWrappedString(argInfo, typeCategories));
                 if (i < info.getParameterizedTypes().size() - 1) {
                     sb.append(", ");
                 }
@@ -366,32 +378,38 @@ public final class TypeUtils {
         return sb.toString();
     }
 
-    public static String getExtractorWrappedString(TypeInfo info) {
+    public static String getExtractorWrappedString(TypeInfo info, List<TypeCategory> typeCategories) {
         final var sb = new StringBuilder();
         if (primitiveTypes.contains(info.getName())) {
+            typeCategories.add(TypeCategory.SYSTEM_TYPE);
             sb.append("($T)$T.getArgumentExtractor($S)");
         } else {
             switch (info.getName()) {
                 case "java.util.List":
+                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
                     sb.append("$T.createList(");
                     break;
                 case "java.util.Set":
+                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
                     sb.append("$T.createSet(");
                     break;
                 case "java.util.Vector":
+                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
                     sb.append("$T.createVector(");
                     break;
                 case "java.util.Optional":
+                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
                     sb.append("$T.createOptional(");
                     break;
                 default:
+                    typeCategories.add(TypeCategory.CUSTOM_OBJECT_TYPE);
                     return "$T.$N";
             }
         }
         if (info.getParameterizedTypes() != null && !info.getParameterizedTypes().isEmpty()) {
             for (int i = 0; i < info.getParameterizedTypes().size(); i++) {
                 TypeInfo argInfo = info.getParameterizedTypes().get(i);
-                sb.append(getExtractorWrappedString(argInfo));
+                sb.append(getExtractorWrappedString(argInfo, typeCategories));
                 if (i < info.getParameterizedTypes().size() - 1) {
                     sb.append(", ");
                 }

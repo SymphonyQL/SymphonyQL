@@ -14,6 +14,7 @@ import symphony.apt.SymphonyQLProcessor;
 import symphony.apt.context.ProcessorContext;
 import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.function.AddSuffix;
+import symphony.apt.model.TypeCategory;
 import symphony.apt.model.TypeInfo;
 import symphony.apt.util.MessageUtils;
 import symphony.apt.util.ModelUtils;
@@ -171,29 +172,42 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
 
     // 集合类型都是 Schema.createXX、ArgumentExtractor.createXX 包装而成的
     // 根据 getSchemaWrappedString 和 getExtractorWrappedString 可以计算出所需的 Schema 或 ArgumentExtractor 的数量 
-    protected List<?> getOneParameterizedTypeArgs(String fieldName, TypeName fieldTypeName, ClassName className, TypeInfo typeInfo) {
+    protected List<?> getOneParameterizedTypeArgs(String fieldName, TypeName fieldTypeName, ClassName className, TypeInfo typeInfo, List<TypeCategory> typeCategories) {
         var args = new ArrayList<>();
         var eitherValueName = fieldName + "Either";
-        var firstName = TypeUtils.getOneFinalParameterizedTypeName(fieldTypeName);
-        var maxDepth = TypeInfo.calculateMaxDepth(typeInfo);
+        var typeTuple = TypeUtils.getFinalParameterizedTypes(fieldTypeName);
         if (className.equals(SYMPHONYQL_EXTRACTOR_CLASS)) {
             args.add(eitherValueName);
         }
-        for (int i = 0; i < maxDepth - 1; i++) {
-            args.add(className);
-        }
-        if (TypeUtils.isPrimitiveType(firstName)) {
-            if (className.equals(SYMPHONYQL_EXTRACTOR_CLASS)) {
-                var castType = ParameterizedTypeName.get(className, firstName);
-                args.addAll(List.of(castType, className, firstName));
-            } else {
-                args.addAll(List.of(className, firstName));
+
+        MessageUtils.note(typeCategories.toString());
+        var parentParameterizedType = false;
+        for (var category : typeCategories) {
+            switch (category) {
+                case SYSTEM_TYPE -> {
+                    if (parentParameterizedType && className.equals(SYMPHONYQL_EXTRACTOR_CLASS)) {
+                        args.add(ParameterizedTypeName.get(className, typeTuple.getKey()));
+                        parentParameterizedType = false;
+                    }
+                    args.add(className);
+                    args.add(typeTuple.getKey());
+                }
+                case CUSTOM_OBJECT_TYPE -> {
+                    ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(typeTuple.getKey().toString()));
+                    var methodName = className.equals(SYMPHONYQL_EXTRACTOR_CLASS) ? EXTRACTOR_METHOD_NAME : SCHEMA_METHOD_NAME;
+                    args.addAll(List.of(expectedObjectType, methodName));
+                }
+                case ONE_PARAMETERIZED_TYPE -> {
+                    parentParameterizedType = true;
+                    args.add(className);
+                }
+                default -> {
+                }
             }
-        } else {
-            ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(firstName.toString()));
-            var methodName = className.equals(SYMPHONYQL_EXTRACTOR_CLASS) ? EXTRACTOR_METHOD_NAME : SCHEMA_METHOD_NAME;
-            args.addAll(List.of(expectedObjectType, methodName));
+
         }
+
+        MessageUtils.note(args.toString());
         return args;
     }
 
@@ -240,8 +254,10 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
                 case ONE_PARAMETERIZED_TYPE -> {
                     var args = new ArrayList<>(list);
                     var typeInfo = TypeUtils.getTypeInfo(type, 1);
-                    var buildSchemaString = TypeUtils.getSchemaWrappedString(typeInfo);
-                    args.addAll(getOneParameterizedTypeArgs(name, type, SYMPHONYQL_SCHEMA_CLASS, typeInfo));
+                    var types = new ArrayList<TypeCategory>();
+                    var buildSchemaString = TypeUtils.getSchemaWrappedString(typeInfo, types);
+                    MessageUtils.note(buildSchemaString);
+                    args.addAll(getOneParameterizedTypeArgs(name, type, SYMPHONYQL_SCHEMA_CLASS, typeInfo, types));
                     builderSchema.addCode(CodeBlock.builder().add(String.format(addFieldMethodTemplate, buildSchemaString), args.toArray()).build());
                 }
                 case TWO_PARAMETERIZED_TYPES -> {

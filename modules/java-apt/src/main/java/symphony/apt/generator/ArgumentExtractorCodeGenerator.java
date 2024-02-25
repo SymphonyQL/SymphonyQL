@@ -9,6 +9,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import symphony.apt.annotation.ArgExtractor;
 import symphony.apt.function.AddSuffix;
+import symphony.apt.model.TypeCategory;
 import symphony.apt.util.MessageUtils;
 import symphony.apt.util.ModelUtils;
 import symphony.apt.util.TypeUtils;
@@ -17,6 +18,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -184,11 +186,13 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                 }
                 case ONE_PARAMETERIZED_TYPE -> {
                     var typeInfo = TypeUtils.getTypeInfo(fieldTypeName, 1);
-                    var buildExtractorString = TypeUtils.getExtractorWrappedString(typeInfo);
+                    var types = new ArrayList<TypeCategory>();
+                    var buildExtractorString = TypeUtils.getExtractorWrappedString(typeInfo, types);
                     var extractMethodString = String.format("var $L = %s.extract($L.get());", buildExtractorString);
+                    MessageUtils.note(extractMethodString);
                     var args = new LinkedList<>();
                     args.addAll(beforeExtractArgs);
-                    args.addAll(getOneParameterizedTypeArgs(fieldName, fieldTypeName, SYMPHONYQL_EXTRACTOR_CLASS, typeInfo));
+                    args.addAll(getOneParameterizedTypeArgs(fieldName, fieldTypeName, SYMPHONYQL_EXTRACTOR_CLASS, typeInfo, types));
                     args.add(optionalValueName);
                     args.addAll(afterExtractArgs);
                     code = CodeBlock.builder().add(String.format(createObjectFieldTemplate, extractMethodString), args.toArray()).build();
@@ -249,7 +253,7 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                 .addParameter(SYMPHONYQL_OBJECT_VALUE_CLASS, "obj")
                 .returns(typeName);
 
-        var join = new StringJoiner(",");
+        var join = new StringJoiner(", ");
         fieldCodes.keySet().forEach(join::add);
         fieldCodes.values().forEach(applyMethod::addCode);
         applyMethod.addStatement("return new $T($L)", typeName, join.toString());
