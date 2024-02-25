@@ -9,7 +9,7 @@ import symphony.apt.AnnotatedElementCallback;
 import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.context.ProcessorSourceContext;
 import symphony.apt.model.TypeCategory;
-import symphony.apt.model.WrappedTypeLocation;
+import symphony.apt.model.WrappedContext;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+
+import static symphony.apt.generator.GeneratedCodeGenerator.EXTRACTOR_METHOD_NAME;
+import static symphony.apt.generator.GeneratedCodeGenerator.SCHEMA_METHOD_NAME;
 
 public final class TypeUtils {
 
@@ -264,7 +267,6 @@ public final class TypeUtils {
         };
     }
 
-    // 不支持Map嵌套Map
     public static List<TypeName> getParameterizedTypes(TypeName typeName) {
         var result = new ArrayList<TypeName>();
         if (typeName instanceof ParameterizedTypeName parameterizedTypeName) {
@@ -303,53 +305,55 @@ public final class TypeUtils {
         return !isPrimitiveType && !isWrappedType;
     }
 
-    public static String getSchemaWrappedString(TypeName info, List<WrappedTypeLocation> wrappedTypeLocations) {
+    public static String buildSchemaWrappedString(WrappedContext wrappedContext, List<Object> args) {
         final var sb = new StringBuilder();
+        var info = wrappedContext.fieldTypeName;
         var rawTypeName = getRawTypeName(info).toString();
         if (primitiveTypes.contains(rawTypeName)) {
-            wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
-            wrappedTypeLocations.add(WrappedTypeLocation.TYPE_NAME);
+            args.add(wrappedContext.className);
+            args.add(wrappedContext.fieldTypeName.toString());
             sb.append("$T.getSchema($S)");
         } else {
             switch (rawTypeName) {
                 case "java.util.Map":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createMap(");
                     break;
                 case "java.util.List":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createList(");
                     break;
                 case "java.util.Set":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createSet(");
                     break;
                 case "java.util.Vector":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createVector(");
                     break;
                 case "java.util.Optional":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createOptional(");
                     break;
                 case "org.apache.pekko.stream.javadsl.Source":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createSource(");
                     break;
                 case "java.util.concurrent.CompletionStage":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createCompletionStage(");
                     break;
                 default:
-                    wrappedTypeLocations.add(WrappedTypeLocation.CUSTOM);
-                    wrappedTypeLocations.add(WrappedTypeLocation.CUSTOM_METHOD);
+                    MessageUtils.note("Custom Schema -> " + info);
+                    args.add(ClassName.get("", wrappedContext.suffix.apply(info.toString())));
+                    args.add(SCHEMA_METHOD_NAME);
                     return "$T.$N";
             }
         }
         if (info instanceof ParameterizedTypeName parameterizedTypeName && !parameterizedTypeName.typeArguments.isEmpty()) {
             for (int i = 0; i < parameterizedTypeName.typeArguments.size(); i++) {
-                var argInfo = parameterizedTypeName.typeArguments.get(i);
-                sb.append(getSchemaWrappedString(argInfo, wrappedTypeLocations));
+                wrappedContext.fieldTypeName = parameterizedTypeName.typeArguments.get(i);
+                sb.append(buildSchemaWrappedString(wrappedContext, args));
                 if (i < parameterizedTypeName.typeArguments.size() - 1) {
                     sb.append(", ");
                 }
@@ -363,43 +367,44 @@ public final class TypeUtils {
         return sb.toString();
     }
 
-    public static String getExtractorWrappedString(TypeName info, List<WrappedTypeLocation> wrappedTypeLocations) {
+    public static String buildExtractorWrappedString(WrappedContext wrappedContext, List<Object> args) {
         final var sb = new StringBuilder();
-        MessageUtils.note(info.toString());
+        var info = wrappedContext.fieldTypeName;
         var rawTypeName = getRawTypeName(info).toString();
         if (primitiveTypes.contains(rawTypeName)) {
-            wrappedTypeLocations.add(WrappedTypeLocation.CAST_TYPE);
-            wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
-            wrappedTypeLocations.add(WrappedTypeLocation.TYPE_NAME);
+            args.add(ParameterizedTypeName.get(wrappedContext.className, wrappedContext.fieldTypeName));
+            args.add(wrappedContext.className);
+            args.add(wrappedContext.fieldTypeName.toString());
             sb.append("($T)$T.getArgumentExtractor($S)");
         } else {
             switch (rawTypeName) {
                 case "java.util.List":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createList(");
                     break;
                 case "java.util.Set":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createSet(");
                     break;
                 case "java.util.Vector":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createVector(");
                     break;
                 case "java.util.Optional":
-                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+                    args.add(wrappedContext.className);
                     sb.append("$T.createOptional(");
                     break;
                 default:
-                    wrappedTypeLocations.add(WrappedTypeLocation.CUSTOM);
-                    wrappedTypeLocations.add(WrappedTypeLocation.CUSTOM_METHOD);
+                    MessageUtils.note("Custom Extractor -> " + info);
+                    args.add(ClassName.get("", wrappedContext.suffix.apply(info.toString())));
+                    args.add(EXTRACTOR_METHOD_NAME);
                     return "$T.$N";
             }
         }
         if (info instanceof ParameterizedTypeName parameterizedTypeName && !parameterizedTypeName.typeArguments.isEmpty()) {
             for (int i = 0; i < parameterizedTypeName.typeArguments.size(); i++) {
-                var argInfo = parameterizedTypeName.typeArguments.get(i);
-                sb.append(getExtractorWrappedString(argInfo, wrappedTypeLocations));
+                wrappedContext.fieldTypeName = parameterizedTypeName.typeArguments.get(i);
+                sb.append(buildExtractorWrappedString(wrappedContext, args));
                 if (i < parameterizedTypeName.typeArguments.size() - 1) {
                     sb.append(", ");
                 }

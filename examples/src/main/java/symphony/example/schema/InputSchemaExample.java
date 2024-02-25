@@ -70,8 +70,8 @@ record OutputObject(
         Map<NestedObject, String> nestedObjectStringMap,
         Map<NestedObject, List<String>> nestedObjectListStringMap,
         Map<Optional<NestedObject>, List<Optional<NestedObject>>> optionalNestedObjectListOptionalNestedObjectMap,
-        Map<List<NestedObject>, List<Optional<String>>> listNestedObjectMapStringListOptionalMap
-
+        Map<List<NestedObject>, List<Optional<String>>> listNestedObjectMapStringListOptionalMap,
+        Map<Map<NestedObject, String>, List<Optional<Map<Optional<String>, List<NestedObject>>>>> complexMap
 ) {
 }
 
