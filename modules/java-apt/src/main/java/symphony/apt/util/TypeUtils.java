@@ -5,12 +5,12 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import symphony.apt.AnnotatedElementCallback;
 import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.context.ProcessorSourceContext;
 import symphony.apt.model.TypeCategory;
 import symphony.apt.model.TypeInfo;
+import symphony.apt.model.WrappedTypeLocation;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -265,37 +265,38 @@ public final class TypeUtils {
         };
     }
 
-    public static TypeName getOneFinalParameterizedTypeName(final TypeName typeName) {
-        return switch (typeName) {
-            case ParameterizedTypeName p -> {
-                if (!p.typeArguments.isEmpty()) {
-                    yield getOneFinalParameterizedTypeName(p.typeArguments.getFirst());
-                } else {
-                    yield p;
-                }
-            }
-            default -> typeName;
-        };
-    }
-
-    public static Pair<TypeName, TypeName> getFinalParameterizedTypes(final TypeName typeName) {
+    // 不支持Map嵌套Map
+    public static List<TypeName> getParameterizedTypes(TypeName typeName) {
+        var result = new ArrayList<TypeName>();
         if (typeName instanceof ParameterizedTypeName parameterizedTypeName) {
             if (parameterizedTypeName.typeArguments.size() == 2) {
-                TypeName keyType = parameterizedTypeName.typeArguments.get(0);
-                TypeName valueType = parameterizedTypeName.typeArguments.get(1);
-
-                TypeName finalKeyType = getOneFinalParameterizedTypeName(keyType);
-                TypeName finalValueType = getOneFinalParameterizedTypeName(valueType);
-
-                return Pair.of(finalKeyType, finalValueType);
+                for (var paramType : parameterizedTypeName.typeArguments) {
+                    extractInDecomposableTypes(paramType, result);
+                }
             } else {
-                var name= getOneFinalParameterizedTypeName(parameterizedTypeName.typeArguments.getFirst());
-                return Pair.of(name, name);
+                for (var innerType : parameterizedTypeName.typeArguments) {
+                    result.addAll(getParameterizedTypes(innerType));
+                }
             }
+        } else {
+            result.add(typeName);
         }
-        return Pair.of(typeName, typeName);
+        return result;
     }
 
+    private static void extractInDecomposableTypes(TypeName type, List<TypeName> inDecomposableTypes) {
+        if (type instanceof ParameterizedTypeName parameterizedTypeName) {
+            if (!parameterizedTypeName.typeArguments.isEmpty()) {
+                for (TypeName innerType : parameterizedTypeName.typeArguments) {
+                    extractInDecomposableTypes(innerType, inDecomposableTypes);
+                }
+            } else {
+                inDecomposableTypes.add(type);
+            }
+        } else {
+            inDecomposableTypes.add(type);
+        }
+    }
 
     public static boolean isCustomObjectType(TypeName typeName) {
         var isPrimitiveType = isPrimitiveType(typeName);
@@ -304,68 +305,70 @@ public final class TypeUtils {
     }
 
 
-    public static TypeInfo getTypeInfo(TypeName typeName, int depth) {
+    public static TypeInfo getTypeInfo(TypeName typeName) {
         TypeInfo typeDesc;
         if (typeName instanceof ParameterizedTypeName parameterizedTypeName) {
             List<TypeInfo> parameterizedTypes = new ArrayList<>();
             for (TypeName typeArgument : parameterizedTypeName.typeArguments) {
-                parameterizedTypes.add(getTypeInfo(typeArgument, depth + 1));
+                parameterizedTypes.add(getTypeInfo(typeArgument));
             }
-            typeDesc = new TypeInfo(parameterizedTypeName.rawType.toString(), depth);
+            typeDesc = new TypeInfo(parameterizedTypeName.rawType.toString());
             typeDesc.setParameterizedTypes(parameterizedTypes);
         } else if (typeName instanceof ClassName className) {
-            typeDesc = new TypeInfo(className.packageName() + "." + className.simpleName(), depth);
+            typeDesc = new TypeInfo(className.packageName() + "." + className.simpleName());
         } else {
-            typeDesc = new TypeInfo(typeName.toString(), depth);
+            typeDesc = new TypeInfo(typeName.toString());
         }
 
         return typeDesc;
     }
 
-    public static String getSchemaWrappedString(TypeInfo info, List<TypeCategory> typeCategories) {
+    public static String getSchemaWrappedString(TypeInfo info, List<WrappedTypeLocation> wrappedTypeLocations) {
         final var sb = new StringBuilder();
         if (primitiveTypes.contains(info.getName())) {
-            typeCategories.add(TypeCategory.SYSTEM_TYPE);
+            wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+            wrappedTypeLocations.add(WrappedTypeLocation.TYPE_NAME);
             sb.append("$T.getSchema($S)");
         } else {
             switch (info.getName()) {
                 case "java.util.Map":
-                    typeCategories.add(TypeCategory.TWO_PARAMETERIZED_TYPES);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createMap(");
                     break;
                 case "java.util.List":
-                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createList(");
                     break;
                 case "java.util.Set":
-                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createSet(");
                     break;
                 case "java.util.Vector":
-                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createVector(");
                     break;
                 case "java.util.Optional":
-                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createOptional(");
                     break;
                 case "org.apache.pekko.stream.javadsl.Source":
-                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createSource(");
                     break;
                 case "java.util.concurrent.CompletionStage":
-                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createCompletionStage(");
                     break;
                 default:
-                    typeCategories.add(TypeCategory.CUSTOM_OBJECT_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.CUSTOM);
+                    wrappedTypeLocations.add(WrappedTypeLocation.CUSTOM_METHOD);
                     return "$T.$N";
             }
         }
         if (info.getParameterizedTypes() != null && !info.getParameterizedTypes().isEmpty()) {
             for (int i = 0; i < info.getParameterizedTypes().size(); i++) {
                 TypeInfo argInfo = info.getParameterizedTypes().get(i);
-                sb.append(getSchemaWrappedString(argInfo, typeCategories));
+                sb.append(getSchemaWrappedString(argInfo, wrappedTypeLocations));
                 if (i < info.getParameterizedTypes().size() - 1) {
                     sb.append(", ");
                 }
@@ -378,38 +381,41 @@ public final class TypeUtils {
         return sb.toString();
     }
 
-    public static String getExtractorWrappedString(TypeInfo info, List<TypeCategory> typeCategories) {
+    public static String getExtractorWrappedString(TypeInfo info, List<WrappedTypeLocation> wrappedTypeLocations) {
         final var sb = new StringBuilder();
         if (primitiveTypes.contains(info.getName())) {
-            typeCategories.add(TypeCategory.SYSTEM_TYPE);
+            wrappedTypeLocations.add(WrappedTypeLocation.CAST_TYPE);
+            wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
+            wrappedTypeLocations.add(WrappedTypeLocation.TYPE_NAME);
             sb.append("($T)$T.getArgumentExtractor($S)");
         } else {
             switch (info.getName()) {
                 case "java.util.List":
-                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createList(");
                     break;
                 case "java.util.Set":
-                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createSet(");
                     break;
                 case "java.util.Vector":
-                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createVector(");
                     break;
                 case "java.util.Optional":
-                    typeCategories.add(TypeCategory.ONE_PARAMETERIZED_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createOptional(");
                     break;
                 default:
-                    typeCategories.add(TypeCategory.CUSTOM_OBJECT_TYPE);
+                    wrappedTypeLocations.add(WrappedTypeLocation.CUSTOM);
+                    wrappedTypeLocations.add(WrappedTypeLocation.CUSTOM_METHOD);
                     return "$T.$N";
             }
         }
         if (info.getParameterizedTypes() != null && !info.getParameterizedTypes().isEmpty()) {
             for (int i = 0; i < info.getParameterizedTypes().size(); i++) {
                 TypeInfo argInfo = info.getParameterizedTypes().get(i);
-                sb.append(getExtractorWrappedString(argInfo, typeCategories));
+                sb.append(getExtractorWrappedString(argInfo, wrappedTypeLocations));
                 if (i < info.getParameterizedTypes().size() - 1) {
                     sb.append(", ");
                 }

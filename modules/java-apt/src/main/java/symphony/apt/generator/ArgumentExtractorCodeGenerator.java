@@ -9,7 +9,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import symphony.apt.annotation.ArgExtractor;
 import symphony.apt.function.AddSuffix;
-import symphony.apt.model.TypeCategory;
+import symphony.apt.model.WrappedTypeLocation;
 import symphony.apt.util.MessageUtils;
 import symphony.apt.util.ModelUtils;
 import symphony.apt.util.TypeUtils;
@@ -185,14 +185,16 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                     code = CodeBlock.builder().add(String.format(createObjectFieldTemplate, "var $L = $T.$N.extract($L.get());"), args.toArray()).build();
                 }
                 case ONE_PARAMETERIZED_TYPE -> {
-                    var typeInfo = TypeUtils.getTypeInfo(fieldTypeName, 1);
-                    var types = new ArrayList<TypeCategory>();
+                    var typeInfo = TypeUtils.getTypeInfo(fieldTypeName);
+                    var types = new ArrayList<WrappedTypeLocation>();
                     var buildExtractorString = TypeUtils.getExtractorWrappedString(typeInfo, types);
                     var extractMethodString = String.format("var $L = %s.extract($L.get());", buildExtractorString);
-                    MessageUtils.note(extractMethodString);
+                    var wrappedArgs = getParameterizedTypeArgs(fieldName, fieldTypeName, SYMPHONYQL_EXTRACTOR_CLASS, types);
+                    MessageUtils.note(fieldName + ":" + extractMethodString);
+                    MessageUtils.note(fieldName + ":" + wrappedArgs.toString());
                     var args = new LinkedList<>();
                     args.addAll(beforeExtractArgs);
-                    args.addAll(getOneParameterizedTypeArgs(fieldName, fieldTypeName, SYMPHONYQL_EXTRACTOR_CLASS, typeInfo, types));
+                    args.addAll(wrappedArgs);
                     args.add(optionalValueName);
                     args.addAll(afterExtractArgs);
                     code = CodeBlock.builder().add(String.format(createObjectFieldTemplate, extractMethodString), args.toArray()).build();

@@ -10,12 +10,12 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import symphony.apt.SymphonyQLProcessor;
 import symphony.apt.context.ProcessorContext;
 import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.function.AddSuffix;
-import symphony.apt.model.TypeCategory;
-import symphony.apt.model.TypeInfo;
+import symphony.apt.model.WrappedTypeLocation;
 import symphony.apt.util.MessageUtils;
 import symphony.apt.util.ModelUtils;
 import symphony.apt.util.ProcessorUtils;
@@ -68,18 +68,12 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
             MessageUtils.note("Attempt to recreate a file for type " + className);
         }
         if (file == null) return;
-        try (
-                var writer = file.openWriter();
-                var printWriter = new PrintWriter(writer)
-        ) {
+        try (var writer = file.openWriter(); var printWriter = new PrintWriter(writer)) {
             var typeSpecBuilder = generateCommon(className);
             generateBody(context, typeSpecBuilder);
 
             var typeSpec = typeSpecBuilder.build();
-            var javaFile = JavaFile.builder(packageName, typeSpec)
-                    .indent(SourceTextUtils.INDENT)
-                    .skipJavaLangImports(true)
-                    .build();
+            var javaFile = JavaFile.builder(packageName, typeSpec).indent(SourceTextUtils.INDENT).skipJavaLangImports(true).build();
 
             var sourceCode = javaFile.toString();
             printWriter.write(sourceCode);
@@ -92,21 +86,12 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
     }
 
 
-    protected abstract void generateBody(
-            CodeGeneratorContext context, TypeSpec.Builder builder
-    ) throws Exception;
+    protected abstract void generateBody(CodeGeneratorContext context, TypeSpec.Builder builder) throws Exception;
 
 
     private TypeSpec.Builder generateCommon(final String className) {
         final TypeSpec.Builder typeSpecBuilder = createTypeSpecBuilder(className);
-        typeSpecBuilder.addModifiers(Modifier.PUBLIC)
-                .addModifiers(Modifier.FINAL)
-                .addMethod(
-                        MethodSpec.constructorBuilder()
-                                .addModifiers(Modifier.PRIVATE)
-                                .addStatement("throw new $T()", UnsupportedOperationException.class)
-                                .build()
-                );
+        typeSpecBuilder.addModifiers(Modifier.PUBLIC).addModifiers(Modifier.FINAL).addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).addStatement("throw new $T()", UnsupportedOperationException.class).build());
 
         final ProcessorContext processorContext = ProcessorContextHolder.getContext();
         if (processorContext.isAddGeneratedAnnotation()) {
@@ -124,22 +109,14 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
     }
 
     private void addSuppressWarningsAnnotation(final TypeSpec.Builder typeSpecBuilder) {
-        typeSpecBuilder.addAnnotation(
-                AnnotationSpec.builder(SuppressWarnings.class)
-                        .addMember("value", "$S", "all")
-                        .build());
+        typeSpecBuilder.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "all").build());
     }
 
-    private void addGeneratedAnnotation(
-            final TypeSpec.Builder typeSpecBuilder, final ProcessorContext processorContext
-    ) {
-        final AnnotationSpec.Builder annotationBuilder =
-                AnnotationSpec.builder(ClassName.get("javax.annotation", "Generated"))
-                        .addMember("value", "$S", SymphonyQLProcessor.class.getName());
+    private void addGeneratedAnnotation(final TypeSpec.Builder typeSpecBuilder, final ProcessorContext processorContext) {
+        final AnnotationSpec.Builder annotationBuilder = AnnotationSpec.builder(ClassName.get("javax.annotation", "Generated")).addMember("value", "$S", SymphonyQLProcessor.class.getName());
 
         if (processorContext.isAddGeneratedDate()) {
-            final String currentTime =
-                    DateFormatUtils.ISO_8601_EXTENDED_DATETIME_TIME_ZONE_FORMAT.format(new Date());
+            final String currentTime = DateFormatUtils.ISO_8601_EXTENDED_DATETIME_TIME_ZONE_FORMAT.format(new Date());
 
             annotationBuilder.addMember("date", "$S", currentTime);
         }
@@ -156,67 +133,56 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
             });
             """;
 
-    private MethodSpec.Builder objectMethodBuilder(
-            final ParameterizedTypeName returnType,
-            final ClassName objectBuilderClass,
-            final TypeElement typeElement
-    ) {
+    private MethodSpec.Builder objectMethodBuilder(final ParameterizedTypeName returnType, final ClassName objectBuilderClass, final TypeElement typeElement) {
         var parameterizedTypeName = TypeUtils.getTypeName(typeElement);
-        return MethodSpec
-                .methodBuilder(SCHEMA_METHOD_NAME)
-                .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-                .returns(returnType)
-                .addStatement("$T<$T> newObject = $T.newObject()", objectBuilderClass, parameterizedTypeName, objectBuilderClass)
-                .addStatement("newObject.name($S)", TypeUtils.getName(typeElement));
+        return MethodSpec.methodBuilder(SCHEMA_METHOD_NAME).addModifiers(Modifier.PRIVATE, Modifier.STATIC).returns(returnType).addStatement("$T<$T> newObject = $T.newObject()", objectBuilderClass, parameterizedTypeName, objectBuilderClass).addStatement("newObject.name($S)", TypeUtils.getName(typeElement));
     }
 
     // 集合类型都是 Schema.createXX、ArgumentExtractor.createXX 包装而成的
     // 根据 getSchemaWrappedString 和 getExtractorWrappedString 可以计算出所需的 Schema 或 ArgumentExtractor 的数量 
-    protected List<?> getOneParameterizedTypeArgs(String fieldName, TypeName fieldTypeName, ClassName className, TypeInfo typeInfo, List<TypeCategory> typeCategories) {
+    protected List<?> getParameterizedTypeArgs(String fieldName, TypeName fieldTypeName, ClassName className, List<WrappedTypeLocation> wrappedTypeLocations) {
         var args = new ArrayList<>();
-        var eitherValueName = fieldName + "Either";
-        var typeTuple = TypeUtils.getFinalParameterizedTypes(fieldTypeName);
+        var types = TypeUtils.getParameterizedTypes(fieldTypeName);
+        var typeTuple = types.size() < 2 ? Pair.of(types.get(0), null) : Pair.of(types.get(0), types.get(1));
+        MessageUtils.note(types.toString());
         if (className.equals(SYMPHONYQL_EXTRACTOR_CLASS)) {
-            args.add(eitherValueName);
+            args.add(fieldName + "Either");
         }
 
-        MessageUtils.note(typeCategories.toString());
-        var parentParameterizedType = false;
-        for (var category : typeCategories) {
-            switch (category) {
-                case SYSTEM_TYPE -> {
-                    if (parentParameterizedType && className.equals(SYMPHONYQL_EXTRACTOR_CLASS)) {
-                        args.add(ParameterizedTypeName.get(className, typeTuple.getKey()));
-                        parentParameterizedType = false;
+        var isSecondTypeName = false;
+        for (var location : wrappedTypeLocations) {
+            switch (location) {
+                case CAST_TYPE -> args.add(ParameterizedTypeName.get(className, typeTuple.getKey()));
+                case TYPE_NAME -> {
+                    if (isSecondTypeName && typeTuple.getValue() != null) {
+                        args.add(typeTuple.getValue());
+                        isSecondTypeName = false;
+                    } else {
+                        args.add(typeTuple.getKey());
+                        isSecondTypeName = true;
                     }
-                    args.add(className);
-                    args.add(typeTuple.getKey());
                 }
-                case CUSTOM_OBJECT_TYPE -> {
-                    ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(typeTuple.getKey().toString()));
-                    var methodName = className.equals(SYMPHONYQL_EXTRACTOR_CLASS) ? EXTRACTOR_METHOD_NAME : SCHEMA_METHOD_NAME;
-                    args.addAll(List.of(expectedObjectType, methodName));
+                case CUSTOM -> {
+                    // TODO：Map嵌套Map无法确定CUSTOM用哪个泛型
+                    if (isSecondTypeName && typeTuple.getValue() != null) {
+                        args.add(ClassName.get("", getNameModifier().apply(typeTuple.getValue().toString())));
+                        isSecondTypeName = false;
+                    } else {
+                        args.add(ClassName.get("", getNameModifier().apply(typeTuple.getKey().toString())));
+                        isSecondTypeName = true;
+                    }
                 }
-                case ONE_PARAMETERIZED_TYPE -> {
-                    parentParameterizedType = true;
-                    args.add(className);
-                }
-                default -> {
-                }
+                case SYSTEM_CLASS -> args.add(className);
+                case CUSTOM_METHOD ->
+                        args.add(className.equals(SYMPHONYQL_EXTRACTOR_CLASS) ? EXTRACTOR_METHOD_NAME : SCHEMA_METHOD_NAME);
             }
 
         }
-
-        MessageUtils.note(args.toString());
         return args;
     }
 
 
-    protected void generateObject(
-            final String builderName,
-            final TypeSpec.Builder builder,
-            final TypeElement typeElement
-    ) {
+    protected void generateObject(final String builderName, final TypeSpec.Builder builder, final TypeElement typeElement) {
         var variables = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
 
         var parameterizedTypeName = TypeUtils.getTypeName(typeElement);
@@ -225,12 +191,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), SYMPHONYQL_FIELD_BUILDER_CLASS, SYMPHONYQL_FIELD_CLASS);
 
         var builderSchema = objectMethodBuilder(returnType, objectBuilderClass, typeElement);
-
-        // 主要按照几个大类分别处理，可能有漏
-        // 1.预定义标量或基本类型
-        // 2.用户定义的对象类型
-        // 3.集合类型
-        // 4.遇到不支持的自定义对象：A，可以在同包下创建一个类 ASchema，并编写一个静态的 schema 方法返回Schema<A>
+        // NOTE: 遇到不支持的自定义对象：A，可以在同包下创建一个类 ASchema，并编写一个静态的 schema 方法返回Schema<A>
         for (final var entry : variables.entrySet()) {
             var name = entry.getKey();
             var type = TypeUtils.getTypeName(entry.getValue());
@@ -238,12 +199,8 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
             switch (TypeUtils.getTypeCategory(type)) {
                 case SYSTEM_TYPE -> {
                     var args = new ArrayList<>(list);
-                    args.addAll(List.of(SYMPHONYQL_SCHEMA_CLASS,
-                            ClassName.get("", type.toString())));
-                    builderSchema.addCode(
-                            SourceTextUtils.lines(String.format(addFieldMethodTemplate, "$T.getSchema($S)")),
-                            args.toArray()
-                    );
+                    args.addAll(List.of(SYMPHONYQL_SCHEMA_CLASS, ClassName.get("", type.toString())));
+                    builderSchema.addCode(SourceTextUtils.lines(String.format(addFieldMethodTemplate, "$T.getSchema($S)")), args.toArray());
                 }
                 case CUSTOM_OBJECT_TYPE -> {
                     ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(type.toString()));
@@ -251,16 +208,16 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
                     args.addAll(List.of(expectedObjectType, SCHEMA_METHOD_NAME));
                     builderSchema.addCode(SourceTextUtils.lines(String.format(addFieldMethodTemplate, "$T.$N")), args.toArray());
                 }
-                case ONE_PARAMETERIZED_TYPE -> {
+                case ONE_PARAMETERIZED_TYPE, TWO_PARAMETERIZED_TYPES -> {
                     var args = new ArrayList<>(list);
-                    var typeInfo = TypeUtils.getTypeInfo(type, 1);
-                    var types = new ArrayList<TypeCategory>();
+                    var typeInfo = TypeUtils.getTypeInfo(type);
+                    var types = new ArrayList<WrappedTypeLocation>();
                     var buildSchemaString = TypeUtils.getSchemaWrappedString(typeInfo, types);
-                    MessageUtils.note(buildSchemaString);
-                    args.addAll(getOneParameterizedTypeArgs(name, type, SYMPHONYQL_SCHEMA_CLASS, typeInfo, types));
+                    var wrappedArgs = getParameterizedTypeArgs(name, type, SYMPHONYQL_SCHEMA_CLASS, types);
+                    MessageUtils.note(name + ":" + buildSchemaString);
+                    MessageUtils.note(name + ":" + wrappedArgs.toString());
+                    args.addAll(wrappedArgs);
                     builderSchema.addCode(CodeBlock.builder().add(String.format(addFieldMethodTemplate, buildSchemaString), args.toArray()).build());
-                }
-                case TWO_PARAMETERIZED_TYPES -> {
                 }
             }
         }
