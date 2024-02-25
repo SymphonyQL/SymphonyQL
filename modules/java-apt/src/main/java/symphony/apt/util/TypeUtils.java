@@ -9,7 +9,6 @@ import symphony.apt.AnnotatedElementCallback;
 import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.context.ProcessorSourceContext;
 import symphony.apt.model.TypeCategory;
-import symphony.apt.model.TypeInfo;
 import symphony.apt.model.WrappedTypeLocation;
 
 import javax.lang.model.element.Element;
@@ -304,33 +303,15 @@ public final class TypeUtils {
         return !isPrimitiveType && !isWrappedType;
     }
 
-
-    public static TypeInfo getTypeInfo(TypeName typeName) {
-        TypeInfo typeDesc;
-        if (typeName instanceof ParameterizedTypeName parameterizedTypeName) {
-            List<TypeInfo> parameterizedTypes = new ArrayList<>();
-            for (TypeName typeArgument : parameterizedTypeName.typeArguments) {
-                parameterizedTypes.add(getTypeInfo(typeArgument));
-            }
-            typeDesc = new TypeInfo(parameterizedTypeName.rawType.toString());
-            typeDesc.setParameterizedTypes(parameterizedTypes);
-        } else if (typeName instanceof ClassName className) {
-            typeDesc = new TypeInfo(className.packageName() + "." + className.simpleName());
-        } else {
-            typeDesc = new TypeInfo(typeName.toString());
-        }
-
-        return typeDesc;
-    }
-
-    public static String getSchemaWrappedString(TypeInfo info, List<WrappedTypeLocation> wrappedTypeLocations) {
+    public static String getSchemaWrappedString(TypeName info, List<WrappedTypeLocation> wrappedTypeLocations) {
         final var sb = new StringBuilder();
-        if (primitiveTypes.contains(info.getName())) {
+        var rawTypeName = getWrappedRawType(info).toString();
+        if (primitiveTypes.contains(rawTypeName)) {
             wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
             wrappedTypeLocations.add(WrappedTypeLocation.TYPE_NAME);
             sb.append("$T.getSchema($S)");
         } else {
-            switch (info.getName()) {
+            switch (rawTypeName) {
                 case "java.util.Map":
                     wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createMap(");
@@ -365,31 +346,42 @@ public final class TypeUtils {
                     return "$T.$N";
             }
         }
-        if (info.getParameterizedTypes() != null && !info.getParameterizedTypes().isEmpty()) {
-            for (int i = 0; i < info.getParameterizedTypes().size(); i++) {
-                TypeInfo argInfo = info.getParameterizedTypes().get(i);
+        if (info instanceof ParameterizedTypeName parameterizedTypeName && !parameterizedTypeName.typeArguments.isEmpty()) {
+            for (int i = 0; i < parameterizedTypeName.typeArguments.size(); i++) {
+                var argInfo = parameterizedTypeName.typeArguments.get(i);
                 sb.append(getSchemaWrappedString(argInfo, wrappedTypeLocations));
-                if (i < info.getParameterizedTypes().size() - 1) {
+                if (i < parameterizedTypeName.typeArguments.size() - 1) {
                     sb.append(", ");
                 }
             }
         }
 
-        if (!primitiveTypes.contains(info.getName())) {
+        if (!primitiveTypes.contains(rawTypeName)) {
             sb.append(")");
         }
+
         return sb.toString();
     }
 
-    public static String getExtractorWrappedString(TypeInfo info, List<WrappedTypeLocation> wrappedTypeLocations) {
+    public static TypeName getWrappedRawType(TypeName info) {
+        if (info instanceof ParameterizedTypeName parameterizedTypeName) {
+            return parameterizedTypeName.rawType;
+        } else {
+            return info;
+        }
+    }
+
+    public static String getExtractorWrappedString(TypeName info, List<WrappedTypeLocation> wrappedTypeLocations) {
         final var sb = new StringBuilder();
-        if (primitiveTypes.contains(info.getName())) {
+        MessageUtils.note(info.toString());
+        var rawTypeName = getWrappedRawType(info).toString();
+        if (primitiveTypes.contains(rawTypeName)) {
             wrappedTypeLocations.add(WrappedTypeLocation.CAST_TYPE);
             wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
             wrappedTypeLocations.add(WrappedTypeLocation.TYPE_NAME);
             sb.append("($T)$T.getArgumentExtractor($S)");
         } else {
-            switch (info.getName()) {
+            switch (rawTypeName) {
                 case "java.util.List":
                     wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
                     sb.append("$T.createList(");
@@ -412,19 +404,20 @@ public final class TypeUtils {
                     return "$T.$N";
             }
         }
-        if (info.getParameterizedTypes() != null && !info.getParameterizedTypes().isEmpty()) {
-            for (int i = 0; i < info.getParameterizedTypes().size(); i++) {
-                TypeInfo argInfo = info.getParameterizedTypes().get(i);
+        if (info instanceof ParameterizedTypeName parameterizedTypeName && !parameterizedTypeName.typeArguments.isEmpty()) {
+            for (int i = 0; i < parameterizedTypeName.typeArguments.size(); i++) {
+                var argInfo = parameterizedTypeName.typeArguments.get(i);
                 sb.append(getExtractorWrappedString(argInfo, wrappedTypeLocations));
-                if (i < info.getParameterizedTypes().size() - 1) {
+                if (i < parameterizedTypeName.typeArguments.size() - 1) {
                     sb.append(", ");
                 }
             }
         }
 
-        if (!primitiveTypes.contains(info.getName())) {
+        if (!primitiveTypes.contains(rawTypeName)) {
             sb.append(")");
         }
+
         return sb.toString();
     }
 }

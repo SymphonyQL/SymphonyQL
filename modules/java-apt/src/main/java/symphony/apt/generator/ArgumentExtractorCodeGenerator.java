@@ -185,9 +185,8 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                     code = CodeBlock.builder().add(String.format(createObjectFieldTemplate, "var $L = $T.$N.extract($L.get());"), args.toArray()).build();
                 }
                 case ONE_PARAMETERIZED_TYPE -> {
-                    var typeInfo = TypeUtils.getTypeInfo(fieldTypeName);
                     var types = new ArrayList<WrappedTypeLocation>();
-                    var buildExtractorString = TypeUtils.getExtractorWrappedString(typeInfo, types);
+                    var buildExtractorString = TypeUtils.getExtractorWrappedString(fieldTypeName, types);
                     var extractMethodString = String.format("var $L = %s.extract($L.get());", buildExtractorString);
                     var wrappedArgs = getParameterizedTypeArgs(fieldName, fieldTypeName, SYMPHONYQL_EXTRACTOR_CLASS, types);
                     MessageUtils.note(fieldName + ":" + extractMethodString);

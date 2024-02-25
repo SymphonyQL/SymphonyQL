@@ -210,9 +210,8 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
                 }
                 case ONE_PARAMETERIZED_TYPE, TWO_PARAMETERIZED_TYPES -> {
                     var args = new ArrayList<>(list);
-                    var typeInfo = TypeUtils.getTypeInfo(type);
                     var types = new ArrayList<WrappedTypeLocation>();
-                    var buildSchemaString = TypeUtils.getSchemaWrappedString(typeInfo, types);
+                    var buildSchemaString = TypeUtils.getSchemaWrappedString(type, types);
                     var wrappedArgs = getParameterizedTypeArgs(name, type, SYMPHONYQL_SCHEMA_CLASS, types);
                     MessageUtils.note(name + ":" + buildSchemaString);
                     MessageUtils.note(name + ":" + wrappedArgs.toString());
