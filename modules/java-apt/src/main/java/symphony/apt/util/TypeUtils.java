@@ -305,7 +305,7 @@ public final class TypeUtils {
 
     public static String getSchemaWrappedString(TypeName info, List<WrappedTypeLocation> wrappedTypeLocations) {
         final var sb = new StringBuilder();
-        var rawTypeName = getWrappedRawType(info).toString();
+        var rawTypeName = getRawTypeName(info).toString();
         if (primitiveTypes.contains(rawTypeName)) {
             wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
             wrappedTypeLocations.add(WrappedTypeLocation.TYPE_NAME);
@@ -363,18 +363,10 @@ public final class TypeUtils {
         return sb.toString();
     }
 
-    public static TypeName getWrappedRawType(TypeName info) {
-        if (info instanceof ParameterizedTypeName parameterizedTypeName) {
-            return parameterizedTypeName.rawType;
-        } else {
-            return info;
-        }
-    }
-
     public static String getExtractorWrappedString(TypeName info, List<WrappedTypeLocation> wrappedTypeLocations) {
         final var sb = new StringBuilder();
         MessageUtils.note(info.toString());
-        var rawTypeName = getWrappedRawType(info).toString();
+        var rawTypeName = getRawTypeName(info).toString();
         if (primitiveTypes.contains(rawTypeName)) {
             wrappedTypeLocations.add(WrappedTypeLocation.CAST_TYPE);
             wrappedTypeLocations.add(WrappedTypeLocation.SYSTEM_CLASS);
