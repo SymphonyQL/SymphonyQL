@@ -1,4 +1,7 @@
 package symphony.example.schema;
 
-record CharacterOutput(String name, Origin origin) {
+import symphony.apt.annotation.ObjectSchema;
+
+@ObjectSchema
+public record CharacterOutput(String name, Origin origin) {
 }

@@ -11,6 +11,7 @@ import symphony.parser.adt.introspection.*
 import symphony.schema.Stage.*
 import symphony.schema.scaladsl.*
 
+import scala.annotation.{ nowarn, unused }
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.*
 import scala.jdk.FunctionConverters.*
@@ -55,6 +56,7 @@ trait SchemaJavaAPI {
   /**
    * Java API
    */
+  @unused
   def createScalar[A](
     name: String,
     description: java.util.Optional[String],
@@ -65,7 +67,8 @@ trait SchemaJavaAPI {
   /**
    * Java API
    */
-  def createFunctionUnitSchema[A](
+  @unused
+  def createFunctionUnit[A](
     schema: Schema[A]
   ): Schema[java.util.function.Supplier[A]] =
     mkFunctionUnitSchema(schema).contramap(_.asScala)
@@ -73,37 +76,44 @@ trait SchemaJavaAPI {
   /**
    * Java API
    */
+  @unused
   def createFunction[A, B](
-    argumentExtractor: ArgumentExtractor[A],
     inputSchema: Schema[A],
+    // When we recursively process in APT, the first thing we get is inputSchema
+    argumentExtractor: ArgumentExtractor[A],
     outputSchema: Schema[B]
   ): Schema[java.util.function.Function[A, B]] =
     mkFunction(argumentExtractor, inputSchema, outputSchema).contramap(_.asScala)
 
+  @unused
   def createSource[A](schema: Schema[A]): Schema[javadsl.Source[A, NotUsed]] =
     mkSource(schema).contramap(_.asScala)
 
   /**
    * Java API
    */
+  @unused
   def createOptional[A](schema: Schema[A]): Schema[java.util.Optional[A]] = mkOption[A](schema).contramap(_.toScala)
 
   /**
    * Java API
    */
-  def createMapSchema[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[java.util.Map[A, B]] =
+  @unused
+  def createMap[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[java.util.Map[A, B]] =
     mkMapSchema[A, B](keySchema, valueSchema).contramap(kv => kv.asScala.toMap)
 
     /**
      * Java API
      */
-  def createTuple2Schema[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)]           =
+  @unused
+  def createTuple2[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)]           =
     mkTuple2Schema[A, B](keySchema, valueSchema)
 
   /**
    * Java API
    * Unsafe Nullable
    */
+  @unused
   def createNullable[A](schema: Schema[A]): Schema[A] = new Schema[A] {
     override def optional: Boolean             = true
     override def tpe(isInput: Boolean): __Type = schema.lazyType(isInput)
@@ -113,26 +123,55 @@ trait SchemaJavaAPI {
   /**
    * Java API
    */
+  @unused
   def createVector[A](schema: Schema[A]): Schema[java.util.Vector[A]] =
     mkVector[A](schema).contramap(_.asScala.toVector)
 
   /**
    * Java API
    */
+  @unused
   def createSet[A](schema: Schema[A]): Schema[java.util.Set[A]] =
     mkSet[A](schema).contramap(_.asScala.toSet)
 
   /**
    * Java API
    */
+  @unused
   def createList[A](schema: Schema[A]): Schema[java.util.List[A]]                                  =
     mkList[A](schema).contramap(_.asScala.toList)
 
     /**
      * Java API
      */
+  @unused
   def createCompletionStage[A](schema: Schema[A]): Schema[java.util.concurrent.CompletionStage[A]] =
     mkFuture[A](schema).contramap(_.asScala)
+
+  /**
+   * Using in APT
+   */
+  @unused
+  def getSchema(typeName: String): Schema[?] =
+    typeName match
+      case "java.lang.Boolean"    => Schema.createNullable(Schema.BooleanSchema)
+      case "java.lang.String"     => Schema.createNullable(Schema.StringSchema)
+      case "java.lang.Integer"    => Schema.createNullable(Schema.IntSchema)
+      case "java.lang.Long"       => Schema.createNullable(Schema.LongSchema)
+      case "java.lang.Double"     => Schema.createNullable(Schema.DoubleSchema)
+      case "java.lang.Float"      => Schema.createNullable(Schema.FloatSchema)
+      case "java.lang.Short"      => Schema.createNullable(Schema.ShortSchema)
+      case "java.math.BigInteger" => Schema.createNullable(Schema.BigIntegerSchema)
+      case "java.math.BigDecimal" => Schema.createNullable(Schema.JavaBigDecimalSchema)
+      case "java.lang.Void"       => Schema.UnitSchema
+      case "boolean"              => Schema.BooleanSchema
+      case "int"                  => Schema.IntSchema
+      case "long"                 => Schema.LongSchema
+      case "double"               => Schema.DoubleSchema
+      case "float"                => Schema.FloatSchema
+      case "short"                => Schema.ShortSchema
+      case "void"                 => Schema.UnitSchema
+      case _                      => throw new IllegalArgumentException(s"Method 'Schema.getSchema' is not support for $typeName")
 
 }
 trait GenericSchema extends SchemaDerivation {
@@ -194,7 +233,12 @@ trait GenericSchema extends SchemaDerivation {
           Types.mkObject(Some(name), description, fields(isInput).map(_._1), directives)
 
       override def analyze(value: A): Stage =
-        ObjectStage(name, fields(false).map { case (f, aToStage) => f.name -> aToStage(value) }.toMap)
+        ObjectStage(
+          name,
+          fields(false).map { case (f, aToStage) =>
+            f.name -> aToStage(value)
+          }.toMap
+        )
     }
 
   implicit def mkOption[A](implicit schema: Schema[A]): Schema[Option[A]] = new Schema[Option[A]] {

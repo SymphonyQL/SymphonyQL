@@ -19,10 +19,10 @@ object Introspector extends IntrospectionSchemaDerivation {
     val resolver = __Introspection(
       __Schema(
         rootType.description,
+        types,
         rootType.queryType,
         rootType.mutationType,
         rootType.subscriptionType,
-        types,
         rootType.additionalDirectives
       ),
       args => types.find(_.name.contains(args.name))

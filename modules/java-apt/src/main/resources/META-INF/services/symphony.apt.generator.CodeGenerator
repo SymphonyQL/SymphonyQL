@@ -1,0 +1,4 @@
+symphony.apt.generator.InputObjectCodeGenerator
+symphony.apt.generator.EnumCodeGenerator
+symphony.apt.generator.ObjectCodeGenerator
+symphony.apt.generator.ArgumentExtractorCodeGenerator

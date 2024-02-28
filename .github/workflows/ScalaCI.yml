@@ -46,36 +46,35 @@ jobs:
       - name: Upload test coverage report
         run: bash <(curl -s https://codecov.io/bash)
   
-#  publish:
-#    runs-on: ubuntu-latest
-#    needs: [ check ]
-#    if: github.event_name != 'pull_request'
-#    steps:
-#      - name: Checkout current branch
-#        uses: actions/checkout@v3.3.0
-#        with:
-#          fetch-depth: 0
-#      - name: Setup JDK
-#        uses: actions/setup-java@v1
-#        with:
-#          java-version: 11
-#
-#      - name: Update docs
-#        if: ${{ vars.RUN_ROLLS_MDOC == 'Y' }}
-#        run: |
-#          git config --global user.name "Rolls Docs"
-#          git config --global user.email "568845948@qq.com"
-#          eval "$(ssh-agent -s)"
-#          echo "$TOKEN" | ssh-add -
-#          sbt rolls-docs/mdoc
-#          cd website
-#          yarn install
-#          yarn deploy
-#        env:
-#          TOKEN: ${{secrets.DEPLOY_KEY}}
-#          USE_SSH: true
-#          GIT_USER: git
-#
+  publish:
+    runs-on: ubuntu-latest
+    needs: [ check ]
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v3.3.0
+        with:
+          fetch-depth: 0
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 21
+
+      - name: Update docs
+        run: |
+          git config --global user.name "SymphonyQL Docs"
+          git config --global user.email "568845948@qq.com"
+          eval "$(ssh-agent -s)"
+          echo "$TOKEN" | ssh-add -
+          sbt docs/mdoc
+          cd website
+          yarn install
+          yarn deploy
+        env:
+          TOKEN: ${{secrets.DEPLOY_KEY}}
+          USE_SSH: true
+          GIT_USER: git
+
 #      - name: Release artifacts
 #        run: sbt ci-release
 #        env:
@@ -86,7 +85,7 @@ jobs:
   
   ci:
     runs-on: ubuntu-latest
-    needs: [ check, test ]
+    needs: [ check, test, publish ]
     steps:
       - name: Aggregate outcomes
         run: echo "build succeeded"          

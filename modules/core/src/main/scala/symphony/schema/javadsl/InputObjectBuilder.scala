@@ -8,7 +8,7 @@ import scala.annotation.varargs
 import scala.jdk.OptionConverters.*
 
 object InputObjectBuilder {
-  def newInputObject[A](): InputObjectBuilder[A] = new InputObjectBuilder[A]
+  def newObject[A](): InputObjectBuilder[A] = new InputObjectBuilder[A]
 }
 
 final class InputObjectBuilder[A] private {
@@ -56,7 +56,7 @@ final class InputObjectBuilder[A] private {
         Schema.mkObject(
           name,
           description,
-          * => fields.map(_.apply(FieldBuilder.newField())).map(f => f -> (* => Stage.NullStage)),
+          * => fields.map(_.apply(FieldBuilder.newField().isInput(true))).map(f => f -> (* => Stage.NullStage)),
           directives
         )
       )
@@ -64,7 +64,7 @@ final class InputObjectBuilder[A] private {
       Schema.mkObject(
         name,
         description,
-        * => fields.map(_.apply(FieldBuilder.newField())).map(f => f -> (* => Stage.NullStage)),
+        * => fields.map(_.apply(FieldBuilder.newField().isInput(true))).map(f => f -> (* => Stage.NullStage)),
         directives
       )
 

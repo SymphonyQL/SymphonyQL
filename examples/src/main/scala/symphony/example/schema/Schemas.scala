@@ -1,16 +1,22 @@
 package symphony.example.schema
 
-import symphony.example.schema.Users.*
 import symphony.parser.*
-import symphony.parser.SymphonyQLValue.StringValue
+import symphony.parser.SymphonyQLValue.*
 import symphony.parser.adt.introspection.*
 import symphony.schema.*
 import symphony.schema.javadsl.*
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
+import symphony.example.schema.Users.*
+
+import java.util.Optional
+import scala.jdk.javaapi.OptionConverters
+
 // for parsing input parameters
 val argumentExtractor: ArgumentExtractor[FilterArgs] = {
   case SymphonyQLInputValue.ObjectValue(fields) =>
     Right(FilterArgs(Some(Origin.valueOf(fields("origin").asInstanceOf[StringValue].value))))
-  case _                                        => Left(SymphonyQLError.ArgumentError("error"))
+  case _                                        => throw new RuntimeException("Expected ObjectValue");
 }
 // Schema DSL
 // create enum by EnumBuilder
@@ -29,7 +35,7 @@ val enumSchema                                       = EnumBuilder
 
 // create input schema by InputObjectBuilder
 val inputSchema: Schema[FilterArgs] = InputObjectBuilder
-  .newInputObject[FilterArgs]()
+  .newObject[FilterArgs]()
   .name("FilterArgs")
   .fields(builder => builder.name("name").schema(Schema.mkOption(enumSchema)).build())
   .build()
@@ -37,8 +43,14 @@ val inputSchema: Schema[FilterArgs] = InputObjectBuilder
 val outputSchema: Schema[Character] = ObjectBuilder
   .newObject[Character]()
   .name("Character")
-  .field(builder => builder.name("name").schema(Schema.StringSchema).build())
-  .field(builder => builder.name("origin").schema(enumSchema).build())
+  .field[String](
+    builder => builder.name("name").schema(Schema.StringSchema).build(),
+    c => c.name
+  )
+  .field[Origin](
+    builder => builder.name("origin").schema(enumSchema).build(),
+    c => c.origin
+  )
   .build()
 
 // create object (resolver) schema by ObjectBuilder
@@ -57,6 +69,6 @@ val queriesSchema: Schema[Queries] = ObjectBuilder
           )
         )
         .build(),
-    a => Stage.derivesStageByReflection(argumentExtractor, args => a.characters(args))
+    a => a.characters
   )
   .build()
