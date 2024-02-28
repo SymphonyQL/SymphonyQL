@@ -20,6 +20,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import symphony.apt.Constant;
 import symphony.apt.model.MethodInfo;
 
 public final class ModelUtils {
@@ -32,10 +33,29 @@ public final class ModelUtils {
     return annotation.getAnnotationType().toString();
   }
 
+  public static Predicate<Element> createHasFunctionalFieldPredicate(
+      final TypeElement typeElement) {
+    final Collection<MethodInfo> methods = findImplementedMethods(typeElement);
+    return element -> {
+      final var name = TypeUtils.getSimpleName(element);
+      final var m = MethodInfo.find(methods, name, Collections.emptyList());
+
+      if (m != null) {
+        final var mElement = m.getElement();
+        if (m.getReturnType().toString().startsWith(Constant.JAVA_FUNCTION_CLASS)
+            || m.getReturnType().toString().startsWith(Constant.JAVA_SUPPLIER_CLASS)) {
+          return TypeUtils.hasAnyModifier(mElement, Modifier.PUBLIC);
+        }
+        return false;
+      }
+      return false;
+    };
+  }
+
   public static Predicate<Element> createHasFieldPredicate(final TypeElement typeElement) {
     final Collection<MethodInfo> methods = findImplementedMethods(typeElement);
     return element -> {
-      final var name = TypeUtils.getName(element);
+      final var name = TypeUtils.getSimpleName(element);
       final var m = MethodInfo.find(methods, name, Collections.emptyList());
 
       if (m != null) {
@@ -53,7 +73,7 @@ public final class ModelUtils {
             .toList();
     final var result = new LinkedHashMap<String, Element>();
     for (var variable : variables) {
-      final var variableName = TypeUtils.getName(variable);
+      final var variableName = TypeUtils.getSimpleName(variable);
       result.put(variableName, variable);
     }
     return result;
@@ -67,7 +87,7 @@ public final class ModelUtils {
 
     for (final var variable : variables) {
       if (predicate.test(variable)) {
-        final var variableName = TypeUtils.getName(variable);
+        final var variableName = TypeUtils.getSimpleName(variable);
         result.put(variableName, variable);
       }
     }

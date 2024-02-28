@@ -56,7 +56,7 @@ final class InputObjectBuilder[A] private {
         Schema.mkObject(
           name,
           description,
-          * => fields.map(_.apply(FieldBuilder.newField())).map(f => f -> (* => Stage.NullStage)),
+          * => fields.map(_.apply(FieldBuilder.newField().isInput(true))).map(f => f -> (* => Stage.NullStage)),
           directives
         )
       )
@@ -64,7 +64,7 @@ final class InputObjectBuilder[A] private {
       Schema.mkObject(
         name,
         description,
-        * => fields.map(_.apply(FieldBuilder.newField())).map(f => f -> (* => Stage.NullStage)),
+        * => fields.map(_.apply(FieldBuilder.newField().isInput(true))).map(f => f -> (* => Stage.NullStage)),
         directives
       )
 

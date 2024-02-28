@@ -4,6 +4,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
+import symphony.apt.Constant;
 import symphony.apt.annotation.EnumSchema;
 import symphony.apt.util.MessageUtils;
 import symphony.apt.util.ModelUtils;
@@ -39,21 +40,16 @@ public class EnumCodeGenerator extends GeneratedCodeGenerator {
 
     private void generateMethod(final TypeSpec.Builder builder, final TypeElement typeElement) {
         var variables = ModelUtils.getEnumTypes(typeElement).values();
-        var schemaClass = ClassName.get(SCHEMA_PACKAGE, "Schema");
-        var parameterizedTypeName = TypeUtils.getTypeName(typeElement);
-        var returnType = ParameterizedTypeName.get(schemaClass, parameterizedTypeName);
-        var enumBuilderClass = ClassName.get(BUILDER_PACKAGE, "EnumBuilder");
-        var enumValueBuilderClass = ClassName.get(BUILDER_PACKAGE, "EnumValueBuilder");
-        var enumValueClass = ClassName.get(ADT_PACKAGE, "__EnumValue");
-        var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), enumValueBuilderClass, enumValueClass);
+        var typeName = TypeUtils.getTypeName(typeElement);
+        var returnType = ParameterizedTypeName.get(SCHEMA_CLASS, typeName);
         var stringClass = ClassName.get(String.class);
-        var serializeFunctionType = ParameterizedTypeName.get(ClassName.get(Function.class), parameterizedTypeName, stringClass);
+        var serializeFunctionType = ParameterizedTypeName.get(ClassName.get(Function.class), typeName, stringClass);
 
-        var builderSchema = MethodSpec.methodBuilder(SCHEMA_METHOD_NAME)
+        var builderSchema = MethodSpec.methodBuilder(Constant.SCHEMA_METHOD_NAME)
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .returns(returnType)
-                .addStatement("$T<$T> newEnum = $T.newEnum()", enumBuilderClass, parameterizedTypeName, enumBuilderClass)
-                .addStatement("newEnum.name($S)", TypeUtils.getName(typeElement));
+                .addStatement("$T<$T> newEnum = $T.newEnum()", ENUM_BUILDER_CLASS, typeName, ENUM_BUILDER_CLASS)
+                .addStatement("newEnum.name($S)", TypeUtils.getSimpleName(typeElement));
 
         builderSchema.addCode(SourceTextUtils.lines("""
                 newEnum.serialize(new $T() {
@@ -62,7 +58,7 @@ public class EnumCodeGenerator extends GeneratedCodeGenerator {
                         return en.name();
                     }
                 });
-                """), serializeFunctionType, parameterizedTypeName);
+                """), serializeFunctionType, typeName);
 
         for (var entry : variables) {
             var name = entry.getSimpleName().toString();
@@ -73,13 +69,13 @@ public class EnumCodeGenerator extends GeneratedCodeGenerator {
                             return builder.name($S).build();
                         }
                     });
-                    """), functionType, enumValueClass, enumValueBuilderClass, name);
+                    """), BUILD_ENUM_VALUE_FUNCTION_TYPE, ENUM_VALUE_CLASS, ENUM_VALUE_BUILDER_CLASS, name);
         }
 
         builderSchema.addStatement("return newEnum.build()");
 
         builder.addMethod(builderSchema.build());
-        builder.addField(assignFieldSpec(returnType, SCHEMA_METHOD_NAME));
+        builder.addField(assignFieldSpec(returnType, Constant.SCHEMA_METHOD_NAME));
     }
 
 }

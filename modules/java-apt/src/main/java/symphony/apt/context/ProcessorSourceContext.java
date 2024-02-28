@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import symphony.apt.SourceCodeGeneratorRegistry;
+import symphony.apt.annotation.IgnoreSchema;
 import symphony.apt.generator.CodeGenerator;
 import symphony.apt.generator.GeneratedCodeGenerator;
 import symphony.apt.util.MessageUtils;
@@ -11,11 +12,13 @@ import symphony.apt.util.ReflectionUtils;
 import symphony.apt.util.TypeUtils;
 
 import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 public class ProcessorSourceContext {
 
@@ -75,22 +78,26 @@ public class ProcessorSourceContext {
         return contexts;
     }
 
+    private static ProcessorSourceContext calculate(
+            final RoundEnvironment roundEnv, final TypeElement annotation
+    ) throws Exception {
+        final var annotationName = annotation.getQualifiedName().toString();
+        final Class<? extends Annotation> annotationClass =
+                ReflectionUtils.getClass(annotationName);
 
-    @SuppressWarnings("unchecked")
-    private static ProcessorSourceContext calculate(final RoundEnvironment roundEnv, final TypeElement annotation) throws Exception {
-        var annotationName = annotation.getQualifiedName().toString();
-        final Class<? extends Annotation> annotationClass = ReflectionUtils.getClass(annotationName);
+        final Set<? extends Element> allElements = roundEnv.getElementsAnnotatedWith(annotation);
+        final Collection<? extends Element> filteredElement =
+                TypeUtils.filterWithAnnotation(allElements, annotationClass);
 
-        var allElements = roundEnv.getElementsAnnotatedWith(annotation);
-        var filteredElement = TypeUtils.filterWithAnnotation(allElements, annotationClass);
-
-        var typeElements = TypeUtils.foldToTypeElements(filteredElement);
+        final var typeElements = TypeUtils.foldToTypeElements(filteredElement);
+        final var filteredTypeElements =
+                TypeUtils.filterWithoutAnnotation(typeElements, IgnoreSchema.class);
 
         var generator = SourceCodeGeneratorRegistry.find(annotationName);
-        var classes = new ArrayList<Pair<TypeElement, String>>();
+        final var classes = new ArrayList<Pair<TypeElement, String>>();
 
-        for (var element : typeElements) {
-            var className = getClassName(generator, element);
+        for (final var element : filteredTypeElements) {
+            final String className = getClassName(generator, element);
             classes.add(Pair.of(element, className));
         }
 
@@ -100,7 +107,7 @@ public class ProcessorSourceContext {
     private static String getClassName(final CodeGenerator generator, final TypeElement element) {
         if (generator instanceof GeneratedCodeGenerator gcGenerator) {
             var nameModifier = gcGenerator.getNameModifier();
-            var originClassName = TypeUtils.getName(element);
+            var originClassName = TypeUtils.getSimpleName(element);
             return nameModifier.apply(originClassName);
         }
         return null;

@@ -20,6 +20,7 @@ final class FieldBuilder private {
   private var isDeprecated: Boolean             = false
   private var deprecationReason: Option[String] = None
   private var hasArgs: Boolean                  = false
+  private var isInput: Boolean                  = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -37,6 +38,8 @@ final class FieldBuilder private {
     this
   }
 
+  protected[symphony] def getSchema[V]: Schema[V] = this.schema.asInstanceOf[Schema[V]]
+
   def schema[V](schema: Schema[V]): this.type = {
     this.schema = schema
     this
@@ -52,8 +55,13 @@ final class FieldBuilder private {
     this
   }
 
-  def hasArgs(isInputArgs: Boolean): this.type = {
-    this.hasArgs = isInputArgs
+  def hasArgs(hasArgs: Boolean): this.type = {
+    this.hasArgs = hasArgs
+    this
+  }
+
+  def isInput(isInput: Boolean): this.type = {
+    this.isInput = isInput
     this
   }
 
@@ -62,7 +70,7 @@ final class FieldBuilder private {
       name,
       description,
       if (hasArgs) schema.arguments else List.empty,
-      () => if (schema.optional) schema.lazyType() else Types.mkNonNull(schema.lazyType()),
+      () => if (schema.optional) schema.lazyType(isInput) else Types.mkNonNull(schema.lazyType(isInput)),
       isDeprecated,
       deprecationReason,
       Option(directives)

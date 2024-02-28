@@ -1,12 +1,22 @@
 # SymphonyQL
 
-SymphonyQL is a GraphQL implementation built with Apache Pekko
+[![CI][Badge-CI]][Link-CI]
+
+[Badge-CI]: https://github.com/SymphonyQL/SymphonyQL/actions/workflows/ScalaCI.yml/badge.svg
+[Link-CI]: https://github.com/SymphonyQL/SymphonyQL/actions
+
+SymphonyQL is a GraphQL implementation built with Apache Pekko.
+
+[SymphonyQL Document](https://SymphonyQL.github.io/SymphonyQL)
 
 ## Motivation
 
-Apache Pekko native, Java/Scala support.
+Native support for Apache Pekko, including Java/Scala.
 
-## POC
+- Java 21
+- Scala 3.3.1
+
+## Examples
 
 These are several POC examples for SymphonyQL, for reference only.
 
@@ -53,7 +63,8 @@ val graphql: SymphonyQL = SymphonyQL
   .addQuery(
       Queries(args =>
         Source.single(Character("abc-" + args.origin.map(_.toString).getOrElse(""), args.origin.getOrElse(Origin.BELT)))
-      ), 
+      ),
+    // Automatically generated through scala3 metaprogramming.
     Schema.derived[Queries]
   )
   .build()
@@ -62,121 +73,65 @@ implicit val actorSystem: ActorSystem                        = ActorSystem("symp
 val getRes: Future[SymphonyQLResponse[SymphonyQLError]]      = graphql.runWith(SymphonyQLRequest(Some(characters)))
 
 println(Await.result(getRes, Duration.Inf).toOutputValue)
-
-actorSystem.terminate()
 ```
 
 ### Java 21 Example
 
 Defining API using Java21 record classes:
 ```java
-record FilterArgs(Optional<Origin> origin) {
+@ObjectSchema(withArgs = true)
+record Queries(Function<FilterArgs, Source<CharacterOutput, NotUsed>> characters) {
 }
 
+@ObjectSchema
 record CharacterOutput(String name, Origin origin) {
 }
 
-enum Origin {
-    EARTH, MARS, BELT;
+@InputSchema
+@ArgExtractor
+record FilterArgs(Optional<Origin> origin) {
 }
 
-record Queries(Function<FilterArgs, Source<CharacterOutput, NotUsed>> characters) {
+@EnumSchema
+@ArgExtractor
+enum Origin {
+    EARTH,
+    MARS,
+    BELT
 }
 ```
 
-Now, we need to manually define it, which is an example of creating a query through DSL:
+After compilation, we can directly use `QueriesSchema.schema` (`QueriesSchema` is a default generated class name):
+> Also, we can manually define it through DSL.
 ```java
-public static ArgumentExtractor<FilterArgs> argumentExtractor() {
-    return input -> switch (input) {
-        case SymphonyQLInputValue.ObjectValue a -> {
-            var org = Optional.of(Origin.valueOf(((SymphonyQLValue.StringValue) a.fields().get("origin").get()).value()));
-            yield Right.apply(new FilterArgs(org));
-        }
-        default -> Left.apply(new SymphonyQLError.ArgumentError("error"));
-    };
-}
+var graphql = SymphonyQL
+        .newSymphonyQL()
+        .addQuery(
+                new Queries(
+                        args1 -> Source.single(new CharacterOutput("abc-" + args1.origin().map(Enum::toString).get(), args1.origin().get()))
+                ),
+                // Automatically generated through APT.
+                QueriesSchema.schema
+        )
+        .build();
+System.out.println(graphql.render());
 
-public static Schema<Origin> originSchema() {
-    return EnumBuilder.<Origin>newEnum()
-            .name("Origin")
-            .serialize((Function<Origin, String>) Enum::name)
-            .value((Function<EnumValueBuilder, __EnumValue>) enumValueBuilder -> enumValueBuilder.name("EARTH").build())
-            .value((Function<EnumValueBuilder, __EnumValue>) enumValueBuilder -> enumValueBuilder.name("MARS").build())
-            .value((Function<EnumValueBuilder, __EnumValue>) enumValueBuilder -> enumValueBuilder.name("BELT").build())
-            .build();
-}
+var characters = """
+          {
+          characters(origin: "BELT") {
+            name
+            origin
+          }
+        }""";
 
-public static Schema<FilterArgs> inputSchema(Schema<Origin> enumSchema) {
-    return InputObjectBuilder.<FilterArgs>newObject()
-            .name("FilterArgs")
-            .field((Function<FieldBuilder, __Field>) builder -> builder.name("name").schema(Schema.createOptional(enumSchema)).build())
-            .build();
-}
+var actorSystem = ActorSystem.create("symphonyActorSystem");
 
-public static Schema<CharacterOutput> outputSchema(Schema<Origin> enumSchema) {
-    return ObjectBuilder
-            .<CharacterOutput>newObject()
-            .name("CharacterOutput")
-            .field((Function<FieldBuilder, __Field>) builder -> builder.name("name").schema(Schema.StringSchema()).build())
-            .field((Function<FieldBuilder, __Field>) builder -> builder.name("origin").schema(enumSchema).build())
-            .build();
-}
+var getRes = graphql.run(
+        SymphonyQLRequest.newRequest().query(Optional.of(characters)).build(),
+        actorSystem
+);
 
-public static Schema<Queries> queriesSchema(
-        ArgumentExtractor<FilterArgs> argumentExtractor,
-        Schema<FilterArgs> inputSchema,
-        Schema<CharacterOutput> outputSchema
-) {
-    return ObjectBuilder.<Queries>newObject()
-            .name("Queries")
-            .fieldWithArg(
-                    (Function<FieldBuilder, __Field>) builder -> builder
-                            .name("characters")
-                            .schema(Schema.createFunction(argumentExtractor, inputSchema, Schema.createSource(outputSchema)))
-                            .build()
-                    ,
-                    (Function<Queries, Stage>) queries -> Stage.derivesStageByReflection(argumentExtractor, args -> queries.characters().apply(args))
-
-            ).build();
-}
-
-
-public static void main(String[] args) {
-    var enumSchema = originSchema();
-    var argumentExtractor = argumentExtractor();
-    var inputSchema = inputSchema(enumSchema);
-    var outputSchema = outputSchema(enumSchema);
-    var queriesSchema = queriesSchema(argumentExtractor, inputSchema, outputSchema);
-
-    var graphql = SymphonyQL
-            .newSymphonyQL()
-            .addQuery(
-                    new Queries(
-                            args1 -> Source.single(new CharacterOutput("abc-" + args1.origin().map(Enum::toString).get(), args1.origin().get()))
-                    ),
-                    queriesSchema
-            )
-            .build();
-    System.out.println(graphql.render());
-
-    var characters = """
-              {
-              characters(origin: "BELT") {
-                name
-                origin
-              }
-            }""";
-
-    final var actorSystem = ActorSystem.create("symphonyActorSystem");
-
-    var getRes = graphql.run(
-            SymphonyQLRequest.newRequest().query(Optional.of(characters)).build(),
-            actorSystem
-    );
-
-    getRes.whenComplete((resp, throwable) -> System.out.println(resp));
-    getRes.thenRun(() -> actorSystem.terminate());
-}
+getRes.whenComplete((resp, throwable) -> System.out.println(resp.toOutputValue()));
 ```
 
 ## Inspire By 

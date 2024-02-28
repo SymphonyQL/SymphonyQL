@@ -1,12 +1,12 @@
-package symphony.example.schema
+package symphony.example
 
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.*
 import org.apache.pekko.stream.scaladsl.*
-import symphony.example.schema.Users.*
 import symphony.parser.*
 import symphony.*
-
+import symphony.example.schema.Users.*
+import symphony.example.schema.queriesSchema
 import scala.concurrent.*
 import scala.concurrent.duration.Duration
 
@@ -17,7 +17,7 @@ object ScalaAPIMain {
     .addQuery(
       Queries(args =>
         Source.single(
-          Character("abc-" + args.origin.map(_.toString).getOrElse(""), args.origin.getOrElse(Origin.BELT))
+          Character("hello-" + args.origin.map(_.toString).getOrElse(""), args.origin.getOrElse(Origin.BELT))
         )
       ),
       queriesSchema

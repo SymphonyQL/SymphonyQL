@@ -115,7 +115,8 @@ lazy val examples = (project in file("examples"))
       "symphony.apt.SymphonyQLProcessor",
       "-s",
       ((Compile / crossTarget).value / "src_managed").getAbsolutePath,
-      "-XprintRounds"
+      "-XprintRounds",
+      "-Xlint:deprecation"
     )
   )
 
@@ -138,3 +139,17 @@ lazy val benchmarks = project
       "com.graphql-java"       % "graphql-java"  % "21.3"
     )
   )
+
+lazy val docs = project
+  .in(file("mdoc"))
+  .enablePlugins(MdocPlugin, DocusaurusPlugin)
+  .settings(commonSettings)
+  .settings(
+    publish / skip := true,
+    name           := "symphony-docs",
+    mdocIn         := (ThisBuild / baseDirectory).value / "docs",
+    run / fork     := true,
+    scalacOptions -= "-Xfatal-warnings",
+    scalacOptions += "-Wunused:imports"
+  )
+  .dependsOn(core, parser, `java-apt`, server, validator)

@@ -2,8 +2,10 @@ package symphony
 package schema
 package javadsl
 
+import symphony.parser.SymphonyQLValue
 import symphony.parser.adt.Directive
 import symphony.parser.adt.introspection.*
+import symphony.schema.Stage
 
 import scala.annotation.varargs
 import scala.jdk.FunctionConverters.*
@@ -14,12 +16,12 @@ object ObjectBuilder {
 }
 
 final class ObjectBuilder[A] private {
-  private var name: String                                                                       = _
-  private var description: Option[String]                                                        = None
-  private var fieldWithArgs: List[(JavaFunction[FieldBuilder, __Field], JavaFunction[A, Stage])] = List.empty
-  private var fields: List[(JavaFunction[FieldBuilder, __Field], JavaFunction[A, Stage])]        = List.empty
-  private var directives: List[Directive]                                                        = List.empty
-  private var isNullable: Boolean                                                                = false
+  private var name: String                                                                   = _
+  private var description: Option[String]                                                    = None
+  private var fieldWithArgs: List[(JavaFunction[FieldBuilder, __Field], JavaFunction[A, ?])] = List.empty
+  private var fields: List[(JavaFunction[FieldBuilder, __Field], JavaFunction[A, ?])]        = List.empty
+  private var directives: List[Directive]                                                    = List.empty
+  private var isNullable: Boolean                                                            = false
 
   def name(name: String): this.type = {
     this.name = name
@@ -31,18 +33,19 @@ final class ObjectBuilder[A] private {
     this
   }
 
-  def field(
-    builder: JavaFunction[FieldBuilder, __Field]
+  def field[V](
+    builder: JavaFunction[FieldBuilder, __Field],
+    fieldValue: JavaFunction[A, V]
   ): this.type = {
-    this.fields = builder -> ((_: A) => Stage.createNull()) :: fields
+    this.fields = (builder -> fieldValue) :: fields
     this
   }
 
-  def fieldWithArg(
+  def fieldWithArg[V](
     builder: JavaFunction[FieldBuilder, __Field],
-    stage: JavaFunction[A, Stage]
+    fieldValue: JavaFunction[A, V]
   ): this.type = {
-    this.fieldWithArgs = builder -> stage :: fieldWithArgs
+    this.fieldWithArgs = (builder -> fieldValue) :: fieldWithArgs
     this
   }
 
@@ -64,8 +67,21 @@ final class ObjectBuilder[A] private {
           name,
           description,
           _ =>
-            fieldWithArgs.reverse.map(kv => kv._1(FieldBuilder.newField().hasArgs(true)) -> kv._2.asScala) ++
-              fields.reverse.map(kv => kv._1(FieldBuilder.newField().hasArgs(false)) -> kv._2.asScala),
+            fieldWithArgs.reverse.map { kv =>
+              val builder = FieldBuilder.newField().hasArgs(true)
+              kv._1(builder) -> new Function[A, Stage]() {
+                override def apply(v1: A): Stage =
+                  builder.getSchema.analyze(kv._2.apply(v1))
+              }
+
+            } ++
+              fields.reverse.map { kv =>
+                val builder = FieldBuilder.newField().hasArgs(false)
+                kv._1(builder) -> new Function[A, Stage]() {
+                  override def apply(v1: A): Stage =
+                    builder.getSchema.analyze(kv._2.apply(v1))
+                }
+              },
           directives
         )
       )
@@ -74,8 +90,21 @@ final class ObjectBuilder[A] private {
         name,
         description,
         _ =>
-          fieldWithArgs.reverse.map(kv => kv._1(FieldBuilder.newField().hasArgs(true)) -> kv._2.asScala) ++
-            fields.reverse.map(kv => kv._1(FieldBuilder.newField().hasArgs(false)) -> kv._2.asScala),
+          fieldWithArgs.reverse.map { kv =>
+            val builder = FieldBuilder.newField().hasArgs(true)
+            kv._1(builder) -> new Function[A, Stage]() {
+              override def apply(v1: A): Stage =
+                builder.getSchema.analyze(kv._2.apply(v1))
+            }
+
+          } ++
+            fields.reverse.map { kv =>
+              val builder = FieldBuilder.newField().hasArgs(false)
+              kv._1(builder) -> new Function[A, Stage]() {
+                override def apply(v1: A): Stage =
+                  builder.getSchema.analyze(kv._2.apply(v1))
+              }
+            },
         directives
       )
 

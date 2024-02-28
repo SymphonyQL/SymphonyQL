@@ -5,20 +5,19 @@ import com.squareup.javapoet.TypeName;
 import java.util.function.Function;
 
 public class WrappedContext {
-
-  public String fieldName;
-  public TypeName fieldTypeName;
-  public ClassName className;
-  public Function<String, String> suffix;
+  public TypeName typeName;
+  public ClassName usedClassName;
+  public Function<String, String> addSuffix;
+  public ClassName extractorClassName;
 
   public WrappedContext(
-      String fieldName,
       TypeName fieldTypeName,
       ClassName className,
-      Function<String, String> suffix) {
-    this.fieldName = fieldName;
-    this.fieldTypeName = fieldTypeName;
-    this.className = className;
-    this.suffix = suffix;
+      Function<String, String> suffix,
+      ClassName extractorClassName) {
+    this.typeName = fieldTypeName;
+    this.usedClassName = className;
+    this.addSuffix = suffix;
+    this.extractorClassName = extractorClassName;
   }
 }

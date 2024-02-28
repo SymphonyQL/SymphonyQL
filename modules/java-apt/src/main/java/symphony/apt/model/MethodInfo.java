@@ -30,7 +30,7 @@ public class MethodInfo {
 
   public static MethodInfo create(final ExecutableElement element) {
     return new MethodInfo(
-        TypeUtils.getName(element),
+        TypeUtils.getSimpleName(element),
         element.getReturnType(),
         TypeUtils.asTypes(element.getParameters()),
         element);

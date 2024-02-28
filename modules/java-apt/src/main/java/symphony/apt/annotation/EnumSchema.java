@@ -7,7 +7,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * &#64;EnumSchema creates a class with schema method for SymphonyQL Enum Type.
+ * &#64;EnumSchema creates a class with schema method for SymphonyQL Enum Type. Support Enum
+ * classes.
  *
  * <p><br>
  * Original class OriginEnum:

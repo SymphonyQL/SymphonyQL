@@ -7,7 +7,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * &#64;InputSchema creates a class with schema method for SymphonyQL Input Type.
+ * &#64;InputSchema creates a class with schema method for SymphonyQL Input Type. Support Enum and
+ * Record classes.
  *
  * <p><br>
  * Original class InputObject:

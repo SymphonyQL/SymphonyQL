@@ -7,7 +7,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * &#64;ArgExtractor creates a class with extractor method for SymphonyQL Enum Type.
+ * &#64;ArgExtractor creates a class with extractor method for SymphonyQL Enum Type. Support Enum
+ * and Record classes.
  *
  * <p><br>
  * Original enum class OriginEnumExtractor:
@@ -45,7 +46,7 @@ import java.lang.annotation.Target;
  *                         yield (OriginEnum) OriginEnum.valueOf((String)right.value());
  *                     }
  *                     case Left<SymphonyQLError.ArgumentError, ?> left -> {
- *                         throw new RuntimeException("Cannot build enum symphony.example.schema.OriginEnum from input", left.value());
+ *                         throw new RuntimeException("Cannot build enum OriginEnum from input", left.value());
  *                     }
  *                 };
  *             }
@@ -55,7 +56,7 @@ import java.lang.annotation.Target;
  *                     yield (OriginEnum) OriginEnum.valueOf((String)right.value());
  *                 }
  *                 case Left<SymphonyQLError.ArgumentError, ?> left -> {
- *                     throw new RuntimeException("Cannot build enum symphony.example.schema.OriginEnum from input", left.value());
+ *                     throw new RuntimeException("Cannot build enum OriginEnum from input", left.value());
  *                 }
  *             };
  *         }
@@ -73,10 +74,10 @@ import java.lang.annotation.Target;
  *             public Either<SymphonyQLError.ArgumentError, OriginEnum> extract(
  *                     SymphonyQLInputValue input) {
  *                 return switch (input) {
- *                     case SymphonyQLValue.EnumValue obj ->  {
+ *                     case SymphonyQLValue.EnumValue obj -> {
  *                         yield Right.apply(function.apply(obj));
  *                     }
- *                     case SymphonyQLValue.StringValue obj ->  {
+ *                     case SymphonyQLValue.StringValue obj -> {
  *                         yield Right.apply(function.apply(obj));
  *                     }
  *                     default -> Left.apply(new SymphonyQLError.ArgumentError("Expected EnumValue or StringValue"));

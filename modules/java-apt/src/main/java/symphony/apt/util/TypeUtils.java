@@ -6,12 +6,14 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.apache.commons.lang3.StringUtils;
 import symphony.apt.AnnotatedElementCallback;
+import symphony.apt.Constant;
 import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.context.ProcessorSourceContext;
-import symphony.apt.model.TypeCategory;
+import symphony.apt.model.TypeClassification;
 import symphony.apt.model.WrappedContext;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -24,8 +26,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-import static symphony.apt.generator.GeneratedCodeGenerator.EXTRACTOR_METHOD_NAME;
-import static symphony.apt.generator.GeneratedCodeGenerator.SCHEMA_METHOD_NAME;
+import static symphony.apt.Constant.SCHEMA_SUFFIX;
+import static symphony.apt.Constant.INPUT_SCHEMA_SUFFIX;
+import static symphony.apt.Constant.SCHEMA_METHOD_NAME;
+import static symphony.apt.Constant.EXTRACTOR_METHOD_NAME;
 
 public final class TypeUtils {
 
@@ -138,10 +142,10 @@ public final class TypeUtils {
         return types;
     }
 
-    public static String getName(final Element element) {
+    public static String getSimpleName(final Element element) {
         return element.getSimpleName().toString();
     }
-
+    
     public static TypeName getTypeName(final Element element) {
         return getTypeName(element, false);
     }
@@ -192,72 +196,43 @@ public final class TypeUtils {
         return false;
     }
 
-    private final static List<String> twoWrappedList = List.of(
-            "java.util.Map"
-    );
-
-    private final static List<String> oneWrappedList = List.of(
-            "java.util.Optional",
-            "java.util.List",
-            "java.util.Vector",
-            "java.util.Set",
-            "java.util.concurrent.CompletionStage"
-    );
-
-    private final static List<String> scalarList = List.of(
-            "java.lang.String",
-            "java.math.BigInteger",
-            "java.math.BigDecimal"
-    );
-
-    private final static List<String> primitiveTypes = List.of(
-            "java.lang.Boolean",
-            "java.lang.String",
-            "java.lang.Integer",
-            "java.lang.Long",
-            "java.lang.Double",
-            "java.lang.Float",
-            "java.lang.Short",
-            "java.math.BigInteger",
-            "java.math.BigDecimal",
-            "java.lang.Void",
-            "boolean",
-            "int",
-            "long",
-            "float",
-            "double",
-            "short",
-            "void"
-    );
-
-    public static boolean existsTwoParameterizedTypes(TypeName typeName) {
-        return twoWrappedList.contains(getRawTypeName(typeName).toString());
+    public static boolean isMapType(TypeName typeName) {
+        return Constant.mapList.contains(typeName.toString());
     }
 
-    public static boolean existsOneParameterizedType(TypeName typeName) {
-        return oneWrappedList.contains(getRawTypeName(typeName).toString());
+    public static boolean isFunctionType(TypeName typeName) {
+        return Constant.functionList.contains(typeName.toString());
     }
 
-    public static TypeCategory getTypeCategory(TypeName typeName) {
-        if (isPrimitiveType(typeName)) {
-            return TypeCategory.SYSTEM_TYPE;
-        }
-        if (existsOneParameterizedType(typeName)) {
-            return TypeCategory.ONE_PARAMETERIZED_TYPE;
-        }
-        if (existsTwoParameterizedTypes(typeName)) {
-            return TypeCategory.TWO_PARAMETERIZED_TYPES;
-        }
-        if (isCustomObjectType(typeName)) {
-            return TypeCategory.CUSTOM_OBJECT_TYPE;
-        }
-
-        return TypeCategory.CUSTOM_OBJECT_TYPE;
-
+    public static boolean isSupplierType(TypeName typeName) {
+        return Constant.supplierList.contains(typeName.toString());
     }
 
-    public static boolean isPrimitiveType(TypeName typeName) {
-        return typeName.isPrimitive() || typeName.isBoxedPrimitive() || scalarList.contains(typeName.toString());
+    public static boolean isCollectionType(TypeName typeName) {
+        return Constant.collectionList.contains(typeName.toString());
+    }
+
+    public static TypeClassification classifyType(TypeName typeName) {
+        if (isDefaultOrPrimitiveType(typeName)) {
+            return TypeClassification.DEFAULT_OR_PRIMITIVE_TYPE;
+        }
+        if (isCollectionType(typeName)) {
+            return TypeClassification.COLLECTION_PARAMETERIZED_TYPE;
+        }
+        if (isFunctionType(typeName)) {
+            return TypeClassification.FUNCTION_PARAMETERIZED_TYPE;
+        }
+        if (isSupplierType(typeName)) {
+            return TypeClassification.SUPPLIER_PARAMETERIZED_TYPE;
+        }
+        if (isMapType(typeName)) {
+            return TypeClassification.MAP_PARAMETERIZED_TYPE;
+        }
+        return TypeClassification.CUSTOM_OBJECT_TYPE;
+    }
+
+    public static boolean isDefaultOrPrimitiveType(TypeName typeName) {
+        return typeName.isPrimitive() || typeName.isBoxedPrimitive() || Constant.scalarList.contains(typeName.toString());
     }
 
     public static TypeName getRawTypeName(final TypeName typeName) {
@@ -299,68 +274,106 @@ public final class TypeUtils {
         }
     }
 
-    public static boolean isCustomObjectType(TypeName typeName) {
-        var isPrimitiveType = isPrimitiveType(typeName);
-        var isWrappedType = existsOneParameterizedType(typeName) || existsTwoParameterizedTypes(typeName);
-        return !isPrimitiveType && !isWrappedType;
+    public static boolean isEnumType(TypeName typeName) {
+        if (typeName instanceof ClassName className) {
+            TypeElement typeElement = ProcessorContextHolder.getContext()
+                    .getProcessingEnvironment()
+                    .getElementUtils()
+                    .getTypeElement(className.toString());
+            return typeElement.getKind() == ElementKind.ENUM;
+        }
+        return false;
     }
 
     public static String buildSchemaWrappedString(WrappedContext wrappedContext, List<Object> args) {
         final var sb = new StringBuilder();
-        var info = wrappedContext.fieldTypeName;
-        var rawTypeName = getRawTypeName(info).toString();
-        if (primitiveTypes.contains(rawTypeName)) {
-            args.add(wrappedContext.className);
-            args.add(wrappedContext.fieldTypeName.toString());
-            sb.append("$T.getSchema($S)");
+        var info = wrappedContext.typeName;
+        var rawType = getRawTypeName(info).toString();
+        if (Constant.primitiveTypes.contains(rawType)) {
+            args.add(ParameterizedTypeName.get(wrappedContext.usedClassName, wrappedContext.typeName));
+            args.add(wrappedContext.usedClassName);
+            args.add(wrappedContext.typeName.toString());
+            sb.append("($T) $T.getSchema($S)");
         } else {
-            switch (rawTypeName) {
+            switch (rawType) {
                 case "java.util.Map":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createMap(");
                     break;
                 case "java.util.List":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createList(");
                     break;
                 case "java.util.Set":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createSet(");
                     break;
                 case "java.util.Vector":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createVector(");
                     break;
                 case "java.util.Optional":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createOptional(");
                     break;
                 case "org.apache.pekko.stream.javadsl.Source":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createSource(");
                     break;
                 case "java.util.concurrent.CompletionStage":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createCompletionStage(");
                     break;
+                case "java.util.function.Function":
+                    args.add(wrappedContext.usedClassName);
+                    sb.append("$T.createFunction(");
+                    break;
+                case "java.util.function.Supplier":
+                    args.add(wrappedContext.usedClassName);
+                    sb.append("$T.createFunctionUnit(");
+                    break;
                 default:
-                    MessageUtils.note("Custom Schema -> " + info);
-                    args.add(ClassName.get("", wrappedContext.suffix.apply(info.toString())));
-                    args.add(SCHEMA_METHOD_NAME);
-                    return "$T.$N";
+                    if (info.toString().equals(Constant.NOT_USED_CLASS)) {
+                        break;
+                    } else {
+                        if (isEnumType(info)) {
+                            args.add(ClassName.get("", SCHEMA_SUFFIX.apply(info.toString())));
+                        } else {
+                            args.add(ClassName.get("", wrappedContext.addSuffix.apply(info.toString())));
+                        }
+                        args.add(SCHEMA_METHOD_NAME);
+                        return "$T.$N";
+                    }
             }
         }
         if (info instanceof ParameterizedTypeName parameterizedTypeName && !parameterizedTypeName.typeArguments.isEmpty()) {
             for (int i = 0; i < parameterizedTypeName.typeArguments.size(); i++) {
-                wrappedContext.fieldTypeName = parameterizedTypeName.typeArguments.get(i);
+                wrappedContext.typeName = parameterizedTypeName.typeArguments.get(i);
+                if (rawType.equals(Constant.JAVA_FUNCTION_CLASS) && i == 0) {
+                    wrappedContext.addSuffix = INPUT_SCHEMA_SUFFIX;
+                }
                 sb.append(buildSchemaWrappedString(wrappedContext, args));
+                wrappedContext.addSuffix = SCHEMA_SUFFIX;
                 if (i < parameterizedTypeName.typeArguments.size() - 1) {
-                    sb.append(", ");
+                    // skip the second type argument
+                    if (rawType.equals(Constant.JAVA_FUNCTION_CLASS)) {
+                        sb.append(", ");
+                        var argCtx = new WrappedContext(
+                                parameterizedTypeName.typeArguments.getFirst(),
+                                wrappedContext.extractorClassName,
+                                Constant.EXTRACTOR_SUFFIX_FUNCTION,
+                                wrappedContext.extractorClassName
+                        );
+                        sb.append(buildExtractorWrappedString(argCtx, args));
+                    }
+                    if (!rawType.equals(Constant.JAVA_SOURCE_CLASS)) {
+                        sb.append(", ");
+                    }
                 }
             }
         }
 
-        if (!primitiveTypes.contains(rawTypeName)) {
+        if (!Constant.primitiveTypes.contains(rawType) && !Constant.NOT_USED_CLASS.equals(rawType)) {
             sb.append(")");
         }
 
@@ -369,41 +382,40 @@ public final class TypeUtils {
 
     public static String buildExtractorWrappedString(WrappedContext wrappedContext, List<Object> args) {
         final var sb = new StringBuilder();
-        var info = wrappedContext.fieldTypeName;
-        var rawTypeName = getRawTypeName(info).toString();
-        if (primitiveTypes.contains(rawTypeName)) {
-            args.add(ParameterizedTypeName.get(wrappedContext.className, wrappedContext.fieldTypeName));
-            args.add(wrappedContext.className);
-            args.add(wrappedContext.fieldTypeName.toString());
-            sb.append("($T)$T.getArgumentExtractor($S)");
+        var info = wrappedContext.typeName;
+        var rawType = getRawTypeName(info).toString();
+        if (Constant.primitiveTypes.contains(rawType)) {
+            args.add(ParameterizedTypeName.get(wrappedContext.usedClassName, wrappedContext.typeName));
+            args.add(wrappedContext.usedClassName);
+            args.add(wrappedContext.typeName.toString());
+            sb.append("($T) $T.getArgumentExtractor($S)");
         } else {
-            switch (rawTypeName) {
+            switch (rawType) {
                 case "java.util.List":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createList(");
                     break;
                 case "java.util.Set":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createSet(");
                     break;
                 case "java.util.Vector":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createVector(");
                     break;
                 case "java.util.Optional":
-                    args.add(wrappedContext.className);
+                    args.add(wrappedContext.usedClassName);
                     sb.append("$T.createOptional(");
                     break;
                 default:
-                    MessageUtils.note("Custom Extractor -> " + info);
-                    args.add(ClassName.get("", wrappedContext.suffix.apply(info.toString())));
+                    args.add(ClassName.get("", wrappedContext.addSuffix.apply(info.toString())));
                     args.add(EXTRACTOR_METHOD_NAME);
                     return "$T.$N";
             }
         }
         if (info instanceof ParameterizedTypeName parameterizedTypeName && !parameterizedTypeName.typeArguments.isEmpty()) {
             for (int i = 0; i < parameterizedTypeName.typeArguments.size(); i++) {
-                wrappedContext.fieldTypeName = parameterizedTypeName.typeArguments.get(i);
+                wrappedContext.typeName = parameterizedTypeName.typeArguments.get(i);
                 sb.append(buildExtractorWrappedString(wrappedContext, args));
                 if (i < parameterizedTypeName.typeArguments.size() - 1) {
                     sb.append(", ");
@@ -411,7 +423,7 @@ public final class TypeUtils {
             }
         }
 
-        if (!primitiveTypes.contains(rawTypeName)) {
+        if (!Constant.primitiveTypes.contains(rawType)) {
             sb.append(")");
         }
 

@@ -32,6 +32,6 @@ public final class CodeGeneratorContext {
   }
 
   public String getClassName(final Function<String, String> nameModifier) {
-    return nameModifier.apply(TypeUtils.getName(getTypeElement()));
+    return nameModifier.apply(TypeUtils.getSimpleName(getTypeElement()));
   }
 }

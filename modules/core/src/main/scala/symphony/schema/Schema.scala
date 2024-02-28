@@ -78,8 +78,9 @@ trait SchemaJavaAPI {
    */
   @unused
   def createFunction[A, B](
-    argumentExtractor: ArgumentExtractor[A],
     inputSchema: Schema[A],
+    // When we recursively process in APT, the first thing we get is inputSchema
+    argumentExtractor: ArgumentExtractor[A],
     outputSchema: Schema[B]
   ): Schema[java.util.function.Function[A, B]] =
     mkFunction(argumentExtractor, inputSchema, outputSchema).contramap(_.asScala)
@@ -153,23 +154,23 @@ trait SchemaJavaAPI {
   @unused
   def getSchema(typeName: String): Schema[?] =
     typeName match
-      case "java.lang.Boolean"    => Schema.BooleanSchema
-      case "java.lang.String"     => Schema.StringSchema
-      case "java.lang.Integer"    => Schema.IntSchema
-      case "java.lang.Long"       => Schema.LongSchema
-      case "java.lang.Double"     => Schema.DoubleSchema
-      case "java.lang.Float"      => Schema.FloatSchema
-      case "java.lang.Short"      => Schema.ShortSchema
-      case "java.math.BigInteger" => Schema.BigIntegerSchema
-      case "java.math.BigDecimal" => Schema.JavaBigDecimalSchema
+      case "java.lang.Boolean"    => Schema.createNullable(Schema.BooleanSchema)
+      case "java.lang.String"     => Schema.createNullable(Schema.StringSchema)
+      case "java.lang.Integer"    => Schema.createNullable(Schema.IntSchema)
+      case "java.lang.Long"       => Schema.createNullable(Schema.LongSchema)
+      case "java.lang.Double"     => Schema.createNullable(Schema.DoubleSchema)
+      case "java.lang.Float"      => Schema.createNullable(Schema.FloatSchema)
+      case "java.lang.Short"      => Schema.createNullable(Schema.ShortSchema)
+      case "java.math.BigInteger" => Schema.createNullable(Schema.BigIntegerSchema)
+      case "java.math.BigDecimal" => Schema.createNullable(Schema.JavaBigDecimalSchema)
       case "java.lang.Void"       => Schema.UnitSchema
-      case "boolean"              => Schema.createNullable(Schema.BooleanSchema)
-      case "int"                  => Schema.createNullable(Schema.IntSchema)
-      case "long"                 => Schema.createNullable(Schema.LongSchema)
-      case "double"               => Schema.createNullable(Schema.DoubleSchema)
-      case "float"                => Schema.createNullable(Schema.FloatSchema)
-      case "short"                => Schema.createNullable(Schema.ShortSchema)
-      case "void"                 => Schema.createNullable(Schema.UnitSchema)
+      case "boolean"              => Schema.BooleanSchema
+      case "int"                  => Schema.IntSchema
+      case "long"                 => Schema.LongSchema
+      case "double"               => Schema.DoubleSchema
+      case "float"                => Schema.FloatSchema
+      case "short"                => Schema.ShortSchema
+      case "void"                 => Schema.UnitSchema
       case _                      => throw new IllegalArgumentException(s"Method 'Schema.getSchema' is not support for $typeName")
 
 }
@@ -232,7 +233,12 @@ trait GenericSchema extends SchemaDerivation {
           Types.mkObject(Some(name), description, fields(isInput).map(_._1), directives)
 
       override def analyze(value: A): Stage =
-        ObjectStage(name, fields(false).map { case (f, aToStage) => f.name -> aToStage(value) }.toMap)
+        ObjectStage(
+          name,
+          fields(false).map { case (f, aToStage) =>
+            f.name -> aToStage(value)
+          }.toMap
+        )
     }
 
   implicit def mkOption[A](implicit schema: Schema[A]): Schema[Option[A]] = new Schema[Option[A]] {

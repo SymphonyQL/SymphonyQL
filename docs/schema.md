@@ -1,5 +1,5 @@
-# Schemas
-
+# Schema Specification
+ 
 A SymphonyQL schema will be derived automatically at compile-time from the types present in your resolver.
 
 The following table shows how to convert common Scala/Java types to SymphonyQL types.
@@ -24,6 +24,7 @@ The following table shows how to convert common Scala/Java types to SymphonyQL t
 | `Seq[A]` (not have)                                                            | List of A                                        |
 | `Vector[A]` (`Vector[A]`)                                                      | List of A                                        |
 | `A => B` (`Function[A, B]`)                                                    | A and B                                          |
+| `() => A` (`Supplier[A]`)                                                      | A                                                |
 | `Future[A]` (`CompletionStage[A]`)                                             | Nullable A                                       |
 | `Tuple2[A, B]` (not have)                                                      | Object with 2 fields `_1` and `_2`               |
 | `Either[A, B]` (not have)                                                      | Object with 2 nullable fields `left` and `right` |

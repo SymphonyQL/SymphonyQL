@@ -1,42 +1,11 @@
-package symphony.example.schema;
+package symphony.example.schema.complex;
 
-
-import symphony.apt.annotation.ArgExtractor;
-import symphony.apt.annotation.EnumSchema;
-import symphony.apt.annotation.InputSchema;
 import symphony.apt.annotation.ObjectSchema;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-@EnumSchema
-@ArgExtractor
-enum OriginEnum {
-    EARTH, MARS, BELT
-}
-
-@ObjectSchema
-@ArgExtractor
-record NestedObject(
-        OriginEnum originEnum,
-        Optional<OriginEnum> optionalEnum,
-        Optional<String> optionalString,
-        List<List<Optional<OriginEnum>>> ssOptionalEnum,
-        List<String> sString,
-        List<List<String>> ssString,
-        String stringV,
-        int intV,
-        double doubleV,
-        float floatV,
-        short shortV,
-        BigDecimal bigDecimalV,
-        Optional<BigDecimal> optionalBigDecimal
-) {
-}
-
-// 不支持Map嵌套Map
 @ObjectSchema
 record OutputObject(
         OriginEnum originEnum,
@@ -72,27 +41,5 @@ record OutputObject(
         Map<Optional<NestedObject>, List<Optional<NestedObject>>> optionalNestedObjectListOptionalNestedObjectMap,
         Map<List<NestedObject>, List<Optional<String>>> listNestedObjectMapStringListOptionalMap,
         Map<Map<NestedObject, String>, List<Optional<Map<Optional<String>, List<NestedObject>>>>> complexMap
-) {
-}
-
-@InputSchema
-@ArgExtractor
-record InputObject(
-        OriginEnum originEnum,
-        Optional<OriginEnum> optionalEnum,
-        Optional<String> optionalString,
-        List<List<Optional<OriginEnum>>> ssOptionalEnum,
-        List<String> sString,
-        List<List<String>> ssString,
-        String stringV,
-        int intV,
-        double doubleV,
-        float floatV,
-        short shortV,
-        BigDecimal bigDecimalV,
-        Optional<BigDecimal> optionalBigDecimal,
-        Optional<NestedObject> optionalNestedObject,
-        List<NestedObject> sNestedObject,
-        Optional<List<NestedObject>> optionalNestedObjects
 ) {
 }
