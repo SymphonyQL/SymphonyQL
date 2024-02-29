@@ -13,12 +13,11 @@ SymphonyQL is a GraphQL implementation built with Apache Pekko.
 
 Native support for Apache Pekko, including Java/Scala.
 
-- Java 21
-- Scala 3.3.1
-
 ## Quickstart
 
-please see [quickstart](docs/quickstart.md)
+[Quickstart Java](docs/quickstart-java.md)
+
+[Quickstart Scala](docs/quickstart-scala.md)
 
 ## Inspire By 
 
