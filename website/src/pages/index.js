@@ -1,41 +1,105 @@
 import React from 'react';
 import clsx from 'clsx';
+import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import Layout from '@theme/Layout';
-import HomepageFeatures from '@site/src/components/HomepageFeatures';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+import styles from './styles.module.css';
 
-import styles from './index.module.css';
+const features = [
+    {
+        imageUrl: 'img/start-quickly-and-scale.svg',
+        title: <>Start Quickly and Scale</>,
+        description: (
+            <>
+                Build your first GraphQL server in minutes and
+                scale to production loads.
+            </>
+        ),
+    },
+    {
+        imageUrl: 'img/functional-and-type-safe.svg',
+        title: <>Functional and Type-safe</>,
+        description: (
+            <>
+                Use the power of Functional Programming and the compiler
+                to build robust, correct and fully-featured GraphQL servers.
+            </>
+        ),
+    },
+    {
+        title: <>Stream with Pekko</>,
+        imageUrl: 'img/stream-with-pekkostream.svg',
+        description: (
+            <>
+                Use Pekko's feature-rich pekko-streams to create query, subscription.
+            </>
+        ),
+    },
+    {
+        title: <>Highly Concurrent</>,
+        imageUrl: 'img/highly-concurrent.svg',
+        description: (
+            <>
+                Leverage the power of Pekko to build asynchronous servers.
+            </>
+        ),
+    }
+];
 
-function HomepageHeader() {
-    const {siteConfig} = useDocusaurusContext();
+function Feature({imageUrl, title, description}) {
+    const imgUrl = useBaseUrl(imageUrl);
     return (
-        <header className={clsx('hero hero--primary', styles.heroBanner)}>
-            <div className="container">
-                <h1 className="hero__title">{siteConfig.title}</h1>
-                <p className="hero__subtitle">{siteConfig.tagline}</p>
-                <div className={styles.buttons}>
-                    <Link
-                        className="button button--secondary button--lg"
-                        to="/docs/quickstart">
-                        GET STARTED
-                    </Link>
+        <div className={clsx('col col--4', styles.feature)}>
+            {imgUrl && (
+                <div className="text--center">
+                    <img className={styles.featureImage} src={imgUrl} alt={title} />
                 </div>
-            </div>
-        </header>
+            )}
+            <h3>{title}</h3>
+            <p>{description}</p>
+        </div>
     );
 }
 
-export default function Home() {
-    const {siteConfig} = useDocusaurusContext();
+function Home() {
+    const context = useDocusaurusContext();
+    const {siteConfig = {}} = context;
+    const img = useBaseUrl('img/logo.png');
     return (
         <Layout
-            title={`SymphonyQL`}
-            description="SymphonyQL is a GraphQL implementation built with Pekko">
-            <HomepageHeader/>
+            title={`A GraphQL implementation built with Apache Pekko`}
+            description="SymphonyQL is a GraphQL implementation built with Apache Pekko.">
+            <header className={clsx('hero hero--primary', styles.heroBanner)}>
+                <div className="container">
+                    <img src={img} width="10%"/>
+                    <p className="hero__subtitle">{siteConfig.tagline}</p>
+                    <div className={styles.buttons}>
+                        <Link
+                            className={clsx(
+                                styles.indexCtasGetStartedButton,
+                            )}
+                            to={useBaseUrl('docs/')}>
+                            Get Started
+                        </Link>
+                    </div>
+                </div>
+            </header>
             <main>
-                <HomepageFeatures/>
+                {features && features.length > 0 && (
+                    <section className={styles.features}>
+                        <div className="container">
+                            <div className="row">
+                                {features.map((props, idx) => (
+                                    <Feature key={idx} {...props} />
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                )}
             </main>
         </Layout>
     );
 }
+
+export default Home;

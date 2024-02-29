@@ -1,6 +1,10 @@
-# Schema Specification
- 
-A SymphonyQL schema will be derived automatically at compile-time from the types present in your resolver.
+---
+title: Schema Specification
+sidebar_label: Schema Specification
+custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/schema.md
+---
+
+A SymphonyQL schema will be generated automatically at compile-time from the types present in your resolver.
 
 The following table shows how to convert common Scala/Java types to SymphonyQL types.
 

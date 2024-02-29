@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
     title: 'SymphonyQL Document',
-    tagline: 'SymphonyQL is a GraphQL implementation built with Pekko.',
+    tagline: 'A GraphQL implementation built with Pekko.',
     favicon: 'img/favicon.ico',
 
     // Set the production url of your site here
@@ -54,26 +54,41 @@ const config = {
             // Replace with your project's social card
             image: 'img/docusaurus-social-card.jpg',
             navbar: {
-                title: 'SymphonyQL',
+                title: ' ',
                 logo: {
                     alt: 'SymphonyQL Logo',
-                    src: 'img/logo.svg',
+                    src: 'img/logo.png',
                 },
                 items: [
                     {
-                        type: 'docSidebar',
-                        sidebarId: 'tutorialSidebar',
+                        to: 'docs/',
+                        activeBasePath: 'docs',
+                        label: 'Docs',
                         position: 'left',
-                        label: 'Tutorial',
                     },
                     {
                         href: 'https://github.com/SymphonyQL/SymphonyQL',
                         label: 'GitHub',
                         position: 'right',
-                    },
+                    }
                 ],
             },
             footer: {
+                links: [
+                    {
+                        title: 'Docs',
+                        items: [
+                            {
+                                label: 'Introduction',
+                                to: 'docs/',
+                            },
+                            {
+                                label: 'Installation',
+                                to: 'docs/installation',
+                            },
+                        ],
+                    },
+                ],
                 style: 'dark',
                 copyright: `Copyright © ${new Date().getFullYear()} SymphonyQL, Inc. Built with Docusaurus.`,
             },

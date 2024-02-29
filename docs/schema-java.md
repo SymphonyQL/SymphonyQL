@@ -1,4 +1,10 @@
-# Java Schema Annotation
+---
+title: Defining the Schema (Java)
+sidebar_label: Defining the Schema (Java)
+custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/schema-java.md
+---
+
+In Java, there is no metaprogramming, we use APT (Java Annotation Processing) to generate codes.
 
 ## @EnumSchema
 

@@ -2,3 +2,4 @@ target
 .bsp
 .idea
 .DS_Store
+/website/package-lock.json
