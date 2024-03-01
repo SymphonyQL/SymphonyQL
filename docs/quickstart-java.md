@@ -1,5 +1,5 @@
 ---
-title: Quick Start (Java)
+title: Quick Start - Java
 custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/quickstart-java.md
 ---
 
@@ -34,15 +34,35 @@ type Queries {
 
 SymphonyQL uses APT (Annotation Processing Tool) to automatically generate schema during compilation.
 Therefore, you only need to write **record class** to define the schema:
+
+**Defining Resolver**
+
+Resolver Object defined using `@ObjectSchema` and `withArgs = true`.
+
 ```java
 @ObjectSchema(withArgs = true)
 record Queries(Function<FilterArgs, Source<CharacterOutput, NotUsed>> characters) {
 }
+```
 
+> `FilterArgs` is the input and `Source<CharacterOutput, NotUsed>>` is the output.
+`Source` indicates that it is a Query/Subscription that returns pekko streams. For more types, please refer to the [Schema Specification](schema.md).
+
+**Defining Object**
+
+Object defined using `@ObjectSchema`.
+
+```java
 @ObjectSchema
 record CharacterOutput(String name, Origin origin) {
 }
+```
 
+**Defining Input**
+
+Input defined using `@InputSchema` and `@ArgExtractor`.
+
+```java
 @InputSchema
 @ArgExtractor
 record FilterArgs(Optional<Origin> origin, Optional<NestedArg> nestedArg) {
@@ -52,7 +72,13 @@ record FilterArgs(Optional<Origin> origin, Optional<NestedArg> nestedArg) {
 @ArgExtractor
 record NestedArg(String id, Optional<String> name) {
 }
+```
 
+**Defining Enum**
+
+Enum defined using `@EnumSchema`, If enumeration is input, you also need `@ArgExtractor`.
+
+```java
 @EnumSchema
 @ArgExtractor
 enum Origin {
@@ -62,7 +88,9 @@ enum Origin {
 }
 ```
 
-No need to write anything else, let's start developing the application now:
+After writing the record class, we don't need to write graphql schemas to start developing the application.
+
+Let's start developing the application now:
 ```java
 public static void main(String[] args) {
     var graphql = SymphonyQL

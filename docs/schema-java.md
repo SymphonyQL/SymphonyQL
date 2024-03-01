@@ -1,6 +1,6 @@
 ---
-title: Defining the Schema (Java)
-sidebar_label: Defining the Schema (Java)
+title: Defining the Schema - Java
+sidebar_label: Defining the Schema - Java
 custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/schema-java.md
 ---
 
@@ -39,8 +39,8 @@ record FilterArgs(Optional<Origin> origin, Optional<NestedArg> nestedArg) {
 
 Any custom type (including enumeration) used for **Input Object Type** needs to be annotated with `ArgExtractor`.
 
-As mentioned above, `NestedArg` are used in **Input Object Type**, to generate the correct **Input Object Type**,
-it is necessary to define `NestedArg` and add `@InputSchema` and `@ArgExtractor`, for example:
+As mentioned above, `NestedArg` are used in **Input Object Type**, to generate the correct **Schema**,
+it is necessary to define `NestedArg` with `@InputSchema` and `@ArgExtractor`, for example:
 ```java
 @InputSchema
 @ArgExtractor
@@ -67,6 +67,8 @@ record CharacterOutput(String name, Origin origin) {
 }
 ```
 
+The object can be any record class, nested types also require annotation.
+
 It is equivalent to the GraphQL Object Type:
 ```graphql
 type CharacterOutput {
@@ -75,12 +77,16 @@ type CharacterOutput {
 }
 ```
 
-When defining a **Resolver** Object, `withArgs` must be `true`, for example:
+When defining a **Resolver** Object, `withArgs` must be `true`.
+
+Each **Resolver** can contain multiple fields, each of which is a Query/Mutation/Subscription API. For example:
 ```java
 @ObjectSchema(withArgs = true)
 record Queries(Function<FilterArgs, Source<CharacterOutput, NotUsed>> characters) {
 }
 ```
+
+The type of the **Resolver** field must be `java.util.function.Function` or `java.util.function.Supplier`. For more types, please refer to the [Schema Specification](schema.md).
 
 It is equivalent to the GraphQL Object Type:
 ```graphql

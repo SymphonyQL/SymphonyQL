@@ -1,5 +1,5 @@
 ---
-title: Quick Start (Scala)
+title: Quick Start - Scala
 custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/quickstart-scala.md
 ---
 
@@ -32,7 +32,7 @@ type Queries {
 }
 ```
 
-Similarly, in Scala, you only need to use **case class** to define the schema.
+Similarly, in Scala, you only need to use **case class** to define the schema and no longer need annotations.
 ```scala
 enum Origin {
   case EARTH, MARS, BELT
@@ -44,7 +44,7 @@ case class NestedArg(id: String, name: Optional[String])
 case class Queries(characters: FilterArgs => Source[Character, NotUsed])
 ```
 
-SymphonyQL automatically generates schema during compilation:
+SymphonyQL automatically generates schemas during compilation:
 ```scala
 def main(args: Array[String]): Unit = {
     val graphql: SymphonyQL = SymphonyQL

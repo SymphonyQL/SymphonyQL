@@ -4,4 +4,4 @@ custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/intro
 slug: /
 ---
 
-SymphonyQL allows you to write GraphQL servers built in the same way, whether it's Scala or Java. It is built on top of pekko-streams.
+SymphonyQL allows you to write GraphQL servers for both Scala and Java built in the same way. It is built at the top of the [pekko-streams](https://github.com/apache/incubator-pekko).

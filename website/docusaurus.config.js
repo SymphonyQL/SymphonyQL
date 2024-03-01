@@ -88,12 +88,21 @@ const config = {
                             },
                         ],
                     },
+                    {
+                        title: 'More',
+                        items: [
+                            {
+                                label: 'GitHub',
+                                href: 'https://github.com/SymphonyQL/SymphonyQL',
+                            },
+                        ],
+                    },
                 ],
                 style: 'dark',
                 copyright: `Copyright © ${new Date().getFullYear()} SymphonyQL, Inc. Built with Docusaurus.`,
             },
             prism: {
-                additionalLanguages: ['json', 'java', 'properties', 'scala'],
+                additionalLanguages: ['json', 'java', 'graphql', 'scala'],
                 theme: lightCodeTheme,
                 darkTheme: darkCodeTheme,
             },

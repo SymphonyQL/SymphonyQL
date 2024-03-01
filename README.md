@@ -1,23 +1,27 @@
 # SymphonyQL
 
+> A GraphQL implementation built with Apache Pekko.
+
 [![CI][Badge-CI]][Link-CI]
 
 [Badge-CI]: https://github.com/SymphonyQL/SymphonyQL/actions/workflows/ScalaCI.yml/badge.svg
 [Link-CI]: https://github.com/SymphonyQL/SymphonyQL/actions
 
-SymphonyQL is a GraphQL implementation built with Apache Pekko.
+## Documentation
 
-[SymphonyQL Document](https://SymphonyQL.github.io/SymphonyQL)
+[SymphonyQL homepage](https://SymphonyQL.github.io/SymphonyQL)
 
-## Motivation
+## Highlights
 
-Native support for Apache Pekko, including Java/Scala.
+- having the least dependency, no adapters.
+- native support for [Apache Pekko](https://github.com/apache/incubator-pekko), including Java and Scala.
+- minimal amount of boilerplate: no need to manually define a schema for every type in your API.
 
 ## Quickstart
 
-[Quickstart Java](docs/quickstart-java.md)
+[Quickstart Java](https://symphonyql.github.io/SymphonyQL/docs/quickstart-java)
 
-[Quickstart Scala](docs/quickstart-scala.md)
+[Quickstart Scala](https://symphonyql.github.io/SymphonyQL/docs/quickstart-scala)
 
 ## Inspire By 
 
