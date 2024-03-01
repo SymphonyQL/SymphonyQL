@@ -11,6 +11,6 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)
-@Target({ElementType.FIELD, ElementType.RECORD_COMPONENT})
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.RECORD_COMPONENT})
 public @interface GQLExcluded {
 }
