@@ -11,6 +11,36 @@ import symphony.schema.Stage.*
 
 object Introspector extends IntrospectionSchemaDerivation {
 
+  private val directives = List(
+    __Directive(
+      "skip",
+      Some(
+        "The @skip directive may be provided for fields, fragment spreads, and inline fragments, and allows for conditional exclusion during execution as described by the if argument."
+      ),
+      Set(__DirectiveLocation.FIELD, __DirectiveLocation.FRAGMENT_SPREAD, __DirectiveLocation.INLINE_FRAGMENT),
+      _ => List(__InputValue("if", None, () => Types.boolean.nonNull, None)),
+      isRepeatable = false
+    ),
+    __Directive(
+      "include",
+      Some(
+        "The @include directive may be provided for fields, fragment spreads, and inline fragments, and allows for conditional inclusion during execution as described by the if argument."
+      ),
+      Set(__DirectiveLocation.FIELD, __DirectiveLocation.FRAGMENT_SPREAD, __DirectiveLocation.INLINE_FRAGMENT),
+      _ => List(__InputValue("if", None, () => Types.boolean.nonNull, None)),
+      isRepeatable = false
+    ),
+    __Directive(
+      "specifiedBy",
+      Some(
+        "The @specifiedBy directive is used within the type system definition language to provide a URL for specifying the behavior of custom scalar types. The URL should point to a human-readable specification of the data format, serialization, and coercion rules. It must not appear on built-in scalar types."
+      ),
+      Set(__DirectiveLocation.SCALAR),
+      _ => List(__InputValue("url", None, () => Types.string.nonNull, None)),
+      isRepeatable = false
+    )
+  )
+
   private val tpe  = __introspectionSchema.tpe()
   private val root = RootType(tpe, None, None)
 
@@ -23,7 +53,7 @@ object Introspector extends IntrospectionSchemaDerivation {
         rootType.queryType,
         rootType.mutationType,
         rootType.subscriptionType,
-        rootType.additionalDirectives
+        directives ++ rootType.additionalDirectives
       ),
       args => types.find(_.name.contains(args.name))
     )

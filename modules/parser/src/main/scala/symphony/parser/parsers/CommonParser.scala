@@ -138,7 +138,11 @@ abstract class CommonParser extends Parser {
 
   // ========================================Value===================================================================
   def name: Rule1[String] = rule {
-    capture(CharPredicate.Alpha ~ ignored ~ CharPredicate.AlphaNum.*)
+    capture(
+      CharPredicate(
+        CharPredicate.ApplyMagnet.fromChar('_')
+      ).* ~ CharPredicate.Alpha ~ ignored ~ CharPredicate.AlphaNum.*
+    )
   }
 
   def operationType: Rule1[OperationType] = rule {
