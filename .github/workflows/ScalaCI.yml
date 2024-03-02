@@ -21,9 +21,10 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java-version }}
+          
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
-
+        
       - name: Checking Code style
         run: sbt check
   
@@ -45,11 +46,9 @@ jobs:
 
       - name: Upload test coverage report
         run: bash <(curl -s https://codecov.io/bash)
-  
-  publish:
+        
+  docs:
     runs-on: ubuntu-latest
-    needs: [ check ]
-    if: github.event_name != 'pull_request'
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v3.3.0
@@ -59,7 +58,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 21
-
+          
       - name: Update docs
         run: |
           git config --global user.name "SymphonyQL Docs"
@@ -74,18 +73,32 @@ jobs:
           TOKEN: ${{secrets.DEPLOY_KEY}}
           USE_SSH: true
           GIT_USER: git
-
-#      - name: Release artifacts
-#        run: sbt ci-release
-#        env:
-#          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-#          PGP_SECRET: ${{ secrets.PGP_SECRET }}
-#          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-#          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  
+  publish:
+    runs-on: ubuntu-latest
+    needs: [ check ]
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v3.3.0
+        with:
+          fetch-depth: 0
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 21
+          
+      - name: Release artifacts
+        run: sbt ci-release
+        env:
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
   
   ci:
     runs-on: ubuntu-latest
-    needs: [ check, test, publish ]
+    needs: [ check, test, docs ]
     steps:
       - name: Aggregate outcomes
         run: echo "build succeeded"          

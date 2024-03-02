@@ -11,9 +11,9 @@ SymphonyQL only supports Scala3 and Java21.
 If you are building with sbt, add the following to your `project/plugins.sbt`:
 ```scala
 libraryDependencies ++= Seq(
-  "org.symphonyql" % "symphony-core" % "<version>",
+  "io.github.symphonyql" % "symphony-core" % "<version>",
   // a default http-server provided by pekko-http
-  "org.symphonyql" % "symphony-server" % "<version>"
+  "io.github.symphonyql" % "symphony-server" % "<version>"
 )
 ```
 
@@ -23,9 +23,9 @@ Here is a complete configuration:
 ```scala
 Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed"
 libraryDependencies ++= Seq(
-  "org.symphonyql" % "symphony-core" % "<version>",
-  "org.symphonyql" % "symphony-server" % "<version>",
-  "org.symphonyql" % "symphony-java-apt" % "<version>",
+  "io.github.symphonyql" % "symphony-core" % "<version>",
+  "io.github.symphonyql" % "symphony-server" % "<version>",
+  "io.github.symphonyql" % "symphony-java-apt" % "<version>",
   "javax.annotation" % "javax.annotation-api" % "<version>"
 )
 Compile / javacOptions ++= Seq(

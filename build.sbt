@@ -3,7 +3,7 @@ import Dependencies.Versions.*
 inThisBuild(
   List(
     scalaVersion           := scala3_Version,
-    organization           := "org.symphonyql",
+    organization           := "io.github.symphonyql",
     sonatypeCredentialHost := "s01.oss.sonatype.org",
     sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
     homepage               := Some(url("https://github.com/SymphonyQL")),
@@ -11,7 +11,7 @@ inThisBuild(
     developers             := List(
       Developer(
         id = "jxnu-liguobin",
-        name = "正在登陆",
+        name = "jxnu-liguobin",
         email = "dreamylost@outlook.com",
         url = url("https://github.com/jxnu-liguobin")
       )
