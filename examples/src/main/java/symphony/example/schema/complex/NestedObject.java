@@ -1,5 +1,8 @@
 package symphony.example.schema.complex;
 
+import symphony.annotations.java.GQLDeprecated;
+import symphony.annotations.java.GQLDescription;
+import symphony.annotations.java.GQLInputName;
 import symphony.apt.annotation.ArgExtractor;
 import symphony.apt.annotation.InputSchema;
 import symphony.apt.annotation.ObjectSchema;
@@ -11,8 +14,12 @@ import java.util.Optional;
 @ArgExtractor
 @InputSchema
 @ObjectSchema
+@GQLDeprecated(reason = "deprecated")
+@GQLDescription("NestedObject")
+@GQLInputName("NObject")
 record NestedObject(
-        OriginEnum originEnum,
+        @GQLDeprecated(reason = "deprecated")
+        @GQLDescription("OriginEnum") OriginEnum originEnum,
         Optional<OriginEnum> optionalEnum,
         Optional<String> optionalString,
         List<List<Optional<OriginEnum>>> ssOptionalEnum,

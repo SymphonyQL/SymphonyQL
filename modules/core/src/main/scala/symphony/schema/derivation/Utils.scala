@@ -1,4 +1,4 @@
-package symphony.schema.scaladsl
+package symphony.schema.derivation
 
 import scala.compiletime.*
 import scala.quoted.*

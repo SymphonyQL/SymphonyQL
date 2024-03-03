@@ -1,6 +1,6 @@
 package symphony
 package schema
-package javadsl
+package builder
 
 import symphony.parser.adt.Directive
 import symphony.parser.adt.introspection.*

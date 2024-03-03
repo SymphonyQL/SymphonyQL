@@ -4,7 +4,7 @@ import symphony.parser.*
 import symphony.parser.SymphonyQLValue.*
 import symphony.parser.adt.introspection.*
 import symphony.schema.*
-import symphony.schema.javadsl.*
+import symphony.schema.builder.*
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import symphony.example.schema.Users.*

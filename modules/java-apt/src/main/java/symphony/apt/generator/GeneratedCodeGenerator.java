@@ -10,6 +10,11 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import symphony.annotations.java.GQLDeprecated;
+import symphony.annotations.java.GQLDescription;
+import symphony.annotations.java.GQLExcluded;
+import symphony.annotations.java.GQLInputName;
+import symphony.annotations.java.GQLName;
 import symphony.apt.Constant;
 import symphony.apt.SymphonyQLProcessor;
 import symphony.apt.context.ProcessorContext;
@@ -20,36 +25,50 @@ import symphony.apt.util.ModelUtils;
 import symphony.apt.util.ProcessorUtils;
 import symphony.apt.util.SourceTextUtils;
 import symphony.apt.util.TypeUtils;
+import symphony.parser.SymphonyQLError;
+import symphony.parser.SymphonyQLInputValue;
+import symphony.parser.SymphonyQLValue;
+import symphony.parser.adt.introspection.__EnumValue;
+import symphony.parser.adt.introspection.__Field;
+import symphony.schema.ArgumentExtractor;
+import symphony.schema.Schema;
+import symphony.schema.builder.EnumBuilder;
+import symphony.schema.builder.EnumValueBuilder;
+import symphony.schema.builder.FieldBuilder;
+import symphony.schema.builder.InputObjectBuilder;
+import symphony.schema.builder.ObjectBuilder;
 
 import javax.annotation.processing.FilerException;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.tools.JavaFileObject;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 public abstract class GeneratedCodeGenerator implements CodeGenerator {
     // symphonyql classes
-    protected static final ClassName SCHEMA_CLASS = ClassName.get(symphony.schema.Schema.class);
-    protected static final ClassName FIELD_BUILDER_CLASS = ClassName.get(symphony.schema.javadsl.FieldBuilder.class);
-    protected static final ClassName FIELD_CLASS = ClassName.get(symphony.parser.adt.introspection.__Field.class);
-    protected static final ClassName EXTRACTOR_CLASS = ClassName.get(symphony.schema.ArgumentExtractor.class);
-    protected static final ClassName SYMPHONYQL_INPUTVALUE_CLASS = ClassName.get(symphony.parser.SymphonyQLInputValue.class);
-    protected static final ClassName SYMPHONYQL_VALUE_CLASS = ClassName.get(symphony.parser.SymphonyQLValue.class);
-    protected static final ClassName SYMPHONYQL_ERROR_CLASS = ClassName.get(symphony.parser.SymphonyQLError.ArgumentError.class);
-    protected static final ClassName SYMPHONYQL_OBJECT_VALUE_CLASS = ClassName.get(symphony.parser.SymphonyQLInputValue.ObjectValue.class);
-    protected static final ClassName SYMPHONYQL_ENUM_VALUE_CLASS = ClassName.get(symphony.parser.SymphonyQLValue.EnumValue.class);
-    protected static final ClassName SYMPHONYQL_STRING_VALUE_CLASS = ClassName.get(symphony.parser.SymphonyQLValue.StringValue.class);
-    protected static final ClassName ENUM_BUILDER_CLASS = ClassName.get(symphony.schema.javadsl.EnumBuilder.class);
-    protected static final ClassName ENUM_VALUE_BUILDER_CLASS = ClassName.get(symphony.schema.javadsl.EnumValueBuilder.class);
-    protected static final ClassName ENUM_VALUE_CLASS = ClassName.get(symphony.parser.adt.introspection.__EnumValue.class);
-    protected static final ClassName OBJECT_BUILDER_CLASS = ClassName.get(symphony.schema.javadsl.ObjectBuilder.class);
-    protected static final ClassName INPUT_OBJECT_BUILDER_CLASS = ClassName.get(symphony.schema.javadsl.InputObjectBuilder.class);
+    protected static final ClassName SCHEMA_CLASS = ClassName.get(Schema.class);
+    protected static final ClassName FIELD_BUILDER_CLASS = ClassName.get(FieldBuilder.class);
+    protected static final ClassName FIELD_CLASS = ClassName.get(__Field.class);
+    protected static final ClassName EXTRACTOR_CLASS = ClassName.get(ArgumentExtractor.class);
+    protected static final ClassName SYMPHONYQL_INPUTVALUE_CLASS = ClassName.get(SymphonyQLInputValue.class);
+    protected static final ClassName SYMPHONYQL_VALUE_CLASS = ClassName.get(SymphonyQLValue.class);
+    protected static final ClassName SYMPHONYQL_ERROR_CLASS = ClassName.get(SymphonyQLError.ArgumentError.class);
+    protected static final ClassName SYMPHONYQL_OBJECT_VALUE_CLASS = ClassName.get(SymphonyQLInputValue.ObjectValue.class);
+    protected static final ClassName SYMPHONYQL_ENUM_VALUE_CLASS = ClassName.get(SymphonyQLValue.EnumValue.class);
+    protected static final ClassName SYMPHONYQL_STRING_VALUE_CLASS = ClassName.get(SymphonyQLValue.StringValue.class);
+    protected static final ClassName ENUM_BUILDER_CLASS = ClassName.get(EnumBuilder.class);
+    protected static final ClassName ENUM_VALUE_BUILDER_CLASS = ClassName.get(EnumValueBuilder.class);
+    protected static final ClassName ENUM_VALUE_CLASS = ClassName.get(__EnumValue.class);
+    protected static final ClassName OBJECT_BUILDER_CLASS = ClassName.get(ObjectBuilder.class);
+    protected static final ClassName INPUT_OBJECT_BUILDER_CLASS = ClassName.get(InputObjectBuilder.class);
 
     // function
     protected static final ParameterizedTypeName BUILD_FIELD_FUNCTION_TYPE = ParameterizedTypeName.get(ClassName.get(Function.class),
@@ -58,40 +77,64 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
             ClassName.get(Function.class), ENUM_VALUE_BUILDER_CLASS, ENUM_VALUE_CLASS
     );
 
-    private static final String addInputFieldMethodTemplate = """
+    public Function<String, String> getNameModifier() {
+        return Constant.SCHEMA_SUFFIX;
+    }
+
+    protected abstract void generateBody(CodeGeneratorContext context, TypeSpec.Builder builder) throws Exception;
+
+    private static final String objectInputFieldMethodTemplate = """
             newObject.field(
                     new $T() {
                         @Override
                         public $T apply($T builder) {
-                            return builder.name($S).schema(%s).build();
+                            return builder
+                                    .name($S)
+                                    .schema(%s)
+                                    .description($L)
+                                    .isDeprecated($L)
+                                    .deprecationReason($L)
+                                    .build();
                         }
                     }
             );
             """;
 
-    private static final String addFieldMethodTemplate = """
+    private static final String objectFieldMethodTemplate = """
             newObject.field(
-                new $T() {
-                    @Override
-                    public $T apply($T builder) {
-                        return builder.name($S).schema(%s).build();
+                    new $T() {
+                        @Override
+                        public $T apply($T builder) {
+                            return builder
+                                    .name($S)
+                                    .schema(%s)
+                                    .description($L)
+                                    .isDeprecated($L)
+                                    .deprecationReason($L)
+                                    .build();
+                        }
+                    },
+                    new $T() {
+                        @Override
+                        public $T apply($T obj) {
+                            return obj.$N();
+                        }
                     }
-                },
-                new $T() {
-                    @Override
-                    public $T apply($T obj) {
-                        return obj.$N();
-                    }
-                }
             );
             """;
 
-    private static final String addFieldWithArgMethodTemplate = """
+    private static final String objectFieldWithArgMethodTemplate = """
             newObject.fieldWithArg(
                     new $T() {
                         @Override
                         public $T apply($T builder) {
-                            return builder.name($S).schema(%s).build();
+                            return builder
+                                    .name($S)
+                                    .schema(%s)
+                                    .description($L)
+                                    .isDeprecated($L)
+                                    .deprecationReason($L)
+                                    .build();
                         }
                     },
                     new $T() {
@@ -128,12 +171,200 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         }
     }
 
-    public Function<String, String> getNameModifier() {
-        return Constant.SCHEMA_SUFFIX;
+    protected void generateObject(
+            final ClassName builderName,
+            final TypeSpec.Builder builder,
+            final TypeElement typeElement
+    ) {
+        var fieldElements = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
+        var typeName = TypeUtils.getTypeName(typeElement);
+        var returnType = ParameterizedTypeName.get(SCHEMA_CLASS, typeName);
+        var builderSchema = objectMethodBuilder(returnType, builderName, typeElement);
+        for (final var elementEntry : fieldElements.entrySet()) {
+            var realName = getName(elementEntry.getValue()).orElse(elementEntry.getKey());
+            var args = new ArrayList<>(List.of(BUILD_FIELD_FUNCTION_TYPE, FIELD_CLASS, FIELD_BUILDER_CLASS, realName));
+            if (INPUT_OBJECT_BUILDER_CLASS.equals(builderName)) {
+                builderSchema.addCode(inputObjectFieldCreator.buildField(typeElement, elementEntry, args));
+            } else {
+                if (!isExcludedField(elementEntry.getValue())) {
+                    builderSchema.addCode(objectFieldCreator.buildField(typeElement, elementEntry, args));
+                }
+            }
+        }
+
+        builderSchema.addStatement("return newObject.build()");
+        builder.addMethod(builderSchema.build());
+        builder.addField(assignFieldSpec(returnType, Constant.SCHEMA_METHOD_NAME));
     }
 
+    protected static List<Object> getAnnotationVarargs(Element fieldElement) {
+        return List.of(
+                getDescription(fieldElement),
+                getIsDeprecated(fieldElement),
+                getDeprecatedReason(fieldElement)
+        );
+    }
 
-    protected abstract void generateBody(CodeGeneratorContext context, TypeSpec.Builder builder) throws Exception;
+    private interface FieldCreator {
+        CodeBlock buildField(
+                final TypeElement typeElement,
+                final Map.Entry<String, RecordComponentElement> fieldElements,
+                final List<Object> list);
+    }
+
+    final FieldCreator objectFieldCreator = new ObjectFieldCreator();
+    final FieldCreator inputObjectFieldCreator = new InputObjectFieldCreator();
+
+    private class ObjectFieldCreator implements FieldCreator {
+        @Override
+        public CodeBlock buildField(
+                final TypeElement typeElement,
+                final Map.Entry<String, RecordComponentElement> fieldElements,
+                final List<Object> list
+        ) {
+            var name = fieldElements.getKey();
+            var fieldElement = fieldElements.getValue();
+            var typeName = TypeUtils.getTypeName(typeElement);
+            var type = TypeUtils.getTypeName(fieldElement);
+            var rawType = TypeUtils.getRawTypeName(type);
+            var fieldValueType = fieldElement.asType().getKind().isPrimitive() ? TypeUtils.getTypeName(fieldElement, true) : type;
+            var fieldFunctionType = ParameterizedTypeName.get(ClassName.get(Function.class), typeName, fieldValueType);
+            var fieldValueArgs = List.of(fieldFunctionType, fieldValueType, typeName, name);
+            var annotationVarargs = getAnnotationVarargs(fieldElement);
+            TypeUtils.classifyType(rawType);
+            return switch (TypeUtils.classifyType(rawType)) {
+                case DEFAULT_OR_PRIMITIVE_TYPE -> {
+                    var args = new ArrayList<>(list);
+                    args.addAll(List.of(SCHEMA_CLASS, ClassName.get("", type.toString())));
+                    args.addAll(annotationVarargs);
+                    args.addAll(fieldValueArgs);
+                    yield CodeBlock.builder().add(String.format(objectFieldMethodTemplate, "$T.getSchema($S)"), args.toArray()).build();
+                }
+                case CUSTOM_OBJECT_TYPE -> {
+                    ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(type.toString()));
+                    var args = new ArrayList<>(list);
+                    args.addAll(List.of(expectedObjectType, Constant.SCHEMA_METHOD_NAME));
+                    args.addAll(annotationVarargs);
+                    args.addAll(fieldValueArgs);
+                    yield CodeBlock.builder().add(String.format(objectFieldMethodTemplate, "$T.$N"), args.toArray()).build();
+                }
+                case COLLECTION_PARAMETERIZED_TYPE, MAP_PARAMETERIZED_TYPE -> {
+                    var args = new ArrayList<>(list);
+                    var wrappedArgs = new ArrayList<>();
+                    var buildSchemaString = TypeUtils.buildSchemaWrappedString(new WrappedContext(type, SCHEMA_CLASS, getNameModifier(), EXTRACTOR_CLASS), wrappedArgs);
+                    args.addAll(wrappedArgs);
+                    args.addAll(annotationVarargs);
+                    args.addAll(fieldValueArgs);
+                    yield CodeBlock.builder().add(String.format(objectFieldMethodTemplate, buildSchemaString), args.toArray()).build();
+                }
+                case FUNCTION_PARAMETERIZED_TYPE, SUPPLIER_PARAMETERIZED_TYPE -> {
+                    var functionSchemaArgs = new ArrayList<>();
+                    var buildInputSchemaString = TypeUtils.buildSchemaWrappedString(new WrappedContext(type, SCHEMA_CLASS, getNameModifier(), EXTRACTOR_CLASS), functionSchemaArgs);
+                    var args = new ArrayList<>(list);
+                    args.addAll(functionSchemaArgs);
+                    args.addAll(annotationVarargs);
+                    args.addAll(List.of(fieldFunctionType, type, typeName, name));
+                    var string = String.format(objectFieldWithArgMethodTemplate, buildInputSchemaString);
+                    yield CodeBlock.builder().add(string, args.toArray()).build();
+                }
+
+            };
+        }
+    }
+
+    private class InputObjectFieldCreator implements FieldCreator {
+
+        @Override
+        public CodeBlock buildField(
+                final TypeElement typeElement,
+                final Map.Entry<String, RecordComponentElement> fieldElements,
+                final List<Object> list
+        ) {
+            var fieldElement = fieldElements.getValue();
+            var type = TypeUtils.getTypeName(fieldElement);
+            var rawType = TypeUtils.getRawTypeName(type);
+            var annotationVarargs = getAnnotationVarargs(fieldElement);
+            TypeUtils.classifyType(rawType);
+            return switch (TypeUtils.classifyType(rawType)) {
+                case DEFAULT_OR_PRIMITIVE_TYPE -> {
+                    var args = new ArrayList<>(list);
+                    args.addAll(List.of(SCHEMA_CLASS, ClassName.get("", type.toString())));
+                    args.addAll(annotationVarargs);
+                    yield CodeBlock.builder().add(String.format(objectInputFieldMethodTemplate, "$T.getSchema($S)"), args.toArray()).build();
+                }
+                case CUSTOM_OBJECT_TYPE -> {
+                    ClassName expectedObjectType = ClassName.get("", (TypeUtils.isEnumType(type) ? Constant.SCHEMA_SUFFIX : getNameModifier()).apply(type.toString()));
+                    var args = new ArrayList<>(list);
+                    args.addAll(List.of(expectedObjectType, Constant.SCHEMA_METHOD_NAME));
+                    args.addAll(annotationVarargs);
+                    yield CodeBlock.builder().add(String.format(objectInputFieldMethodTemplate, "$T.$N"), args.toArray()).build();
+                }
+                case COLLECTION_PARAMETERIZED_TYPE, MAP_PARAMETERIZED_TYPE -> {
+                    var args = new ArrayList<>(list);
+                    var wrappedArgs = new ArrayList<>();
+                    var buildSchemaString = TypeUtils.buildSchemaWrappedString(new WrappedContext(type, SCHEMA_CLASS, getNameModifier(), EXTRACTOR_CLASS), wrappedArgs);
+                    args.addAll(wrappedArgs);
+                    args.addAll(annotationVarargs);
+                    yield CodeBlock.builder().add(String.format(objectInputFieldMethodTemplate, buildSchemaString), args.toArray()).build();
+                }
+                case FUNCTION_PARAMETERIZED_TYPE, SUPPLIER_PARAMETERIZED_TYPE -> CodeBlock.builder().build();
+            };
+        }
+    }
+
+    private MethodSpec.Builder objectMethodBuilder(
+            final ParameterizedTypeName returnType,
+            final ClassName objectBuilder,
+            final TypeElement typeElement
+    ) {
+        var parameterizedTypeName = TypeUtils.getTypeName(typeElement);
+        var name = objectBuilder.equals(INPUT_OBJECT_BUILDER_CLASS)
+                ? getInputName(typeElement).orElse(TypeUtils.getSimpleName(typeElement) + "Input")
+                : getName(typeElement).orElse(TypeUtils.getSimpleName(typeElement));
+        return MethodSpec.methodBuilder(Constant.SCHEMA_METHOD_NAME)
+                .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
+                .returns(returnType)
+                .addStatement("$T<$T> newObject = $T.newObject()", objectBuilder, parameterizedTypeName, objectBuilder)
+                .addStatement("newObject.description($L)", getDescription(typeElement))
+                .addStatement("newObject.name($S)", name);
+    }
+
+    protected static CodeBlock getIsDeprecated(Element element) {
+        var deprecated = TypeUtils.getAnnotation(GQLDeprecated.class, element);
+        return deprecated != null ? CodeBlock.of("$L", true) : CodeBlock.of("$L", false);
+    }
+
+    protected boolean isExcludedField(Element element) {
+        var excluded = TypeUtils.getAnnotation(GQLExcluded.class, element);
+        return excluded != null;
+    }
+
+    protected Optional<String> getInputName(Element element) {
+        var inputName = TypeUtils.getAnnotation(GQLInputName.class, element);
+        return Optional.ofNullable(inputName != null ? inputName.value() : null);
+    }
+
+    protected Optional<String> getName(Element element) {
+        var name = TypeUtils.getAnnotation(GQLName.class, element);
+        return Optional.ofNullable(name != null ? name.value() : null);
+    }
+
+    protected static CodeBlock getDescription(Element element) {
+        var description = TypeUtils.getAnnotation(GQLDescription.class, element);
+        return description != null ? CodeBlock.of("$T.ofNullable($S)", ClassName.get(Optional.class), description.value()) :
+                CodeBlock.of("$T.empty()", ClassName.get(Optional.class));
+    }
+
+    protected static CodeBlock getDeprecatedReason(Element element) {
+        var deprecated = TypeUtils.getAnnotation(GQLDeprecated.class, element);
+        return deprecated != null ? CodeBlock.of("$T.ofNullable($S)", ClassName.get(Optional.class), deprecated.reason()) :
+                CodeBlock.of("$T.empty()", ClassName.get(Optional.class));
+    }
+
+    protected FieldSpec assignFieldSpec(TypeName returnType, String methodName) {
+        return FieldSpec.builder(returnType, methodName, Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
+                .initializer(methodName + "()").build();
+    }
 
 
     private TypeSpec.Builder generateCommon(final String className) {
@@ -175,151 +406,6 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         }
 
         typeSpecBuilder.addAnnotation(annotationBuilder.build());
-    }
-
-    protected void generateObjectWithArg(final TypeSpec.Builder builder, final TypeElement typeElement) {
-        var variables = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFunctionalFieldPredicate(typeElement));
-        var typeName = TypeUtils.getTypeName(typeElement);
-        var returnType = ParameterizedTypeName.get(SCHEMA_CLASS, typeName);
-        var builderSchema = objectMethodBuilder(returnType, OBJECT_BUILDER_CLASS, typeElement);
-        var schemaArgs = new ArrayList<Object>(List.of(BUILD_FIELD_FUNCTION_TYPE, FIELD_CLASS, FIELD_BUILDER_CLASS));
-
-        for (final var entry : variables.entrySet()) {
-            var name = entry.getKey();
-            var type = TypeUtils.getTypeName(entry.getValue());
-            var rawType = TypeUtils.getRawTypeName(type);
-            switch (TypeUtils.classifyType(rawType)) {
-                case FUNCTION_PARAMETERIZED_TYPE, SUPPLIER_PARAMETERIZED_TYPE -> {
-                    var functionSchemaArgs = new ArrayList<>();
-                    var buildInputSchemaString =
-                            TypeUtils.buildSchemaWrappedString(new WrappedContext(type, SCHEMA_CLASS, getNameModifier(), EXTRACTOR_CLASS), functionSchemaArgs);
-
-                    var fieldValueType = entry.getValue().asType().getKind().isPrimitive() ? TypeUtils.getTypeName(entry.getValue(), true) : type;
-                    var fieldFunctionType = ParameterizedTypeName.get(ClassName.get(Function.class), typeName, fieldValueType);
-                    var args = new ArrayList<Object>(schemaArgs);
-                    args.add(name);
-                    args.addAll(functionSchemaArgs);
-                    args.addAll(List.of(fieldFunctionType, type, typeName, name));
-                    var string = String.format(addFieldWithArgMethodTemplate, buildInputSchemaString);
-                    MessageUtils.note(name + " -> " + functionSchemaArgs);
-                    MessageUtils.note(name + " -> " + buildInputSchemaString);
-                    builderSchema.addCode(CodeBlock.builder().add(string, args.toArray()).build());
-                }
-            }
-        }
-
-        builderSchema.addStatement("return newObject.build()");
-        builder.addMethod(builderSchema.build());
-        builder.addField(assignFieldSpec(returnType, Constant.SCHEMA_METHOD_NAME));
-    }
-
-    private MethodSpec.Builder objectMethodBuilder(
-            final ParameterizedTypeName returnType,
-            final ClassName objectBuilder,
-            final TypeElement typeElement
-    ) {
-        var parameterizedTypeName = TypeUtils.getTypeName(typeElement);
-        return MethodSpec.methodBuilder(Constant.SCHEMA_METHOD_NAME)
-                .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-                .returns(returnType)
-                .addStatement("$T<$T> newObject = $T.newObject()", objectBuilder, parameterizedTypeName, objectBuilder)
-                .addStatement("newObject.name($S)", TypeUtils.getSimpleName(typeElement));
-    }
-
-    private void generateObjectField(MethodSpec.Builder builderSchema, TypeElement typeElement, Map.Entry<String, VariableElement> entry, List<Object> list) {
-        var name = entry.getKey();
-        var fieldElement = entry.getValue();
-        var typeName = TypeUtils.getTypeName(typeElement);
-        var type = TypeUtils.getTypeName(fieldElement);
-        var rawType = TypeUtils.getRawTypeName(type);
-        var fieldValueType = fieldElement.asType().getKind().isPrimitive() ? TypeUtils.getTypeName(fieldElement, true) : type;
-        var fieldFunctionType = ParameterizedTypeName.get(ClassName.get(Function.class), typeName, fieldValueType);
-        var fieldValueArgs = List.of(fieldFunctionType, fieldValueType, typeName, name);
-        switch (TypeUtils.classifyType(rawType)) {
-            case DEFAULT_OR_PRIMITIVE_TYPE -> {
-                var args = new ArrayList<>(list);
-                args.addAll(List.of(SCHEMA_CLASS, ClassName.get("", type.toString())));
-                args.addAll(fieldValueArgs);
-                builderSchema.addCode(SourceTextUtils.lines(String.format(addFieldMethodTemplate, "$T.getSchema($S)")), args.toArray());
-            }
-            case CUSTOM_OBJECT_TYPE -> {
-                ClassName expectedObjectType = ClassName.get("", getNameModifier().apply(type.toString()));
-                var args = new ArrayList<>(list);
-                args.addAll(List.of(expectedObjectType, Constant.SCHEMA_METHOD_NAME));
-                args.addAll(fieldValueArgs);
-                builderSchema.addCode(SourceTextUtils.lines(String.format(addFieldMethodTemplate, "$T.$N")), args.toArray());
-            }
-            case COLLECTION_PARAMETERIZED_TYPE, MAP_PARAMETERIZED_TYPE -> {
-                var args = new ArrayList<>(list);
-                var wrappedArgs = new ArrayList<>();
-                var buildSchemaString = TypeUtils.buildSchemaWrappedString(
-                        new WrappedContext(type, SCHEMA_CLASS, getNameModifier(), EXTRACTOR_CLASS), wrappedArgs
-                );
-                MessageUtils.note(name + " -> " + buildSchemaString);
-                MessageUtils.note(name + " -> " + wrappedArgs);
-                args.addAll(wrappedArgs);
-                args.addAll(fieldValueArgs);
-                builderSchema.addCode(CodeBlock.builder().add(
-                        String.format(addFieldMethodTemplate, buildSchemaString), args.toArray()).build()
-                );
-            }
-        }
-    }
-
-    private void generateInputObjectField(MethodSpec.Builder builderSchema, Map.Entry<String, VariableElement> entry, List<Object> list) {
-        var name = entry.getKey();
-        var fieldElement = entry.getValue();
-        var type = TypeUtils.getTypeName(fieldElement);
-        var rawType = TypeUtils.getRawTypeName(type);
-        switch (TypeUtils.classifyType(rawType)) {
-            case DEFAULT_OR_PRIMITIVE_TYPE -> {
-                var args = new ArrayList<>(list);
-                args.addAll(List.of(SCHEMA_CLASS, ClassName.get("", type.toString())));
-                builderSchema.addCode(SourceTextUtils.lines(String.format(addInputFieldMethodTemplate, "$T.getSchema($S)")), args.toArray());
-            }
-            case CUSTOM_OBJECT_TYPE -> {
-                ClassName expectedObjectType = ClassName.get("", (TypeUtils.isEnumType(type) ? Constant.SCHEMA_SUFFIX : getNameModifier()).apply(type.toString()));
-                var args = new ArrayList<>(list);
-                args.addAll(List.of(expectedObjectType, Constant.SCHEMA_METHOD_NAME));
-                builderSchema.addCode(SourceTextUtils.lines(String.format(addInputFieldMethodTemplate, "$T.$N")), args.toArray());
-            }
-            case COLLECTION_PARAMETERIZED_TYPE, MAP_PARAMETERIZED_TYPE -> {
-                var args = new ArrayList<>(list);
-                var wrappedArgs = new ArrayList<>();
-                var buildSchemaString = TypeUtils.buildSchemaWrappedString(new WrappedContext(type, SCHEMA_CLASS, getNameModifier(), EXTRACTOR_CLASS), wrappedArgs);
-                MessageUtils.note(name + " -> " + buildSchemaString);
-                MessageUtils.note(name + " -> " + wrappedArgs);
-                args.addAll(wrappedArgs);
-                builderSchema.addCode(CodeBlock.builder().add(
-                        String.format(addInputFieldMethodTemplate, buildSchemaString), args.toArray()).build()
-                );
-            }
-        }
-    }
-
-    protected void generateObject(final ClassName builderName, final TypeSpec.Builder builder, final TypeElement typeElement) {
-        var variables = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
-        var typeName = TypeUtils.getTypeName(typeElement);
-        var returnType = ParameterizedTypeName.get(SCHEMA_CLASS, typeName);
-        var builderSchema = objectMethodBuilder(returnType, builderName, typeElement);
-        for (final var entry : variables.entrySet()) {
-            var name = entry.getKey();
-            var list = new ArrayList<>(List.of(BUILD_FIELD_FUNCTION_TYPE, FIELD_CLASS, FIELD_BUILDER_CLASS, name));
-            if (INPUT_OBJECT_BUILDER_CLASS.equals(builderName)) {
-                generateInputObjectField(builderSchema, entry, list);
-            } else {
-                generateObjectField(builderSchema, typeElement, entry, list);
-            }
-        }
-
-        builderSchema.addStatement("return newObject.build()");
-        builder.addMethod(builderSchema.build());
-        builder.addField(assignFieldSpec(returnType, Constant.SCHEMA_METHOD_NAME));
-    }
-
-    protected FieldSpec assignFieldSpec(TypeName returnType, String methodName) {
-        return FieldSpec.builder(returnType, methodName, Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
-                .initializer(methodName + "()").build();
     }
 
 }

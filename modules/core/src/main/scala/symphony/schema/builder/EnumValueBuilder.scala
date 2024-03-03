@@ -1,4 +1,4 @@
-package symphony.schema.javadsl
+package symphony.schema.builder
 
 import symphony.parser.adt.Directive
 import symphony.parser.adt.introspection.*

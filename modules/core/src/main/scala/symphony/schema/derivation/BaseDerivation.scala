@@ -1,4 +1,4 @@
-package symphony.schema.scaladsl
+package symphony.schema.derivation
 
 import magnolia1.TypeInfo
 import symphony.parser.adt.introspection.*

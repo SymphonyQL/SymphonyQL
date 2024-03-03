@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Annotation to make a sealed trait a union instead of an enum. */
+/** Annotation to make an interface a union instead of an interface. */
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE})

@@ -1,14 +1,18 @@
 package symphony.example.schema.complex;
 
+import symphony.annotations.java.GQLDeprecated;
+import symphony.annotations.java.GQLDescription;
+import symphony.annotations.java.GQLExcluded;
 import symphony.apt.annotation.ObjectSchema;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 @ObjectSchema
 record OutputObject(
-        OriginEnum originEnum,
+        @GQLDeprecated(reason = "deprecated") @GQLDescription("OriginEnum") OriginEnum originEnum,
         Optional<OriginEnum> optionalEnum,
         Optional<String> optionalString,
         List<List<Optional<OriginEnum>>> ssOptionalEnum,
@@ -18,7 +22,7 @@ record OutputObject(
         int intV,
         double doubleV,
         float floatV,
-        short shortV,
+        @GQLExcluded short shortV,
         BigDecimal bigDecimalV,
         Optional<BigDecimal> optionalBigDecimal,
         Optional<NestedObject> optionalNestedObject,

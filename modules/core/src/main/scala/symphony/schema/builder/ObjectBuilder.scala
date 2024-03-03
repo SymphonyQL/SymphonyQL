@@ -1,6 +1,6 @@
 package symphony
 package schema
-package javadsl
+package builder
 
 import symphony.parser.SymphonyQLValue
 import symphony.parser.adt.Directive

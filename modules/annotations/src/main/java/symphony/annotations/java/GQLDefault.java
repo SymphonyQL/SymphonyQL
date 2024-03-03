@@ -11,5 +11,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.FIELD, ElementType.RECORD_COMPONENT})
 public @interface GQLDefault {
-  String value() default "";
+  String value();
 }

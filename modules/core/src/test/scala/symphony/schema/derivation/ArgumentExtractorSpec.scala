@@ -1,4 +1,4 @@
-package symphony.schema.scaladsl
+package symphony.schema.derivation
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -6,7 +6,7 @@ import symphony.*
 import symphony.parser.*
 import symphony.parser.adt.introspection.*
 import symphony.schema.*
-import symphony.schema.scaladsl.*
+import symphony.schema.derivation.*
 
 class ArgumentExtractorSpec extends AnyFunSpec with Matchers {
 
@@ -26,11 +26,11 @@ class ArgumentExtractorSpec extends AnyFunSpec with Matchers {
 
       implicit def nullableArgumentExtractor[A](implicit ev: ArgumentExtractor[A]): ArgumentExtractor[Nullable[A]] =
         new ArgumentExtractor[Nullable[A]] {
-          def extract(input: SymphonyQLInputValue): Either[SymphonyQLError.ArgumentError, Nullable[A]]      = input match {
+          def extract(input: SymphonyQLInputValue): Either[SymphonyQLError.ArgumentError, Nullable[A]]           = input match {
             case SymphonyQLValue.NullValue => Right(NullNullable)
             case _                         => ev.extract(input).map(SomeNullable(_))
           }
-          override def default(default: Option[String]): Either[SymphonyQLError.ArgumentError, Nullable[A]] =
+          override def defaultValue(default: Option[String]): Either[SymphonyQLError.ArgumentError, Nullable[A]] =
             Right(MissingNullable)
         }
 

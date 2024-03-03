@@ -2,7 +2,7 @@ package symphony.execution
 
 import symphony.{ SymphonyQL, SymphonyQLResolver }
 import symphony.execution.Data.*
-import symphony.schema.javadsl.ObjectBuilder
+import symphony.schema.builder.ObjectBuilder
 
 import scala.concurrent.Future
 

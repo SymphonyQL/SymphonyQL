@@ -2,18 +2,25 @@ package symphony.example.schema.complex;
 
 import org.apache.pekko.*;
 import org.apache.pekko.stream.javadsl.*;
+import symphony.annotations.java.GQLDeprecated;
+import symphony.annotations.java.GQLDescription;
+import symphony.annotations.java.GQLName;
 import symphony.apt.annotation.ObjectSchema;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-@ObjectSchema(withArgs = true)
+@ObjectSchema
+@GQLDeprecated(reason = "deprecated")
+@GQLDescription("QueriesObject")
+@GQLName("GQLQueriesObject")
 record QueriesObject(
-        Function<InputObject, Source<OutputObject, NotUsed>> characters,
+        @GQLDeprecated(reason = "deprecated")
+        @GQLDescription("Function") Function<InputObject, Source<OutputObject, NotUsed>> characters,
         Function<InputObject, OutputObject> character,
         Function<Integer, OutputObject> intCharacter,
         Function<String, String> intString,
-        Supplier<OutputObject> noArgCharacter,
+        @GQLName("supplierArgCharacter") Supplier<OutputObject> noArgCharacter,
         String ignoreField
 ) {
 }

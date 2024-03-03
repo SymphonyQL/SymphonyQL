@@ -1,10 +1,10 @@
-package symphony.schema.scaladsl
+package symphony.schema.derivation
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import symphony.*
 import symphony.schema.*
-import symphony.schema.scaladsl.*
+import symphony.schema.derivation.*
 import symphony.annotations.scala.*
 import symphony.parser.adt.introspection.*
 

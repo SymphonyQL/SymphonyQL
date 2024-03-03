@@ -1,9 +1,9 @@
-package symphony.schema.scaladsl
+package symphony.schema.derivation
 
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers.shouldEqual
 import symphony.parser.adt.introspection.*
-import symphony.schema.scaladsl.*
+import symphony.schema.derivation.*
 import symphony.annotations.scala.*
 import symphony.schema.*
 

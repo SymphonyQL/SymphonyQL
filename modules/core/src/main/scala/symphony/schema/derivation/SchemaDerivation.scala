@@ -1,4 +1,4 @@
-package symphony.schema.scaladsl
+package symphony.schema.derivation
 
 import magnolia1.Macro
 import symphony.parser.SymphonyQLValue.*
@@ -114,7 +114,7 @@ trait SchemaDerivation extends BaseDerivation {
               )
             } else {
               val fieldList = fields.filterNot { case (label, _, _, _) =>
-                paramAnnotations.getOrElse(label, Nil).exists(_ == GQLExcluded())
+                paramAnnotations.getOrElse(label, Nil).contains(GQLExcluded())
               }.map { case (label, _, schema, _) =>
                 val fieldAnnotations = paramAnnotations.getOrElse(label, Nil)
                 __Field(

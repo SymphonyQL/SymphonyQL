@@ -14,8 +14,8 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -79,11 +79,11 @@ public final class ModelUtils {
     return result;
   }
 
-  public static Map<String, VariableElement> getVariableTypes(
+  public static Map<String, RecordComponentElement> getVariableTypes(
       final TypeElement typeElement, final Predicate<Element> predicate) {
     final List<? extends Element> elements = typeElement.getEnclosedElements();
-    final var variables = ElementFilter.fieldsIn(elements);
-    final var result = new LinkedHashMap<String, VariableElement>();
+    final var variables = ElementFilter.recordComponentsIn(elements);
+    final var result = new LinkedHashMap<String, RecordComponentElement>();
 
     for (final var variable : variables) {
       if (predicate.test(variable)) {

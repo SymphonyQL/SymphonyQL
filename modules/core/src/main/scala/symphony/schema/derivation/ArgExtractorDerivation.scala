@@ -1,4 +1,4 @@
-package symphony.schema.scaladsl
+package symphony.schema.derivation
 
 import magnolia1.Macro
 import symphony.parser.*
@@ -100,7 +100,7 @@ trait ArgExtractorDerivation extends BaseDerivation {
             val labelList    = annotations.get(label)
             lazy val default = labelList.flatMap(_.collectFirst { case GQLDefault(v) => v })
             val finalLabel   = labelList.flatMap(_.collectFirst { case GQLName(name) => name }).getOrElse(label)
-            fields.get(finalLabel).fold(builder.default(default))(builder.extract)
+            fields.get(finalLabel).fold(builder.defaultValue(default))(builder.extract)
           case value                                    => builder.extract(value)
         }
       }.foldLeft[Either[ArgumentError, Tuple]](Right(EmptyTuple)) { (acc, item) =>

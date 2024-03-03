@@ -9,7 +9,7 @@ import symphony.parser.SymphonyQLValue.*
 import symphony.parser.adt.*
 import symphony.parser.adt.introspection.*
 import symphony.schema.Stage.*
-import symphony.schema.scaladsl.*
+import symphony.schema.derivation.*
 
 import scala.annotation.{ nowarn, unused }
 import scala.concurrent.Future

@@ -1,4 +1,4 @@
-package symphony.schema.scaladsl
+package symphony.schema.derivation
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
