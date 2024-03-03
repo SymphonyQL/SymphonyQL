@@ -4,7 +4,7 @@ inThisBuild(
   List(
     scalaVersion           := scala3_Version,
     organization           := "io.github.symphonyql",
-    sonatypeCredentialHost := "s01.oss.sonatype.org",
+    sonatypeCredentialHost := "oss.sonatype.org",
     sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
     homepage               := Some(url("https://github.com/SymphonyQL")),
     licenses               := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
@@ -38,7 +38,7 @@ lazy val commonSettings =
     ) ++ Seq("-Xmax-inlines", "100")
   )
 
-lazy val root = (project in file("."))
+lazy val SymphonyQL = (project in file("."))
   .aggregate(
     core,
     parser,
@@ -69,7 +69,7 @@ lazy val parser = (project in file("modules/parser"))
     commonSettings,
     name           := "symphony-parser",
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.parser.value
+    libraryDependencies ++= Dependencies.Deps.parser
   )
 
 lazy val core = (project in file("modules/core"))
@@ -79,7 +79,7 @@ lazy val core = (project in file("modules/core"))
     commonSettings,
     name           := "symphony-core",
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.core.value
+    libraryDependencies ++= Dependencies.Deps.core
   )
 
 lazy val server     = (project in file("modules/server"))
@@ -89,14 +89,14 @@ lazy val server     = (project in file("modules/server"))
     commonSettings,
     name           := "symphony-server",
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.server.value
+    libraryDependencies ++= Dependencies.Deps.server
   )
 lazy val `java-apt` = (project in file("modules/java-apt"))
   .settings(
     publish / skip   := false,
     name             := "symphony-java-apt",
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.apt.value,
+    libraryDependencies ++= Dependencies.Deps.apt,
     javafmtOnCompile := true
   )
 

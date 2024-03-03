@@ -17,38 +17,34 @@ object Dependencies {
     import Versions.*
 
     // parser schema and query, convert to ADTs, types definition
-    val parser = sbt.Def.setting {
+    lazy val parser =
       Seq(
         "org.apache.pekko" %% "pekko-stream" % `pekko-core_Version` % Provided, // StreamValue
         "org.parboiled"    %% "parboiled"    % `parboiled_Version`  % Provided,
         "org.scalatest"    %% "scalatest"    % `scalatest_Version`  % Test
       )
-    }
-
     // prepare, analyzer, run, tracing
-    val core = sbt.Def.setting {
+    lazy val core   =
       Seq(
         "com.softwaremill.magnolia1_3" %% "magnolia"      % `magnolia_Version`,
         "org.apache.pekko"             %% "pekko-stream"  % `pekko-core_Version` % Provided,
         "org.apache.pekko"             %% "pekko-testkit" % `pekko-core_Version` % Test,
         "org.scalatest"                %% "scalatest"     % `scalatest_Version`  % Test
       )
-    }
 
     // default http server
-    val server = sbt.Def.setting {
+    lazy val server =
       Seq(
         "org.apache.pekko" %% "pekko-http"   % `pekko-http_Version`,
         "org.apache.pekko" %% "pekko-stream" % `pekko-core_Version`
       )
-    }
 
-    val apt = sbt.Def.setting {
+    // java annotation processor tools
+    lazy val apt =
       Seq(
         "com.squareup"       % "javapoet"      % javapoet_Version,
         "org.apache.commons" % "commons-lang3" % `commons-lang3_Version`
       )
-    }
   }
 
 }
