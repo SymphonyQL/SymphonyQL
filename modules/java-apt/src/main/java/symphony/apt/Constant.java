@@ -9,13 +9,6 @@ public final class Constant {
     throw new UnsupportedOperationException();
   }
 
-  public static final String PARSER_PACKAGE = "symphony.parser";
-  public static final String SCHEMA_PACKAGE = "symphony.schema";
-  public static final String ADT_PACKAGE = "symphony.parser.adt.introspection";
-  public static final String BUILDER_PACKAGE = "symphony.schema.javadsl";
-  public static final String OBJECT_BUILDER = "ObjectBuilder";
-  public static final String INPUT_OBJECT_BUILDER = "InputObjectBuilder";
-
   public static final String NOT_USED_CLASS = "org.apache.pekko.NotUsed";
   public static final String JAVA_FUNCTION_CLASS = "java.util.function.Function";
   public static final String JAVA_SUPPLIER_CLASS = "java.util.function.Supplier";

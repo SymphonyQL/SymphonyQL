@@ -1,7 +1,5 @@
 package symphony.apt.generator;
 
-import static symphony.apt.Constant.OBJECT_BUILDER;
-
 import com.squareup.javapoet.TypeSpec;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
@@ -27,7 +25,7 @@ public class ObjectCodeGenerator extends GeneratedCodeGenerator {
         && !modifiers.contains(Modifier.ABSTRACT)
         && (kind == ElementKind.RECORD)) {
       if (!annotation.withArgs()) {
-        generateObject(OBJECT_BUILDER, builder, typeElement);
+        generateObject(OBJECT_BUILDER_CLASS, builder, typeElement);
       } else {
         generateObjectWithArg(builder, typeElement);
       }

@@ -33,32 +33,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static symphony.apt.Constant.ADT_PACKAGE;
-import static symphony.apt.Constant.BUILDER_PACKAGE;
-import static symphony.apt.Constant.INPUT_OBJECT_BUILDER;
-import static symphony.apt.Constant.PARSER_PACKAGE;
-import static symphony.apt.Constant.SCHEMA_PACKAGE;
-
 public abstract class GeneratedCodeGenerator implements CodeGenerator {
-    // symphonyql schema classes
-    protected static final ClassName SCHEMA_CLASS = ClassName.get(SCHEMA_PACKAGE, "Schema");
-    protected static final ClassName FIELD_BUILDER_CLASS = ClassName.get(BUILDER_PACKAGE, "FieldBuilder");
-    protected static final ClassName FIELD_CLASS = ClassName.get(ADT_PACKAGE, "__Field");
     // symphonyql classes
-    public static final ClassName EXTRACTOR_CLASS = ClassName.get(SCHEMA_PACKAGE, "ArgumentExtractor");
-    protected static final ClassName SYMPHONYQL_INPUTVALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLInputValue");
-    protected static final ClassName SYMPHONYQL_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue");
-    protected static final ClassName SYMPHONYQL_ERROR_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLError", "ArgumentError");
-    protected static final ClassName SYMPHONYQL_OBJECT_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLInputValue", "ObjectValue");
-    protected static final ClassName SYMPHONYQL_ENUM_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue", "EnumValue");
-    protected static final ClassName SYMPHONYQL_STRING_VALUE_CLASS = ClassName.get(PARSER_PACKAGE, "SymphonyQLValue", "StringValue");
-    protected static final ClassName ENUM_BUILDER_CLASS = ClassName.get(BUILDER_PACKAGE, "EnumBuilder");
-    protected static final ClassName ENUM_VALUE_BUILDER_CLASS = ClassName.get(BUILDER_PACKAGE, "EnumValueBuilder");
-    protected static final ClassName ENUM_VALUE_CLASS = ClassName.get(ADT_PACKAGE, "__EnumValue");
+    protected static final ClassName SCHEMA_CLASS = ClassName.get(symphony.schema.Schema.class);
+    protected static final ClassName FIELD_BUILDER_CLASS = ClassName.get(symphony.schema.javadsl.FieldBuilder.class);
+    protected static final ClassName FIELD_CLASS = ClassName.get(symphony.parser.adt.introspection.__Field.class);
+    protected static final ClassName EXTRACTOR_CLASS = ClassName.get(symphony.schema.ArgumentExtractor.class);
+    protected static final ClassName SYMPHONYQL_INPUTVALUE_CLASS = ClassName.get(symphony.parser.SymphonyQLInputValue.class);
+    protected static final ClassName SYMPHONYQL_VALUE_CLASS = ClassName.get(symphony.parser.SymphonyQLValue.class);
+    protected static final ClassName SYMPHONYQL_ERROR_CLASS = ClassName.get(symphony.parser.SymphonyQLError.ArgumentError.class);
+    protected static final ClassName SYMPHONYQL_OBJECT_VALUE_CLASS = ClassName.get(symphony.parser.SymphonyQLInputValue.ObjectValue.class);
+    protected static final ClassName SYMPHONYQL_ENUM_VALUE_CLASS = ClassName.get(symphony.parser.SymphonyQLValue.EnumValue.class);
+    protected static final ClassName SYMPHONYQL_STRING_VALUE_CLASS = ClassName.get(symphony.parser.SymphonyQLValue.StringValue.class);
+    protected static final ClassName ENUM_BUILDER_CLASS = ClassName.get(symphony.schema.javadsl.EnumBuilder.class);
+    protected static final ClassName ENUM_VALUE_BUILDER_CLASS = ClassName.get(symphony.schema.javadsl.EnumValueBuilder.class);
+    protected static final ClassName ENUM_VALUE_CLASS = ClassName.get(symphony.parser.adt.introspection.__EnumValue.class);
+    protected static final ClassName OBJECT_BUILDER_CLASS = ClassName.get(symphony.schema.javadsl.ObjectBuilder.class);
+    protected static final ClassName INPUT_OBJECT_BUILDER_CLASS = ClassName.get(symphony.schema.javadsl.InputObjectBuilder.class);
+
     // function
     protected static final ParameterizedTypeName BUILD_FIELD_FUNCTION_TYPE = ParameterizedTypeName.get(ClassName.get(Function.class),
             FIELD_BUILDER_CLASS, FIELD_CLASS);
-    protected static final ParameterizedTypeName BUILD_ENUM_VALUE_FUNCTION_TYPE = ParameterizedTypeName.get(ClassName.get(Function.class), ENUM_VALUE_BUILDER_CLASS, ENUM_VALUE_CLASS);
+    protected static final ParameterizedTypeName BUILD_ENUM_VALUE_FUNCTION_TYPE = ParameterizedTypeName.get(
+            ClassName.get(Function.class), ENUM_VALUE_BUILDER_CLASS, ENUM_VALUE_CLASS
+    );
 
     private static final String addInputFieldMethodTemplate = """
             newObject.field(
@@ -183,8 +181,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         var variables = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFunctionalFieldPredicate(typeElement));
         var typeName = TypeUtils.getTypeName(typeElement);
         var returnType = ParameterizedTypeName.get(SCHEMA_CLASS, typeName);
-        var objectBuilderClass = ClassName.get(BUILDER_PACKAGE, Constant.OBJECT_BUILDER);
-        var builderSchema = objectMethodBuilder(returnType, objectBuilderClass, typeElement);
+        var builderSchema = objectMethodBuilder(returnType, OBJECT_BUILDER_CLASS, typeElement);
         var schemaArgs = new ArrayList<Object>(List.of(BUILD_FIELD_FUNCTION_TYPE, FIELD_CLASS, FIELD_BUILDER_CLASS));
 
         for (final var entry : variables.entrySet()) {
@@ -218,14 +215,14 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
 
     private MethodSpec.Builder objectMethodBuilder(
             final ParameterizedTypeName returnType,
-            final ClassName objectBuilderClass,
+            final ClassName objectBuilder,
             final TypeElement typeElement
     ) {
         var parameterizedTypeName = TypeUtils.getTypeName(typeElement);
         return MethodSpec.methodBuilder(Constant.SCHEMA_METHOD_NAME)
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .returns(returnType)
-                .addStatement("$T<$T> newObject = $T.newObject()", objectBuilderClass, parameterizedTypeName, objectBuilderClass)
+                .addStatement("$T<$T> newObject = $T.newObject()", objectBuilder, parameterizedTypeName, objectBuilder)
                 .addStatement("newObject.name($S)", TypeUtils.getSimpleName(typeElement));
     }
 
@@ -300,16 +297,15 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         }
     }
 
-    protected void generateObject(final String builderName, final TypeSpec.Builder builder, final TypeElement typeElement) {
+    protected void generateObject(final ClassName builderName, final TypeSpec.Builder builder, final TypeElement typeElement) {
         var variables = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
         var typeName = TypeUtils.getTypeName(typeElement);
         var returnType = ParameterizedTypeName.get(SCHEMA_CLASS, typeName);
-        var objectBuilderClass = ClassName.get(BUILDER_PACKAGE, builderName);
-        var builderSchema = objectMethodBuilder(returnType, objectBuilderClass, typeElement);
+        var builderSchema = objectMethodBuilder(returnType, builderName, typeElement);
         for (final var entry : variables.entrySet()) {
             var name = entry.getKey();
             var list = new ArrayList<>(List.of(BUILD_FIELD_FUNCTION_TYPE, FIELD_CLASS, FIELD_BUILDER_CLASS, name));
-            if (INPUT_OBJECT_BUILDER.equals(builderName)) {
+            if (INPUT_OBJECT_BUILDER_CLASS.equals(builderName)) {
                 generateInputObjectField(builderSchema, entry, list);
             } else {
                 generateObjectField(builderSchema, typeElement, entry, list);
