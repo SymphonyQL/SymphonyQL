@@ -45,6 +45,7 @@ lazy val SymphonyQL = (project in file("."))
     server,
     validator,
     `java-apt`,
+    annotations,
     examples,
     benchmarks
   )
@@ -64,6 +65,7 @@ lazy val validator = (project in file("modules/validator"))
   )
 
 lazy val parser = (project in file("modules/parser"))
+  .dependsOn(annotations)
   .settings(
     publish / skip := false,
     commonSettings,
@@ -73,7 +75,7 @@ lazy val parser = (project in file("modules/parser"))
   )
 
 lazy val core = (project in file("modules/core"))
-  .dependsOn(parser, validator)
+  .dependsOn(parser, validator, annotations)
   .settings(
     publish / skip := false,
     commonSettings,
@@ -82,7 +84,7 @@ lazy val core = (project in file("modules/core"))
     libraryDependencies ++= Dependencies.Deps.core
   )
 
-lazy val server     = (project in file("modules/server"))
+lazy val server = (project in file("modules/server"))
   .dependsOn(core)
   .settings(
     publish / skip := false,
@@ -91,6 +93,15 @@ lazy val server     = (project in file("modules/server"))
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.server
   )
+
+lazy val annotations = (project in file("modules/annotations"))
+  .settings(
+    publish / skip   := false,
+    name             := "symphony-annotations",
+    commands ++= Commands.value,
+    javafmtOnCompile := true
+  )
+
 lazy val `java-apt` = (project in file("modules/java-apt"))
   .dependsOn(core)
   .settings(

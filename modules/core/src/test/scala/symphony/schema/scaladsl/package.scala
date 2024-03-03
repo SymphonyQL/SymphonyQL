@@ -3,7 +3,11 @@ package symphony.schema.scaladsl
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers.shouldEqual
 import symphony.parser.adt.introspection.*
-import symphony.schema.Types
+import symphony.schema.scaladsl.*
+import symphony.annotations.scala.*
+import symphony.schema.*
+
+import scala.concurrent.Future
 
 def hasType(tpe: __Type, name: String, kind: __TypeKind): Assertion = {
   val allTypes                           = Types.collectTypes(tpe)
@@ -13,4 +17,27 @@ def hasType(tpe: __Type, name: String, kind: __TypeKind): Assertion = {
     println(s"Actual Types: ${nameKinds.mkString("[", ",", "]")}")
   }
   has shouldEqual true
+}
+
+case class FutureFieldSchema(q: Future[Int])
+
+@GQLInterface
+sealed trait MyInterface
+object MyInterface {
+  case class A(common: Int, different: String)  extends MyInterface
+  case class B(common: Int, different: Boolean) extends MyInterface
+}
+
+@GQLUnion
+sealed trait EnumLikeUnion
+object EnumLikeUnion {
+  case object A extends EnumLikeUnion
+  case object B extends EnumLikeUnion
+}
+
+@GQLInterface
+sealed trait EnumLikeInterface
+object EnumLikeInterface {
+  case object A extends EnumLikeInterface
+  case object B extends EnumLikeInterface
 }

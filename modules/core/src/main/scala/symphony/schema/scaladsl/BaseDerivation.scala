@@ -3,6 +3,7 @@ package symphony.schema.scaladsl
 import magnolia1.TypeInfo
 import symphony.parser.adt.introspection.*
 import symphony.schema.*
+import symphony.annotations.scala.*
 
 import scala.quoted.*
 
@@ -49,4 +50,18 @@ trait BaseDerivation {
       case Nil  => info.short
       case args => info.short + args.map(getName).mkString
     }
+
+  def getName(annotations: Seq[Any], label: String): String =
+    annotations.collectFirst { case GQLName(name) => name }.getOrElse(label)
+
+  def getName(annotations: Seq[Any], info: TypeInfo): String =
+    annotations.collectFirst { case GQLName(name) => name }.getOrElse {
+      info.typeParams match {
+        case Nil  => info.short
+        case args => info.short + args.map(getName(Nil, _)).mkString
+      }
+    }
+
+  def getDescription(annotations: Seq[Any]): Option[String] =
+    annotations.collectFirst { case GQLDescription(desc) => desc }
 }

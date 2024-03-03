@@ -7,6 +7,7 @@ import symphony.parser.SymphonyQLParser
 import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.InputValueDefinition
 import symphony.parser.adt.Directive
+import symphony.annotations.scala.GQLExcluded
 
 final case class __InputValue(
   name: String,
@@ -15,7 +16,7 @@ final case class __InputValue(
   defaultValue: Option[String],
   isDeprecated: Boolean = false,
   deprecationReason: Option[String] = None,
-  directives: Option[List[Directive]] = None
+  @GQLExcluded directives: Option[List[Directive]] = None
 ) {
 
   def toInputValueDefinition: InputValueDefinition = {

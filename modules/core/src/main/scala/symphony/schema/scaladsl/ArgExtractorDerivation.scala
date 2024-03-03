@@ -6,6 +6,7 @@ import symphony.parser.SymphonyQLError.*
 import symphony.parser.SymphonyQLInputValue.*
 import symphony.parser.SymphonyQLValue.*
 import symphony.schema.*
+import symphony.annotations.scala.*
 
 import scala.compiletime.*
 import scala.deriving.*
@@ -23,12 +24,15 @@ trait ArgExtractorDerivation extends BaseDerivation {
           recurseSum[A, m.MirroredElemLabels, m.MirroredElemTypes](Nil)
         )
       case m: Mirror.ProductOf[A] =>
-        makeProduct(recurseProduct[A, m.MirroredElemLabels, m.MirroredElemTypes](Nil))(m.fromProduct)
+        makeProduct(
+          recurseProduct[A, m.MirroredElemLabels, m.MirroredElemTypes](Nil),
+          Macro.paramAnns[A].toMap
+        )(m.fromProduct)
     }
 
   private inline def recurseSum[P, Label, A <: Tuple](
-    inline values: List[(String, ArgumentExtractor[Any])]
-  ): List[(String, ArgumentExtractor[Any])] =
+    inline values: List[(String, List[Any], ArgumentExtractor[Any])]
+  ): List[(String, List[Any], ArgumentExtractor[Any])] =
     inline erasedValue[(Label, A)] match {
       case (_: EmptyTuple, _)                => values.reverse
       case (_: (head *: tail), _: (t *: ts)) =>
@@ -42,7 +46,7 @@ trait ArgExtractorDerivation extends BaseDerivation {
                   if (!implicitExists[ArgumentExtractor[t]]) gen[t]
                   else summonInline[ArgumentExtractor[t]]
                 else summonInline[ArgumentExtractor[t]]
-              (constValue[head].toString, extractor.asInstanceOf[ArgumentExtractor[Any]]) :: values
+              (constValue[head].toString, Macro.anns[t], extractor.asInstanceOf[ArgumentExtractor[Any]]) :: values
           }
         }
     }
@@ -60,8 +64,9 @@ trait ArgExtractorDerivation extends BaseDerivation {
 
   private def makeSum[A](
     traitLabel: String,
-    subTypes: => List[(String, ArgumentExtractor[Any])]
+    _subTypes: => List[(String, List[Any], ArgumentExtractor[Any])]
   ) = new ArgumentExtractor[A] {
+    private lazy val subTypes = _subTypes
 
     def extract(input: SymphonyQLInputValue): Either[ArgumentError, A] =
       input.match {
@@ -70,7 +75,12 @@ trait ArgExtractorDerivation extends BaseDerivation {
         case _                  => Left(ArgumentError(s"Cannot build a trait from input $input"))
       }.flatMap { value =>
         subTypes.collectFirst {
-          case (label, builder: ArgumentExtractor[A @unchecked]) if label == value => builder
+          case (
+                label,
+                annotations,
+                builder: ArgumentExtractor[A @unchecked]
+              ) if label == value || annotations.exists { case GQLName(name) => name == value } =>
+            builder
         }
           .toRight(ArgumentError(s"Invalid SymphonyQL value $value for trait $traitLabel"))
           .flatMap(_.extract(SymphonyQLInputValue.ObjectValue(Map.empty)))
@@ -78,17 +88,19 @@ trait ArgExtractorDerivation extends BaseDerivation {
   }
 
   private def makeProduct[A](
-    _fields: => List[(String, ArgumentExtractor[Any])]
+    _fields: => List[(String, ArgumentExtractor[Any])],
+    annotations: Map[String, List[Any]]
   )(fromProduct: Product => A) = new ArgumentExtractor[A] {
+    private lazy val fields = _fields
 
     def extract(input: SymphonyQLInputValue): Either[ArgumentError, A] =
-      _fields.map { (label, builder) =>
+      fields.view.map { (label, builder) =>
         input match {
           case SymphonyQLInputValue.ObjectValue(fields) =>
-            fields
-              .get(label)
-              .map(builder.extract)
-              .getOrElse(builder.default())
+            val labelList    = annotations.get(label)
+            lazy val default = labelList.flatMap(_.collectFirst { case GQLDefault(v) => v })
+            val finalLabel   = labelList.flatMap(_.collectFirst { case GQLName(name) => name }).getOrElse(label)
+            fields.get(finalLabel).fold(builder.default(default))(builder.extract)
           case value                                    => builder.extract(value)
         }
       }.foldLeft[Either[ArgumentError, Tuple]](Right(EmptyTuple)) { (acc, item) =>

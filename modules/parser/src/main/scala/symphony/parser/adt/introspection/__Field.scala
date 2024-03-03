@@ -3,6 +3,7 @@ package symphony.parser.adt.introspection
 import symphony.parser.SymphonyQLValue.StringValue
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.adt.Directive
+import symphony.annotations.scala.GQLExcluded
 
 final case class __Field(
   name: String,
@@ -11,7 +12,7 @@ final case class __Field(
   `type`: () => __Type,
   isDeprecated: Boolean = false,
   deprecationReason: Option[String] = None,
-  directives: Option[List[Directive]] = None
+  @GQLExcluded directives: Option[List[Directive]] = None
 ) {
   override lazy val hashCode: Int = super.hashCode()
 

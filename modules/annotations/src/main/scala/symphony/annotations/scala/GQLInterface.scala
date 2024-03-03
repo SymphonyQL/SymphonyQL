@@ -1,4 +1,4 @@
-package symphony.schema.scaladsl.annotations
+package symphony.annotations.scala
 
 import scala.annotation.StaticAnnotation
 
