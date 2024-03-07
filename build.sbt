@@ -21,9 +21,11 @@ inThisBuild(
 
 lazy val commonSettings =
   Seq(
-    Test / fork  := true,
-    run / fork   := true,
-    scalaVersion := scala3_Version,
+    Test / fork      := true,
+    run / fork       := true,
+    publish / skip   := false,
+    scalaVersion     := scala3_Version,
+    javafmtOnCompile := true,
     scalacOptions ++= Seq(
       "-language:dynamics",
       "-explain",
@@ -59,18 +61,16 @@ lazy val SymphonyQL = (project in file("."))
 lazy val validator = (project in file("modules/validator"))
   .dependsOn(parser)
   .settings(
-    publish / skip := false,
     commonSettings,
-    name           := "symphony-validator",
+    name := "symphony-validator",
     commands ++= Commands.value
   )
 
 lazy val parser = (project in file("modules/parser"))
   .dependsOn(annotations)
   .settings(
-    publish / skip := false,
     commonSettings,
-    name           := "symphony-parser",
+    name := "symphony-parser",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.parser
   )
@@ -78,9 +78,8 @@ lazy val parser = (project in file("modules/parser"))
 lazy val core = (project in file("modules/core"))
   .dependsOn(parser, validator, annotations)
   .settings(
-    publish / skip := false,
     commonSettings,
-    name           := "symphony-core",
+    name := "symphony-core",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.core
   )
@@ -88,40 +87,35 @@ lazy val core = (project in file("modules/core"))
 lazy val server = (project in file("modules/server"))
   .dependsOn(core)
   .settings(
-    publish / skip := false,
     commonSettings,
-    name           := "symphony-server",
+    name := "symphony-server",
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.server
   )
 
 lazy val annotations = (project in file("modules/annotations"))
   .settings(
-    publish / skip   := false,
-    name             := "symphony-annotations",
-    commands ++= Commands.value,
-    javafmtOnCompile := true
+    commonSettings,
+    name := "symphony-annotations",
+    commands ++= Commands.value
   )
 
 lazy val `java-apt` = (project in file("modules/java-apt"))
   .dependsOn(core)
   .settings(
-    publish / skip   := false,
-    name             := "symphony-java-apt",
+    commonSettings,
+    name := "symphony-java-apt",
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.apt,
-    javafmtOnCompile := true
+    libraryDependencies ++= Dependencies.Deps.apt
   )
 
 lazy val `java-apt-tests` = (project in file("modules/java-apt-tests"))
   .dependsOn(core, `java-apt`)
   .settings(
-    publish / skip   := true,
-    name             := "symphony-java-apt-tests",
+    commonSettings,
+    publish / skip := true,
+    name           := "symphony-java-apt-tests",
     commands ++= Commands.value,
-    compileOrder     := CompileOrder.JavaThenScala,
-    commands ++= Commands.value,
-    javafmtOnCompile := true,
     Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed",
     libraryDependencies ++= Dependencies.Deps.`apt-tests`,
     Compile / javacOptions ++= Seq(
@@ -137,11 +131,10 @@ lazy val `java-apt-tests` = (project in file("modules/java-apt-tests"))
 lazy val examples = (project in file("examples"))
   .dependsOn(server, core, `java-apt`)
   .settings(
-    publish / skip   := true,
+    publish / skip := true,
     commonSettings,
-    compileOrder     := CompileOrder.JavaThenScala,
+    compileOrder   := CompileOrder.JavaThenScala,
     commands ++= Commands.value,
-    javafmtOnCompile := true,
     Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed",
     libraryDependencies ++= Seq(
       "javax.annotation" % "javax.annotation-api" % "1.3.2"

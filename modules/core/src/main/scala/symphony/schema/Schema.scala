@@ -314,26 +314,19 @@ trait GenericSchema extends SchemaDerivation {
       override def tpe(isInput: Boolean = false): __Type = outputSchema.lazyType(isInput)
       override def analyze(value: A => B): Stage         =
         FunctionStage { args =>
-          var builder: Either[ArgumentError, A] = null
-          // Fix Java RuntimeException
-          try {
-            builder = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args))
-            val fixBuilder = inputType.kind match {
-              case __TypeKind.SCALAR | __TypeKind.ENUM | __TypeKind.LIST =>
-                builder.fold(
-                  error => args.get("value").fold[Either[ArgumentError, A]](Left(error))(argumentExtractor.extract),
-                  Right(_)
-                )
-              case _                                                     => builder
-            }
-            fixBuilder.fold(
-              error => ScalaSourceStage(scaladsl.Source.failed(error)),
-              input => outputSchema.analyze(value(input))
-            )
-          } catch {
-            case e: RuntimeException =>
-              ScalaSourceStage(scaladsl.Source.failed(e))
+          var builder    = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args))
+          val fixBuilder = inputType.kind match {
+            case __TypeKind.SCALAR | __TypeKind.ENUM | __TypeKind.LIST =>
+              builder.fold(
+                error => args.get("value").fold[Either[ArgumentError, A]](Left(error))(argumentExtractor.extract),
+                Right(_)
+              )
+            case _                                                     => builder
           }
+          fixBuilder.fold(
+            error => ScalaSourceStage(scaladsl.Source.failed(error)),
+            input => outputSchema.analyze(value(input))
+          )
         }
     }
 

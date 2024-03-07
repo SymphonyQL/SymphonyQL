@@ -71,7 +71,7 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
             var $L = %s;
             var $L = $L.isEmpty() ? $L.defaultValue(%s) : $L.extract($L.get());
             if ($L.isLeft()) {
-                throw new RuntimeException($S, $L.swap().toOption().get());
+                return $T.apply(new $T($S, $L.swap().toOption().get()));
             }
             var $L = $T.toJava($L.flatMap(a -> $L.toOption()))
                     .flatMap(a -> a.isEmpty() ? $T.empty() : $T.of(a.get()));
@@ -83,7 +83,7 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
             var $L = %s;
             var $L = $L.isEmpty() ? $L.defaultValue(%s) : $L.extract($L.get());
             if ($L.isLeft()) {
-                throw new RuntimeException($S, $L.swap().toOption().get());
+                return $T.apply(new $T($S, $L.swap().toOption().get()));
             }
             var $L = ($T) $L.toOption().get();
                         
@@ -93,24 +93,24 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
             if (obj instanceof $T value) {
                 var $L = $T.stream($T.values()).filter(o -> o.name().equals(value.value())).findFirst();
                 if ($L.isEmpty()) {
-                    throw new RuntimeException($S);
+                    return $T.apply(new $T($S));
                 }
-                return $L.get();
+                return $T.apply($L.get());
             }
                         
             var $L = ($T) obj;
             var $L = $T.stream($T.values()).filter(o -> o.name().equals($L.value())).findFirst();
             if ($L.isEmpty()) {
-                throw new RuntimeException($S);
+                return $T.apply(new $T($S));
             }
-            return $L.get();
+            return $T.apply($L.get());
             """;
 
     private void generateEnum(final TypeSpec.Builder builder, final TypeElement typeElement) {
         var typeName = TypeUtils.getTypeName(typeElement);
         var realName = getName(typeElement).orElse(TypeUtils.getSimpleName(typeElement));
         var fieldCodes = new LinkedHashMap<String, CodeBlock>();
-        var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), SYMPHONYQL_VALUE_CLASS, typeName);
+        var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), SYMPHONYQL_VALUE_CLASS, ParameterizedTypeName.get(EITHER_CLASS,SYMPHONYQL_ARG_ERROR_CLASS,   typeName));
         var type = TypeUtils.getTypeName(typeElement);
         var fieldName = typeElement.getSimpleName().toString().toLowerCase();
         var optionalValueName = Constant.OPTIONAL_SUFFIX_FUNCTION.apply(fieldName);
@@ -118,13 +118,13 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
         var code = CodeBlock.builder().add(createEnumValueTemplate, SYMPHONYQL_ENUM_VALUE_CLASS, // line 1
                 optionalValueName, ClassName.get(Arrays.class), type,// line 2
                 optionalValueName, // line 3
-                String.format(Constant.CREATE_ENUM_ERROR_MSG, realName), // line 4
-                optionalValueName, // line 6
+                LEFT_CLASS, SYMPHONYQL_ARG_ERROR_CLASS ,String.format(Constant.CREATE_ENUM_ERROR_MSG, realName), // line 4
+                RIGHT_CLASS, optionalValueName, // line 6
                 stringValueName, SYMPHONYQL_STRING_VALUE_CLASS, // line 9
                 optionalValueName, ClassName.get(Arrays.class), type, stringValueName,// line 10
                 optionalValueName, // line 11
-                String.format(Constant.CREATE_ENUM_ERROR_MSG, realName), // line 12
-                optionalValueName // line 14
+                LEFT_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, String.format(Constant.CREATE_ENUM_ERROR_MSG, realName), // line 12
+                RIGHT_CLASS, optionalValueName // line 14
 
         ).build();
 
@@ -140,23 +140,24 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
         var applyCode = CodeBlock.builder().add("""
                 return switch (input) {
                     case $T obj ->  {
-                        yield $T.apply($L.apply(obj));
+                        yield $L.apply(obj);
                     }
                     case $T obj -> {
-                        yield $T.apply($L.apply(obj));
+                        yield $L.apply(obj);
                     }
                     default -> $T.apply(new $T($S));
                 };
-                """, List.of(SYMPHONYQL_ENUM_VALUE_CLASS, // 2
-                RIGHT_CLASS, Constant.CREATE_OBJECT_FUNCTION, // 3
+                """, List.of(
+                        SYMPHONYQL_ENUM_VALUE_CLASS, // 2
+                Constant.CREATE_OBJECT_FUNCTION, // 3
                 SYMPHONYQL_STRING_VALUE_CLASS, // 5
-                RIGHT_CLASS, Constant.CREATE_OBJECT_FUNCTION, // 6
+                 Constant.CREATE_OBJECT_FUNCTION, // 6
                 LEFT_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, "Expected EnumValue or StringValue" // 8
         ).toArray()).build();
         generateObjectBody(builder, typeName, applyCode, fieldSpec);
     }
 
-    // TODO support union and interface
+    // TODO support interface
     protected void generateObject(final TypeSpec.Builder builder, final TypeElement typeElement) {
         var fieldElements = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
         var fieldCodes = new LinkedHashMap<String, CodeBlock>();
@@ -187,7 +188,7 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                     args.addAll(defaultValue);
                     args.addAll(List.of(fieldSchemaName, optionalValueName));
                     args.addAll(List.of(
-                            eitherValueName, String.format(Constant.CREATE_ERROR_MSG, inputFieldName), eitherValueName,
+                            eitherValueName, LEFT_CLASS, SYMPHONYQL_ARG_ERROR_CLASS,  String.format(Constant.CREATE_ERROR_MSG, inputFieldName), eitherValueName,
                             fieldName, fieldTypeName, eitherValueName)
                     );
                     codeString = String.format(createObjectFieldTemplate, "$T.getArgumentExtractor($S)", defaultString);
@@ -200,7 +201,7 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                     args.addAll(defaultValue);
                     args.addAll(List.of(fieldSchemaName, optionalValueName));
                     args.addAll(List.of(
-                            eitherValueName, String.format(Constant.CREATE_ERROR_MSG, inputFieldName), eitherValueName,
+                            eitherValueName, LEFT_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, String.format(Constant.CREATE_ERROR_MSG, inputFieldName), eitherValueName,
                             fieldName, fieldTypeName, eitherValueName)
                     );
                     codeString = String.format(createObjectFieldTemplate, "$T.$N", defaultString);
@@ -219,8 +220,7 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                         args.addAll(List.of(fieldSchemaName, optionalValueName));
                         args.addAll(List.of(
                                 eitherValueName,
-                                String.format(Constant.CREATE_ERROR_MSG, inputFieldName),
-                                eitherValueName,
+                                LEFT_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, String.format(Constant.CREATE_ERROR_MSG, inputFieldName), eitherValueName,
                                 fieldName,
                                 OPTION_CONVERTERS_CLASS,
                                 optionalValueName,
@@ -238,7 +238,7 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                         args.addAll(defaultValue);
                         args.addAll(List.of(fieldSchemaName, optionalValueName));
                         args.addAll(List.of(
-                                        eitherValueName, String.format(Constant.CREATE_ERROR_MSG, inputFieldName), eitherValueName,
+                                        eitherValueName, LEFT_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, String.format(Constant.CREATE_ERROR_MSG, inputFieldName), eitherValueName,
                                         fieldName, fieldTypeName, eitherValueName
                                 )
                         );
@@ -253,16 +253,18 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                 fieldCodes.put(fieldName, code);
             }
         }
-        var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), SYMPHONYQL_OBJECT_VALUE_CLASS, typeName);
+        var functionType = ParameterizedTypeName.get(ClassName.get(Function.class), SYMPHONYQL_OBJECT_VALUE_CLASS,
+                ParameterizedTypeName.get(EITHER_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, typeName)
+        );
         var applyCode = CodeBlock.builder().add("""
                 return switch (input) {
                     case $T obj -> {
-                        yield $T.apply($L.apply(obj));
+                        yield $L.apply(obj);
                     }
                     default -> $T.apply(new $T($S));
                 };
                 """, List.of(
-                        SYMPHONYQL_OBJECT_VALUE_CLASS, RIGHT_CLASS, Constant.CREATE_OBJECT_FUNCTION,
+                        SYMPHONYQL_OBJECT_VALUE_CLASS,  Constant.CREATE_OBJECT_FUNCTION,
                 LEFT_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, "Expected ObjectValue"
         ).toArray()).build();
         var fieldSpec = FieldSpec.builder(functionType, Constant.CREATE_OBJECT_FUNCTION, Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
@@ -277,12 +279,12 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
             final LinkedHashMap<String, CodeBlock> fieldCodes,
             final TypeName typeName
     ) {
-        // new Function<SymphonyQLValue, T>
+        // new Function<SymphonyQLValue, Either<SymphonyQLError.ArgumentError, T>>
         var applyMethod = MethodSpec.methodBuilder("apply")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(SYMPHONYQL_VALUE_CLASS, "obj")
-                .returns(typeName);
+                .returns(ParameterizedTypeName.get(EITHER_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, typeName));
 
         fieldCodes.values().forEach(applyMethod::addCode);
         return applyMethod.build();
@@ -293,17 +295,17 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
             final LinkedHashMap<String, CodeBlock> fieldCodes,
             final TypeName typeName
     ) {
-        // new Function<SymphonyQLInputValue, T>
+        // new Function<SymphonyQLInputValue, Either<SymphonyQLError.ArgumentError, T>>
         var applyMethod = MethodSpec.methodBuilder("apply")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(SYMPHONYQL_OBJECT_VALUE_CLASS, "obj")
-                .returns(typeName);
+                .returns(ParameterizedTypeName.get(EITHER_CLASS,SYMPHONYQL_ARG_ERROR_CLASS, typeName));
 
         var join = new StringJoiner(", ");
         fieldCodes.keySet().forEach(join::add);
         fieldCodes.values().forEach(applyMethod::addCode);
-        applyMethod.addStatement("return new $T($L)", typeName, join.toString());
+        applyMethod.addStatement("return $T.apply(new $T($L))", RIGHT_CLASS,typeName, join.toString());
         return applyMethod.build();
 
     }
@@ -336,7 +338,8 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                         .addStatement("return $L", extractAnonymousObject.build()).returns(returnType)
                         .build());
 
-        // private final static Function<SymphonyQLInputValue, T> function = new Function<SymphonyQLInputValue, T>{ };  
+        // private final static Function<SymphonyQLInputValue, Either<SymphonyQLError.ArgumentError, T>> function = 
+        // new Function<SymphonyQLInputValue, Either<SymphonyQLError.ArgumentError, T>>{ };  
         builder.addField(fieldSpec);
     }
 }

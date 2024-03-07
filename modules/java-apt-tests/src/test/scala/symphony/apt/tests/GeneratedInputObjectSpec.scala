@@ -51,20 +51,6 @@ class GeneratedInputObjectSpec extends AnyFunSpec with Matchers {
       obj shouldEqual Right(SimpleNestedObject(OriginEnum.BELT))
     }
 
-    it("extract input failed") {
-      withClue("Expected EnumValue or StringValue for Enum") {
-        intercept[RuntimeException] {
-          SimpleNestedObjectExtractor.extractor.extract(
-            SymphonyQLInputValue.ObjectValue(
-              Map(
-                "originEnum" -> SymphonyQLValue.IntValue(1)
-              )
-            )
-          )
-        }
-      }
-    }
-
     it("complex input schema") {
       val document = getDocument(InputObjectInputSchema.schema)
       val str      = DocumentRenderer.render(document).trim
