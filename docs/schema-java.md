@@ -11,15 +11,15 @@ In Java, there is no metaprogramming, we use APT (Java Annotation Processing) to
 If we want to define it manually, we can use the builder class in `symphony.schema.builder.*` and add the `@IgnoreSchema` annotation on record class.
 
 Then, we should create a class **under the same package**:
-- Record class `A` is **Object** (or *Enum*). Create an `ASchema` class with field `public static final Schema<A> schema = ???;`.
-- Record class `A` is **Input Object**. Create an `AInputSchema` class with field `public static final Schema<A> schema = ???;`.
-- Record class `A` is **Argument Extractor** (*Input Object* or if *Enum* is in *Input Object*). Create an `AExtractor` class with field `public static final ArgumentExtractor<A> extractor = ???;`.
+- If record class `A` is **Object** (or *Enum*, *Union*, *Interface*), a class named `ASchema` should be created with the field `public static final Schema<A> schema = ???;`.
+- If record class `A` is **Input Object (or *Enum*)**, a class named `AInputSchema` should be created with the field `public static final Schema<A> schema = ???;`.
+- It is also possible to customize the `ArgumentExtractor<A>`, simply created a class named `AExtractor` with the field `public static final ArgumentExtractor<A> extractor = ???;`.
 
 If these are not provided, an error will be reported by javac on which type has `@IgnoreSchema`, such as `A or schema can't be found.`.
 
 ### @EnumSchema
 
-Defining SymphonyQL **Enum Type**, for example:
+Defining GraphQL **Enum Type**, for example:
 ```java
 @EnumSchema
 enum OriginEnum {
@@ -29,7 +29,7 @@ enum OriginEnum {
 
 The enumeration used in **Input Object Type** must be annotated with `@ArgExtractor`.
 
-It is equivalent to the GraphQL Enum Type:
+The snippet above will produce the following GraphQL type:
 ```graphql
 enum Origin {
   EARTH
@@ -40,7 +40,7 @@ enum Origin {
 
 ### @InputSchema
 
-Defining SymphonyQL **Input Object Type**, for example:
+Defining GraphQL **Input Object Type**, for example:
 ```java
 @InputSchema
 @ArgExtractor
@@ -62,7 +62,7 @@ record NestedArg(String id, Optional<String> name) {
 }
 ```
 
-It is equivalent to the GraphQL Input Type:
+The snippet above will produce the following GraphQL type:
 ```graphql
 input NestedArgInput {
     id: String!
@@ -72,7 +72,7 @@ input NestedArgInput {
 
 ### @ObjectSchema
 
-Defining simple SymphonyQL **Object Type**, for example:
+Defining simple GraphQL **Object Type**, for example:
 ```java
 @ObjectSchema
 record CharacterOutput(String name, Origin origin) {
@@ -81,7 +81,7 @@ record CharacterOutput(String name, Origin origin) {
 
 The object can be any record class, nested types also require annotation.
 
-It is equivalent to the GraphQL Object Type:
+The snippet above will produce the following GraphQL type:
 ```graphql
 type CharacterOutput {
   name: String!
@@ -89,7 +89,7 @@ type CharacterOutput {
 }
 ```
 
-Defining complex SymphonyQL **Object Type** for **resolver**, for example:
+Defining complex GraphQL **Object Type** for **resolver**, for example:
 ```java
 @ObjectSchema
 record Queries(Function<FilterArgs, Source<CharacterOutput, NotUsed>> characters) {
@@ -99,7 +99,7 @@ record Queries(Function<FilterArgs, Source<CharacterOutput, NotUsed>> characters
 Each **resolver** can contain multiple fields, each of which is a Query/Mutation/Subscription API. 
 For more types, please refer to the [Schema Specification](schema.md).
 
-It is equivalent to the GraphQL Object Type:
+The snippet above will produce the following GraphQL type:
 ```graphql
 # There is no FilterArgs, but it has all its fields: origin, nestedArg
 type Queries {

@@ -1,4 +1,4 @@
-package symphony.example.schema.complex;
+package symphony.apt.tests;
 
 import symphony.annotations.java.GQLDeprecated;
 import symphony.annotations.java.GQLDescription;

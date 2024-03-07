@@ -12,11 +12,11 @@ object EnumValueBuilder {
 }
 
 final class EnumValueBuilder private {
-  private var name: String                        = _
-  private var description: Option[String]         = None
-  private var isDeprecated: Boolean               = false
-  private var deprecationReason: Option[String]   = None
-  private var directives: Option[List[Directive]] = None
+  private var name: String                      = _
+  private var description: Option[String]       = None
+  private var isDeprecated: Boolean             = false
+  private var deprecationReason: Option[String] = None
+  private var directives: List[Directive]       = List.empty
 
   def name(name: String): this.type = {
     this.name = name
@@ -40,7 +40,7 @@ final class EnumValueBuilder private {
 
   @varargs
   def directives(directives: Directive*): this.type = {
-    this.directives = Option(directives.toList)
+    this.directives = directives.toList
     this
   }
 
@@ -49,6 +49,6 @@ final class EnumValueBuilder private {
     description,
     isDeprecated,
     deprecationReason,
-    directives
+    Some(directives)
   )
 }

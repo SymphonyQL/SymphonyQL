@@ -45,6 +45,7 @@ lazy val SymphonyQL = (project in file("."))
     server,
     validator,
     `java-apt`,
+    `java-apt-tests`,
     annotations,
     examples,
     benchmarks
@@ -112,12 +113,35 @@ lazy val `java-apt` = (project in file("modules/java-apt"))
     javafmtOnCompile := true
   )
 
+lazy val `java-apt-tests` = (project in file("modules/java-apt-tests"))
+  .dependsOn(core, `java-apt`)
+  .settings(
+    publish / skip   := true,
+    name             := "symphony-java-apt-tests",
+    commands ++= Commands.value,
+    compileOrder     := CompileOrder.JavaThenScala,
+    commands ++= Commands.value,
+    javafmtOnCompile := true,
+    Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed",
+    libraryDependencies ++= Dependencies.Deps.`apt-tests`,
+    Compile / javacOptions ++= Seq(
+      "-processor",
+      "symphony.apt.SymphonyQLProcessor",
+      "-s",
+      ((Compile / crossTarget).value / "src_managed").getAbsolutePath,
+      "-XprintRounds",
+      "-Xlint:deprecation"
+    )
+  )
+
 lazy val examples = (project in file("examples"))
   .dependsOn(server, core, `java-apt`)
   .settings(
-    publish / skip := true,
+    publish / skip   := true,
     commonSettings,
+    compileOrder     := CompileOrder.JavaThenScala,
     commands ++= Commands.value,
+    javafmtOnCompile := true,
     Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed",
     libraryDependencies ++= Seq(
       "javax.annotation" % "javax.annotation-api" % "1.3.2"

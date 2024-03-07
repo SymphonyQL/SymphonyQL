@@ -13,7 +13,8 @@
 
 ## Highlights
 
-- having the least dependency, no adapters.
+- support for Java 21: record classes, sealed interface.
+- minimal dependencies, no adapter required.
 - native support for [Apache Pekko](https://github.com/apache/incubator-pekko), including Java and Scala.
 - minimal amount of boilerplate: no need to manually define a schema for every type in your API.
 

@@ -73,7 +73,7 @@ final class FieldBuilder private {
       () => if (schema.optional) schema.lazyType(isInput) else Types.mkNonNull(schema.lazyType(isInput)),
       isDeprecated,
       deprecationReason,
-      Option(directives)
+      Some(directives)
     )
 
 }

@@ -1,7 +1,7 @@
-package symphony.example.schema.complex;
+package symphony.apt.tests;
 
-import org.apache.pekko.*;
-import org.apache.pekko.stream.javadsl.*;
+import org.apache.pekko.NotUsed;
+import org.apache.pekko.stream.javadsl.Source;
 import symphony.annotations.java.GQLDeprecated;
 import symphony.annotations.java.GQLDescription;
 import symphony.annotations.java.GQLName;
@@ -21,6 +21,7 @@ record QueriesObject(
         Function<Integer, OutputObject> intCharacter,
         Function<String, String> intString,
         @GQLName("supplierArgCharacter") Supplier<OutputObject> noArgCharacter,
-        String ignoreField
+        String scalarField,
+        SimpleNestedObject simpleNestedObject
 ) {
 }

@@ -93,7 +93,6 @@ class AutoGenSpec extends AnyFunSpec with Matchers {
         .asInstanceOf[Stage.FunctionStage]
         .stage
         .apply(Map("id" -> SymphonyQLValue.StringValue("")))
-      println(getUsersStage)
       getUsersStage.toString.contains("ScalaSourceStage(Source(SourceShape(") shouldEqual true
     }
   }

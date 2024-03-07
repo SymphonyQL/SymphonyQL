@@ -6,9 +6,9 @@ custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/schem
 
 A SymphonyQL schema will be generated automatically at compile-time from the types present in your resolver.
 
-The following table shows how to convert common Scala/Java types to SymphonyQL types.
+The following table shows how to convert common Scala/Java types to GraphQL types.
 
-| Scala Type (Java Type)                                                         | SymphonyQL Type                                  |
+| Scala Type (Java Type)                                                         | GraphQL Type                                     |
 |--------------------------------------------------------------------------------|--------------------------------------------------|
 | `Boolean` (`boolean`)                                                          | Boolean                                          |
 | `Int` (`int`)                                                                  | Int                                              |
@@ -95,4 +95,39 @@ type Mechanic {
 
 ### Enums, unions, interfaces
 
-TODO
+In Java, only the enum classes can be used to define GraphQL enum types.
+
+A sealed interface will be converted to a different GraphQL type depending on its content:
+
+- a sealed interface with only record classes will be converted to a `UNION` if exists `@UnionSchema` on interface type.
+- a sealed interface with only record classes will be converted to a `INTERFACE` if exists `@InterfaceSchema` on interface type.
+
+Sealed interfaces have other subclasses that are not supported at this time.
+
+Here's an example of union:
+```java
+@UnionSchema
+public sealed interface SearchResult permits Book, Author {
+}
+
+@ObjectSchema
+record Book(String title) implements SearchResult {
+}
+
+@ObjectSchema
+record Author(String name) implements SearchResult {
+}
+```
+
+The snippet above will produce the following GraphQL type:
+```graphql
+union SearchResult = Book | Author
+
+type Author {
+    name: String
+}
+
+type Book {
+    title: String
+}
+```

@@ -21,30 +21,6 @@ trait BaseDerivation {
     }
   }
 
-  def customInputTypeName(name: String): String = s"${name}Input"
-
-  // see https://github.com/graphql/graphql-spec/issues/568
-  def fixEmptyUnionObject(t: __Type): __Type =
-    t.fields(__DeprecatedArgs(Some(true))) match {
-      case Some(Nil) =>
-        t.copy(
-          fields = (_: __DeprecatedArgs) =>
-            Some(
-              List(
-                __Field(
-                  "_",
-                  Some(
-                    "SymphonyQL does not support empty objects. Do not query, use __typename instead."
-                  ),
-                  _ => Nil,
-                  () => Types.mkScalar("Boolean")
-                )
-              )
-            )
-        )
-      case _         => t
-    }
-
   def getName(info: TypeInfo): String =
     info.typeParams match {
       case Nil  => info.short

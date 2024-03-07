@@ -212,6 +212,23 @@ trait GenericSchema extends SchemaDerivation {
       override def analyze(value: A): Stage      = PureStage(toOutput(value))
     }
 
+  def mkUnion[A](
+    name: Option[String],
+    description: Option[String],
+    subSchemas: List[(String, Schema[Any])],
+    directives: List[Directive] = List.empty
+  ): Schema[A] =
+    new Schema[A] {
+      override def analyze(value: A): Stage = {
+        val name   = value.getClass.getSimpleName
+        val schema = subSchemas.toMap.get(name)
+        schema.map(s => s.analyze(value)).getOrElse(Stage.NullStage)
+      }
+
+      override def tpe(isInput: Boolean): __Type =
+        Types.mkUnion(name, description, subSchemas.map(_._2.lazyType(isInput)), directives = Some(directives))
+    }
+
   def mkObject[A](
     name: String,
     description: Option[String],
@@ -297,19 +314,26 @@ trait GenericSchema extends SchemaDerivation {
       override def tpe(isInput: Boolean = false): __Type = outputSchema.lazyType(isInput)
       override def analyze(value: A => B): Stage         =
         FunctionStage { args =>
-          val builder    = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args))
-          val fixBuilder = inputType.kind match {
-            case __TypeKind.SCALAR | __TypeKind.ENUM | __TypeKind.LIST =>
-              builder.fold(
-                error => args.get("value").fold[Either[ArgumentError, A]](Left(error))(argumentExtractor.extract),
-                Right(_)
-              )
-            case _                                                     => builder
+          var builder: Either[ArgumentError, A] = null
+          // Fix Java RuntimeException
+          try {
+            builder = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args))
+            val fixBuilder = inputType.kind match {
+              case __TypeKind.SCALAR | __TypeKind.ENUM | __TypeKind.LIST =>
+                builder.fold(
+                  error => args.get("value").fold[Either[ArgumentError, A]](Left(error))(argumentExtractor.extract),
+                  Right(_)
+                )
+              case _                                                     => builder
+            }
+            fixBuilder.fold(
+              error => ScalaSourceStage(scaladsl.Source.failed(error)),
+              input => outputSchema.analyze(value(input))
+            )
+          } catch {
+            case e: RuntimeException =>
+              ScalaSourceStage(scaladsl.Source.failed(e))
           }
-          fixBuilder.fold(
-            error => ScalaSourceStage(scaladsl.Source.failed(error)),
-            input => outputSchema.analyze(value(input))
-          )
         }
     }
 

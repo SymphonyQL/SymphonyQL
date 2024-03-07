@@ -58,7 +58,7 @@ trait SchemaDerivation extends BaseDerivation {
               Types.mkUnion(
                 typeName,
                 typeDesc,
-                subTypes.map { case (_, t, _) => fixEmptyUnionObject(t) },
+                subTypes.map { case (_, t, _) => Utils.fixEmptyUnionObject(t) },
                 Some(info.full)
               )
             } else {
@@ -94,7 +94,7 @@ trait SchemaDerivation extends BaseDerivation {
           def tpe(isInput: Boolean): __Type =
             if (isInput) {
               val name      = annotations.collectFirst { case GQLInputName(suffix) => suffix }
-                .getOrElse(customInputTypeName(getName(annotations, info)))
+                .getOrElse(Utils.customInputTypeName(getName(annotations, info)))
               val fieldList = fields.map { case (label, _, schema, _) =>
                 val fieldAnnotations = paramAnnotations.getOrElse(label, Nil)
                 __InputValue(

@@ -9,6 +9,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import scala.jdk.javaapi.OptionConverters;
 import scala.util.Either;
+import scala.util.Left;
 import scala.util.Right;
 import symphony.annotations.java.GQLDefault;
 import symphony.apt.Constant;
@@ -34,6 +35,7 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
     // scala classes
     protected static final ClassName EITHER_CLASS = ClassName.get(Either.class);
     protected static final ClassName RIGHT_CLASS = ClassName.get(Right.class);
+    protected static final ClassName LEFT_CLASS = ClassName.get(Left.class);
     protected static final ClassName OPTION_CONVERTERS_CLASS = ClassName.get(OptionConverters.class);
 
     @Override
@@ -143,12 +145,13 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                     case $T obj -> {
                         yield $T.apply($L.apply(obj));
                     }
-                    default -> throw new RuntimeException("Expected EnumValue or StringValue");
+                    default -> $T.apply(new $T($S));
                 };
                 """, List.of(SYMPHONYQL_ENUM_VALUE_CLASS, // 2
                 RIGHT_CLASS, Constant.CREATE_OBJECT_FUNCTION, // 3
                 SYMPHONYQL_STRING_VALUE_CLASS, // 5
-                RIGHT_CLASS, Constant.CREATE_OBJECT_FUNCTION // 6
+                RIGHT_CLASS, Constant.CREATE_OBJECT_FUNCTION, // 6
+                LEFT_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, "Expected EnumValue or StringValue" // 8
         ).toArray()).build();
         generateObjectBody(builder, typeName, applyCode, fieldSpec);
     }
@@ -256,9 +259,12 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                     case $T obj -> {
                         yield $T.apply($L.apply(obj));
                     }
-                    default -> throw new RuntimeException("Expected ObjectValue");
+                    default -> $T.apply(new $T($S));
                 };
-                """, List.of(SYMPHONYQL_OBJECT_VALUE_CLASS, RIGHT_CLASS, Constant.CREATE_OBJECT_FUNCTION).toArray()).build();
+                """, List.of(
+                        SYMPHONYQL_OBJECT_VALUE_CLASS, RIGHT_CLASS, Constant.CREATE_OBJECT_FUNCTION,
+                LEFT_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, "Expected ObjectValue"
+        ).toArray()).build();
         var fieldSpec = FieldSpec.builder(functionType, Constant.CREATE_OBJECT_FUNCTION, Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
                 .initializer("$L", TypeSpec.anonymousClassBuilder("")
                         .addSuperinterface(functionType)
@@ -317,7 +323,7 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
                         .addAnnotation(Override.class)
                         .addModifiers(Modifier.PUBLIC)
                         .addParameter(SYMPHONYQL_INPUTVALUE_CLASS, "input")
-                        .returns(ParameterizedTypeName.get(EITHER_CLASS, SYMPHONYQL_ERROR_CLASS, typeName))
+                        .returns(ParameterizedTypeName.get(EITHER_CLASS, SYMPHONYQL_ARG_ERROR_CLASS, typeName))
                         .addCode(applyCode).build());
 
         // public static final ArgumentExtractor<T> extractor = extractor(); 

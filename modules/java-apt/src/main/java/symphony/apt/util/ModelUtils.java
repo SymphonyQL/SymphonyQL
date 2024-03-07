@@ -21,6 +21,7 @@ import javax.lang.model.util.ElementFilter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import symphony.apt.Constant;
+import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.model.MethodInfo;
 
 public final class ModelUtils {
@@ -76,6 +77,21 @@ public final class ModelUtils {
       final var variableName = TypeUtils.getSimpleName(variable);
       result.put(variableName, variable);
     }
+    return result;
+  }
+
+  public static Map<String, Element> getPermittedSubclasses(final TypeElement typeElement) {
+    final List<? extends TypeMirror> elements = typeElement.getPermittedSubclasses();
+    final var result = new LinkedHashMap<String, Element>();
+    final var env = ProcessorContextHolder.getProcessingEnvironment();
+    final var typeUtils = env.getTypeUtils();
+
+    for (final var element : elements) {
+      final var el = typeUtils.asElement(element);
+      final var simpleName = TypeUtils.getSimpleName(el);
+      result.put(simpleName, el);
+    }
+
     return result;
   }
 

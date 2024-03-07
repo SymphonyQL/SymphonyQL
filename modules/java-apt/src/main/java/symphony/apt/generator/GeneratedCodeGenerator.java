@@ -37,6 +37,8 @@ import symphony.schema.builder.EnumValueBuilder;
 import symphony.schema.builder.FieldBuilder;
 import symphony.schema.builder.InputObjectBuilder;
 import symphony.schema.builder.ObjectBuilder;
+import symphony.schema.builder.UnionBuilder;
+import symphony.schema.derivation.Utils;
 
 import javax.annotation.processing.FilerException;
 import javax.lang.model.element.Element;
@@ -60,7 +62,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
     protected static final ClassName EXTRACTOR_CLASS = ClassName.get(ArgumentExtractor.class);
     protected static final ClassName SYMPHONYQL_INPUTVALUE_CLASS = ClassName.get(SymphonyQLInputValue.class);
     protected static final ClassName SYMPHONYQL_VALUE_CLASS = ClassName.get(SymphonyQLValue.class);
-    protected static final ClassName SYMPHONYQL_ERROR_CLASS = ClassName.get(SymphonyQLError.ArgumentError.class);
+    protected static final ClassName SYMPHONYQL_ARG_ERROR_CLASS = ClassName.get(SymphonyQLError.ArgumentError.class);
     protected static final ClassName SYMPHONYQL_OBJECT_VALUE_CLASS = ClassName.get(SymphonyQLInputValue.ObjectValue.class);
     protected static final ClassName SYMPHONYQL_ENUM_VALUE_CLASS = ClassName.get(SymphonyQLValue.EnumValue.class);
     protected static final ClassName SYMPHONYQL_STRING_VALUE_CLASS = ClassName.get(SymphonyQLValue.StringValue.class);
@@ -69,6 +71,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
     protected static final ClassName ENUM_VALUE_CLASS = ClassName.get(__EnumValue.class);
     protected static final ClassName OBJECT_BUILDER_CLASS = ClassName.get(ObjectBuilder.class);
     protected static final ClassName INPUT_OBJECT_BUILDER_CLASS = ClassName.get(InputObjectBuilder.class);
+    protected static final ClassName UNION_BUILDER_CLASS = ClassName.get(UnionBuilder.class);
 
     // function
     protected static final ParameterizedTypeName BUILD_FIELD_FUNCTION_TYPE = ParameterizedTypeName.get(ClassName.get(Function.class),
@@ -82,6 +85,10 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
     }
 
     protected abstract void generateBody(CodeGeneratorContext context, TypeSpec.Builder builder) throws Exception;
+
+    private static final String unionSchemaMethodTemplate = """
+            newObject.subSchema($S, $T.$N);
+            """;
 
     private static final String objectInputFieldMethodTemplate = """
             newObject.field(
@@ -176,19 +183,25 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
             final TypeSpec.Builder builder,
             final TypeElement typeElement
     ) {
-        var fieldElements = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
         var typeName = TypeUtils.getTypeName(typeElement);
         var returnType = ParameterizedTypeName.get(SCHEMA_CLASS, typeName);
         var builderSchema = objectMethodBuilder(returnType, builderName, typeElement);
-        for (final var elementEntry : fieldElements.entrySet()) {
-            var realName = getName(elementEntry.getValue()).orElse(elementEntry.getKey());
-            var args = new ArrayList<>(List.of(BUILD_FIELD_FUNCTION_TYPE, FIELD_CLASS, FIELD_BUILDER_CLASS, realName));
-            if (INPUT_OBJECT_BUILDER_CLASS.equals(builderName)) {
-                builderSchema.addCode(inputObjectFieldCreator.buildField(typeElement, elementEntry, args));
-            } else {
+        if (builderName.equals(INPUT_OBJECT_BUILDER_CLASS)) {
+            var fieldElements = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
+            for (final var elementEntry : fieldElements.entrySet()) {
+                builderSchema.addCode(inputObjectFieldCreator.build(typeElement, elementEntry));
+            }
+        } else if (builderName.equals(OBJECT_BUILDER_CLASS)) {
+            var fieldElements = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
+            for (final var elementEntry : fieldElements.entrySet()) {
                 if (!isExcludedField(elementEntry.getValue())) {
-                    builderSchema.addCode(objectFieldCreator.buildField(typeElement, elementEntry, args));
+                    builderSchema.addCode(objectFieldCreator.build(typeElement, elementEntry));
                 }
+            }
+        } else if (builderName.equals(UNION_BUILDER_CLASS)) {
+            var fieldElements = ModelUtils.getPermittedSubclasses(typeElement);
+            for (var elementEntry : fieldElements.entrySet()) {
+                builderSchema.addCode(unionSchemaCreator.build(typeElement, elementEntry));
             }
         }
 
@@ -205,25 +218,35 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         );
     }
 
-    private interface FieldCreator {
-        CodeBlock buildField(
+    private interface Creator<T extends Element> {
+        CodeBlock build(
                 final TypeElement typeElement,
-                final Map.Entry<String, RecordComponentElement> fieldElements,
-                final List<Object> list);
+                final Map.Entry<String, T> elementEntry
+        );
     }
 
-    final FieldCreator objectFieldCreator = new ObjectFieldCreator();
-    final FieldCreator inputObjectFieldCreator = new InputObjectFieldCreator();
+    final Creator<RecordComponentElement> objectFieldCreator = new ObjectFieldCreator();
+    final Creator<RecordComponentElement> inputObjectFieldCreator = new InputObjectFieldCreator();
+    final Creator<Element> unionSchemaCreator = new UnionSchemaCreator();
 
-    private class ObjectFieldCreator implements FieldCreator {
+
+    private static class UnionSchemaCreator implements Creator<Element> {
+
         @Override
-        public CodeBlock buildField(
+        public CodeBlock build(TypeElement typeElement, Map.Entry<String, Element> elementEntry) {
+            var args = List.of(elementEntry.getKey(), ClassName.get("", Constant.SCHEMA_SUFFIX.apply(elementEntry.getKey())), Constant.SCHEMA_METHOD_NAME);
+            return CodeBlock.builder().add(unionSchemaMethodTemplate, args.toArray()).build();
+        }
+    }
+
+    private class ObjectFieldCreator implements Creator<RecordComponentElement> {
+        @Override
+        public CodeBlock build(
                 final TypeElement typeElement,
-                final Map.Entry<String, RecordComponentElement> fieldElements,
-                final List<Object> list
+                final Map.Entry<String, RecordComponentElement> elementEntry
         ) {
-            var name = fieldElements.getKey();
-            var fieldElement = fieldElements.getValue();
+            var name = elementEntry.getKey();
+            var fieldElement = elementEntry.getValue();
             var typeName = TypeUtils.getTypeName(typeElement);
             var type = TypeUtils.getTypeName(fieldElement);
             var rawType = TypeUtils.getRawTypeName(type);
@@ -231,6 +254,8 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
             var fieldFunctionType = ParameterizedTypeName.get(ClassName.get(Function.class), typeName, fieldValueType);
             var fieldValueArgs = List.of(fieldFunctionType, fieldValueType, typeName, name);
             var annotationVarargs = getAnnotationVarargs(fieldElement);
+            var realName = getName(elementEntry.getValue()).orElse(elementEntry.getKey());
+            var list = List.of(BUILD_FIELD_FUNCTION_TYPE, FIELD_CLASS, FIELD_BUILDER_CLASS, realName);
             TypeUtils.classifyType(rawType);
             return switch (TypeUtils.classifyType(rawType)) {
                 case DEFAULT_OR_PRIMITIVE_TYPE -> {
@@ -272,19 +297,19 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         }
     }
 
-    private class InputObjectFieldCreator implements FieldCreator {
+    private class InputObjectFieldCreator implements Creator<RecordComponentElement> {
 
         @Override
-        public CodeBlock buildField(
+        public CodeBlock build(
                 final TypeElement typeElement,
-                final Map.Entry<String, RecordComponentElement> fieldElements,
-                final List<Object> list
+                final Map.Entry<String, RecordComponentElement> elementEntry
         ) {
-            var fieldElement = fieldElements.getValue();
+            var fieldElement = elementEntry.getValue();
             var type = TypeUtils.getTypeName(fieldElement);
             var rawType = TypeUtils.getRawTypeName(type);
             var annotationVarargs = getAnnotationVarargs(fieldElement);
-            TypeUtils.classifyType(rawType);
+            var realName = getName(elementEntry.getValue()).orElse(elementEntry.getKey());
+            var list = List.of(BUILD_FIELD_FUNCTION_TYPE, FIELD_CLASS, FIELD_BUILDER_CLASS, realName);
             return switch (TypeUtils.classifyType(rawType)) {
                 case DEFAULT_OR_PRIMITIVE_TYPE -> {
                     var args = new ArrayList<>(list);
@@ -319,7 +344,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
     ) {
         var parameterizedTypeName = TypeUtils.getTypeName(typeElement);
         var name = objectBuilder.equals(INPUT_OBJECT_BUILDER_CLASS)
-                ? getInputName(typeElement).orElse(TypeUtils.getSimpleName(typeElement) + "Input")
+                ? getInputName(typeElement).orElse(Utils.customInputTypeName(TypeUtils.getSimpleName(typeElement)))
                 : getName(typeElement).orElse(TypeUtils.getSimpleName(typeElement));
         return MethodSpec.methodBuilder(Constant.SCHEMA_METHOD_NAME)
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)

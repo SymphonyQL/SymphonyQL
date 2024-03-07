@@ -58,7 +58,8 @@ object SymphonyQLError {
     msg: String,
     locationInfo: Option[LocationInfo] = None,
     extensions: Option[ObjectValue] = None
-  ) extends SymphonyQLError {
+  ) extends RuntimeException(msg)
+      with SymphonyQLError {
 
     def this(msg: String) =
       this(msg, None, None)
