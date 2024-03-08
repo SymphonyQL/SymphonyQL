@@ -1,6 +1,5 @@
 package symphony.apt.util;
 
-import com.squareup.javapoet.TypeName;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -9,7 +8,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -95,27 +93,17 @@ public final class ModelUtils {
     return result;
   }
 
-  public static Map<String, RecordComponentElement> getVariableTypes(
-      final TypeElement typeElement, final Predicate<Element> predicate) {
-    final List<? extends Element> elements = typeElement.getEnclosedElements();
-    final var variables = ElementFilter.recordComponentsIn(elements);
+  public static Map<String, RecordComponentElement> getRecordComponents(
+      final TypeElement typeElement) {
+    final var elements = typeElement.getRecordComponents();
     final var result = new LinkedHashMap<String, RecordComponentElement>();
 
-    for (final var variable : variables) {
-      if (predicate.test(variable)) {
-        final var variableName = TypeUtils.getSimpleName(variable);
-        result.put(variableName, variable);
-      }
+    for (final var element : elements) {
+      final var variableName = TypeUtils.getSimpleName(element);
+      result.put(variableName, element);
     }
 
     return result;
-  }
-
-  public static Map<String, TypeName> getVariables(
-      final TypeElement typeElement, final Predicate<Element> predicate) {
-    return getVariableTypes(typeElement, predicate).entrySet().stream()
-        .map(entry -> Map.entry(entry.getKey(), TypeUtils.getTypeName(entry.getValue())))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   public static Pair<Collection<MethodInfo>, Collection<MethodInfo>> calculateMethodInfo(

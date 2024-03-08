@@ -6,7 +6,7 @@ custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/schem
 
 In Java, there is no metaprogramming, we use APT (Java Annotation Processing) to generate codes.
 
-## Core Annotations
+## Core annotations
 
 If we want to define it manually, we can use the builder class in `symphony.schema.builder.*` and add the `@IgnoreSchema` annotation on record class.
 
@@ -17,7 +17,7 @@ Then, we should create a class **under the same package**:
 
 If these are not provided, an error will be reported by javac on which type has `@IgnoreSchema`, such as `A or schema can't be found.`.
 
-### @EnumSchema
+### `@EnumSchema`
 
 Defining GraphQL **Enum Type**, for example:
 ```java
@@ -38,7 +38,7 @@ enum Origin {
 }
 ```
 
-### @InputSchema
+### `@InputSchema`
 
 Defining GraphQL **Input Object Type**, for example:
 ```java
@@ -70,7 +70,7 @@ input NestedArgInput {
 }
 ```
 
-### @ObjectSchema
+### `@ObjectSchema`
 
 Defining simple GraphQL **Object Type**, for example:
 ```java
@@ -107,43 +107,130 @@ type Queries {
 }
 ```
 
-## Helper Annotations
+### `@UnionSchema`
+
+Defining simple GraphQL **Union Type**, for example:
+```java
+@UnionSchema
+public sealed interface SearchResult permits Book, Author {
+}
+
+@ObjectSchema
+record Book(String title) implements SearchResult {
+}
+
+@ObjectSchema
+record Author(String name) implements SearchResult {
+}
+```
+
+The snippet above will produce the following GraphQL type:
+```graphql
+union SearchResult = Book | Author
+
+type Author {
+    name: String
+}
+
+type Book {
+    title: String
+}
+```
+
+### `@InterfaceSchema`
+
+Defining simple GraphQL **Interface Type**, for example:
+```java
+@InterfaceSchema
+public sealed interface NestedInterface {
+}
+
+
+@InterfaceSchema
+sealed interface Mid1 extends NestedInterface {
+}
+
+@InterfaceSchema
+sealed interface Mid2 extends NestedInterface {
+}
+
+@ObjectSchema
+record FooA(String a, String b, String c) implements Mid1 {
+}
+
+@ObjectSchema
+record FooB(String b, String c, String d) implements Mid1, Mid2 {
+}
+
+@ObjectSchema
+record FooC(String b, String d, String e) implements Mid2 {
+}
+```
+
+The snippet above will produce the following GraphQL type:
+```graphql
+interface Mid1 implements NestedInterface {
+    b: String
+    c: String
+}
+
+interface Mid2 implements NestedInterface {
+    b: String
+    d: String
+}
+
+interface NestedInterface {
+    b: String
+}
+
+type FooA implements Mid1 {
+    a: String
+    b: String
+    c: String
+}
+
+type FooB implements Mid1 & Mid2 {
+    b: String
+    c: String
+    d: String
+}
+
+type FooC implements Mid2 {
+    b: String
+    d: String
+    e: String
+}
+```
+
+### `@IgnoreSchema`
+
+Annotation to ignore class from SymphonyQL's processing.
+
+## Tool Annotations
 
 1. Fields refer to components of the record class.
 2. Type refers to the record class
 
-### @IgnoreSchema
-
-Annotation to ignore class from SymphonyQL's processing.
-
-### @GQLDefault
+### `@GQLDefault`
 
 Annotation to specify the default value of an input field.
 
-### @GQLDeprecated
+### `@GQLDeprecated`
 
 Annotation used to indicate a type or a field is deprecated.
 
-### @GQLDescription
+### `@GQLDescription`
 
 Annotation used to provide a description to a field or a type.
 
-### @GQLExcluded
+### `@GQLExcluded`
 
 Annotation used to exclude a field from a type.
 
-### @GQLInputName
+### `@GQLInputName`
 
 Annotation used to customize the name of an input type.
 
-### @GQLInterface
-
-Annotation to make an interface type.
-
-### @GQLName
+### `@GQLName`
 
 Annotation used to provide an alternative name to a field or a type.
-
-### @GQLUnion
-
-Annotation to make an interface a union instead of an interface.

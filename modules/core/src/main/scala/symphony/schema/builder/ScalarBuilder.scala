@@ -8,7 +8,7 @@ import scala.jdk.FunctionConverters.*
 import scala.jdk.OptionConverters.*
 
 object ScalarBuilder {
-  def newObject[A](): ScalarBuilder[A] = new ScalarBuilder[A]
+  def newScalar[A](): ScalarBuilder[A] = new ScalarBuilder[A]
 }
 
 final class ScalarBuilder[A] {

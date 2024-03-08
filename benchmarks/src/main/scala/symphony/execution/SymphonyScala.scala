@@ -6,7 +6,7 @@ import symphony.schema.builder.ObjectBuilder
 
 import scala.concurrent.Future
 
-object Symphony {
+object SymphonyScala {
   import symphony.schema.*
 
   case class CharactersArgs(origin: Option[Origin])

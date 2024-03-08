@@ -193,12 +193,13 @@ trait GenericSchema extends SchemaDerivation {
     name: String,
     description: Option[String] = None,
     values: List[__EnumValue],
+    origin: Option[String] = None,
     repr: A => String,
     directives: List[Directive] = List.empty
   ): Schema[A] = new Schema[A] {
     private val validEnumValues                = values.map(_.name).toSet
     override def tpe(isInput: Boolean): __Type =
-      Types.mkEnum(Some(name), description, values, None, if (directives.nonEmpty) Some(directives) else None)
+      Types.mkEnum(Some(name), description, values, origin, if (directives.nonEmpty) Some(directives) else None)
     override def analyze(value: A): Stage      = {
       val asString = repr(value)
       if (validEnumValues.contains(asString)) PureStage(EnumValue(asString))
@@ -212,10 +213,11 @@ trait GenericSchema extends SchemaDerivation {
       override def analyze(value: A): Stage      = PureStage(toOutput(value))
     }
 
-  def mkUnion[A](
+  def mkInterface[A](
     name: Option[String],
     description: Option[String],
     subSchemas: List[(String, Schema[Any])],
+    origin: Option[String] = None,
     directives: List[Directive] = List.empty
   ): Schema[A] =
     new Schema[A] {
@@ -226,7 +228,46 @@ trait GenericSchema extends SchemaDerivation {
       }
 
       override def tpe(isInput: Boolean): __Type =
-        Types.mkUnion(name, description, subSchemas.map(_._2.lazyType(isInput)), directives = Some(directives))
+        val impl         = subSchemas.map(_._2.lazyType(isInput).copy(interfaces = () => Some(List(tpe(isInput)))))
+        val commonFields = () =>
+          impl
+            .flatMap(_.fields(__DeprecatedArgs(Some(true))))
+            .flatten
+            .groupBy(_.name)
+            .filter { case (name, list) => list.lengthCompare(impl.size) == 0 }
+            .collect { case (name, list) =>
+              Types
+                .unify(list.map(_.`type`()))
+                .flatMap(t => list.headOption.map(_.copy(`type` = () => t)))
+            }
+            .flatten
+            .toList
+        Types.mkInterface(
+          name,
+          description,
+          commonFields,
+          impl,
+          origin,
+          directives = Some(directives)
+        )
+    }
+
+  def mkUnion[A](
+    name: Option[String],
+    description: Option[String],
+    subSchemas: List[(String, Schema[Any])],
+    origin: Option[String] = None,
+    directives: List[Directive] = List.empty
+  ): Schema[A] =
+    new Schema[A] {
+      override def analyze(value: A): Stage = {
+        val name   = value.getClass.getSimpleName
+        val schema = subSchemas.toMap.get(name)
+        schema.map(s => s.analyze(value)).getOrElse(Stage.NullStage)
+      }
+
+      override def tpe(isInput: Boolean): __Type =
+        Types.mkUnion(name, description, subSchemas.map(_._2.lazyType(isInput)), origin, Some(directives))
     }
 
   def mkObject[A](
@@ -314,7 +355,7 @@ trait GenericSchema extends SchemaDerivation {
       override def tpe(isInput: Boolean = false): __Type = outputSchema.lazyType(isInput)
       override def analyze(value: A => B): Stage         =
         FunctionStage { args =>
-          var builder    = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args))
+          val builder    = argumentExtractor.extract(SymphonyQLInputValue.ObjectValue(args))
           val fixBuilder = inputType.kind match {
             case __TypeKind.SCALAR | __TypeKind.ENUM | __TypeKind.LIST =>
               builder.fold(

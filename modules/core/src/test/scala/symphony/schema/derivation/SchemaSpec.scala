@@ -6,6 +6,7 @@ import symphony.*
 import symphony.schema.*
 import symphony.schema.derivation.*
 import symphony.annotations.scala.*
+import symphony.parser.DocumentRenderer
 import symphony.parser.adt.introspection.*
 
 class SchemaSpec extends AnyFunSpec with Matchers {
@@ -145,11 +146,72 @@ class SchemaSpec extends AnyFunSpec with Matchers {
     }
 
     it("enum-like sealed traits annotated with GQLUnion") {
-      hasType(Schema[EnumLikeUnion].lazyType(), "EnumLikeUnion", __TypeKind.UNION)
+      val doc = getDocument(Schema[EnumLikeUnion])
+      println(DocumentRenderer.render(doc))
+      DocumentRenderer.render(doc).trim shouldEqual
+        // https://spec.graphql.org/October2021/#sec-Objects
+        // An Object type must define one or more fields.
+        """union EnumLikeUnion = A | B
+          |
+          |type A {
+          |  "SymphonyQL does not support empty objects. Do not query, use __typename instead."
+          |  _: Boolean
+          |}
+          |
+          |type B {
+          |  "SymphonyQL does not support empty objects. Do not query, use __typename instead."
+          |  _: Boolean
+          |}""".stripMargin
+
     }
 
     it("enum-like sealed traits annotated with GQLInterface") {
-      hasType(Schema[EnumLikeInterface].lazyType(), "EnumLikeInterface", __TypeKind.INTERFACE)
+      val doc = getDocument(Schema[EnumLikeInterface])
+      println(DocumentRenderer.render(doc))
+      // https://spec.graphql.org/October2021/#sec-Interfaces
+      // An Interface type must define one or more fields.
+      DocumentRenderer.render(doc).trim shouldEqual
+        """interface EnumLikeInterface
+          |
+          |type A implements EnumLikeInterface
+          |
+          |type B implements EnumLikeInterface""".stripMargin
+    }
+
+    it("nested interfaces") {
+      val doc = getDocument(Schema[NestedInterface])
+      DocumentRenderer.render(doc).trim shouldEqual
+        """interface Mid1 implements NestedInterface {
+          |  b: String!
+          |  c: String!
+          |}
+          |
+          |interface Mid2 implements NestedInterface {
+          |  b: String!
+          |  d: String!
+          |}
+          |
+          |interface NestedInterface {
+          |  b: String!
+          |}
+          |
+          |type FooA implements Mid1 {
+          |  a: String!
+          |  b: String!
+          |  c: String!
+          |}
+          |
+          |type FooB implements Mid1 & Mid2 {
+          |  b: String!
+          |  c: String!
+          |  d: String!
+          |}
+          |
+          |type FooC implements Mid2 {
+          |  b: String!
+          |  d: String!
+          |  e: String!
+          |}""".stripMargin
     }
   }
 

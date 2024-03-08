@@ -3,3 +3,4 @@ symphony.apt.generator.EnumCodeGenerator
 symphony.apt.generator.ObjectCodeGenerator
 symphony.apt.generator.ArgumentExtractorCodeGenerator
 symphony.apt.generator.UnionCodeGenerator
+symphony.apt.generator.InterfaceCodeGenerator

@@ -5,7 +5,7 @@ package builder
 import symphony.parser.adt.Directive
 import symphony.parser.adt.introspection.*
 
-import scala.annotation.varargs
+import scala.annotation.*
 import scala.jdk.OptionConverters.*
 
 object FieldBuilder {

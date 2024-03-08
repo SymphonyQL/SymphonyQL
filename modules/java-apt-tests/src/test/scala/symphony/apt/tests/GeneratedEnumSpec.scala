@@ -4,6 +4,8 @@ import org.scalactic.Explicitly.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
 import symphony.parser.*
+import symphony.parser.*
+import symphony.schema.derivation.*
 
 class GeneratedEnumSpec extends AnyFunSpec with Matchers {
 

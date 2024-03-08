@@ -23,11 +23,9 @@ val argumentExtractor: ArgumentExtractor[FilterArgs] = {
 val enumSchema                                       = EnumBuilder
   .newEnum[Origin]()
   .name("Origin")
-  .values(
-    builder => builder.name("EARTH").isDeprecated(false).build(),
-    builder => builder.name("MARS").isDeprecated(false).build(),
-    builder => builder.name("BELT").isDeprecated(false).build()
-  )
+  .value(builder => builder.name("EARTH").isDeprecated(false).build())
+  .value(builder => builder.name("MARS").isDeprecated(false).build())
+  .value(builder => builder.name("BELT").isDeprecated(false).build())
   .serialize(new JavaFunction[Origin, String]() {
     override def apply(t: Origin): String = t.toString
   })

@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.*
 
 import symphony.parser.*
 import symphony.schema.*
+import symphony.schema.derivation.*
 
 class GeneratedObjectSpec extends AnyFunSpec with Matchers {
 
@@ -40,6 +41,43 @@ class GeneratedObjectSpec extends AnyFunSpec with Matchers {
           |
           |type Book {
           |  title: String
+          |}""".stripMargin
+    }
+
+    it("interface schema") {
+      val document = getDocument(NestedInterfaceSchema.schema)
+      val str      = DocumentRenderer.render(document).trim
+      str shouldEqual
+        """interface Mid1 implements NestedInterface {
+          |  b: String
+          |  c: String
+          |}
+          |
+          |interface Mid2 implements NestedInterface {
+          |  b: String
+          |  d: String
+          |}
+          |
+          |interface NestedInterface {
+          |  b: String
+          |}
+          |
+          |type FooA implements Mid1 {
+          |  a: String
+          |  b: String
+          |  c: String
+          |}
+          |
+          |type FooB implements Mid1 & Mid2 {
+          |  b: String
+          |  c: String
+          |  d: String
+          |}
+          |
+          |type FooC implements Mid2 {
+          |  b: String
+          |  d: String
+          |  e: String
           |}""".stripMargin
     }
 

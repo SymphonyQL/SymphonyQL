@@ -14,6 +14,10 @@ import scala.jdk.javaapi.OptionConverters
 
 trait ArgumentExtractor[T] { self =>
 
+  /**
+   * Java API
+   * This method is only available for object types.
+   */
   def defaultValue(default: Optional[String]): Either[ArgumentError, T] =
     defaultValue(OptionConverters.toScala(default))
 

@@ -29,6 +29,7 @@ public final class Constant {
 
   public static final String CREATE_ENUM_ERROR_MSG = "Cannot build enum %s from input";
   public static final String CREATE_ERROR_MSG = "Cannot build %s from input";
+  public static final String CREATE_NOT_FOUND_ERROR_MSG = "%s not found in input";
 
   public static final List<String> mapList = List.of(JAVA_MAP_CLASS);
 

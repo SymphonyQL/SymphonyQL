@@ -5,15 +5,15 @@ import symphony.parser.adt.Directive
 import symphony.parser.adt.introspection.*
 import symphony.schema.*
 
-import scala.annotation.*
+import scala.annotation.varargs
 import scala.jdk.FunctionConverters.*
 import scala.jdk.OptionConverters.*
 
-object UnionBuilder {
-  def newObject[A](): UnionBuilder[A] = new UnionBuilder[A]
+object InterfaceBuilder {
+  def newObject[A](): InterfaceBuilder[A] = new InterfaceBuilder[A]
 }
 
-final class UnionBuilder[A] private {
+final class InterfaceBuilder[A] private {
   private var name: String                            = _
   private var description: Option[String]             = None
   private var subSchemas: List[(String, Schema[Any])] = List.empty
@@ -50,7 +50,7 @@ final class UnionBuilder[A] private {
   }
 
   def build(): Schema[A] =
-    Schema.mkUnion(
+    Schema.mkInterface(
       Option(name),
       description,
       subSchemas.reverse,

@@ -24,11 +24,7 @@ public class ObjectCodeGenerator extends GeneratedCodeGenerator {
     if (annotation != null
         && !modifiers.contains(Modifier.ABSTRACT)
         && (kind == ElementKind.RECORD)) {
-      //      if (!annotation.withArgs()) {
       generateObject(OBJECT_BUILDER_CLASS, builder, typeElement);
-      //      } else {
-      //        generateObjectWithArg(builder, typeElement);
-      //      }
     } else {
       MessageUtils.message(
           Diagnostic.Kind.WARNING, "@ObjectSchema only support on record class: " + typeElement);

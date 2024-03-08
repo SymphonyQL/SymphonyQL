@@ -46,6 +46,7 @@ import java.lang.annotation.Target;
  *     private static Schema<SearchResult> schema() {
  *         UnionBuilder<SearchResult> newObject = UnionBuilder.newObject();
  *         newObject.description(Optional.ofNullable("SearchResult"));
+ *         newObject.origin(Optional.of("symphony.apt.tests.SearchResult"));
  *         newObject.name("SearchResult");
  *         newObject.subSchema("Book", BookSchema.schema);
  *         newObject.subSchema("Author", AuthorSchema.schema);

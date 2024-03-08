@@ -40,6 +40,7 @@ import java.lang.annotation.Target;
  *     public static Schema<OriginEnum> schema() {
  *         EnumBuilder<OriginEnum> newEnum = EnumBuilder.newEnum();
  *         newEnum.description(Optional.empty());
+ *         newEnum.origin(Optional.of("symphony.apt.tests.OriginEnum"));
  *         newEnum.name("OriginEnum");
  *         newEnum.serialize(new Function<OriginEnum, String>() {
  *             @Override

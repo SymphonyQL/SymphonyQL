@@ -274,6 +274,11 @@ public final class TypeUtils {
         }
     }
 
+    public static boolean noDefaultValue(TypeName typeName) {
+        MessageUtils.note(getParameterizedTypes(typeName).toString());
+        return getParameterizedTypes(typeName).stream().anyMatch(a -> TypeUtils.isEnumType(a) || TypeUtils.isDefaultOrPrimitiveType(a));
+    }
+    
     public static boolean isEnumType(TypeName typeName) {
         if (typeName instanceof ClassName className) {
             TypeElement typeElement = ProcessorContextHolder.getContext()

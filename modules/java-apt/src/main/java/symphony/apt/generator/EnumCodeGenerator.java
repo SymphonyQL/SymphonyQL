@@ -54,6 +54,7 @@ public class EnumCodeGenerator extends GeneratedCodeGenerator {
                 .returns(returnType)
                 .addStatement("$T<$T> newEnum = $T.newEnum()", ENUM_BUILDER_CLASS, typeName, ENUM_BUILDER_CLASS)
                 .addStatement("newEnum.description($L)", getDescription(typeElement))
+                .addStatement("newEnum.origin($L)", getOrigin(typeElement))
                 .addStatement("newEnum.name($S)", realName);
 
         builderSchema.addCode(SourceTextUtils.lines("""

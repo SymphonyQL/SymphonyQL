@@ -4,7 +4,7 @@ import symphony.parser.adt.Directive
 import symphony.parser.adt.introspection.*
 import symphony.schema.*
 
-import scala.annotation.varargs
+import scala.annotation.*
 import scala.jdk.OptionConverters.*
 
 object EnumValueBuilder {

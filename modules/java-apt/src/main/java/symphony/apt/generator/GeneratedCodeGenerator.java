@@ -36,6 +36,7 @@ import symphony.schema.builder.EnumBuilder;
 import symphony.schema.builder.EnumValueBuilder;
 import symphony.schema.builder.FieldBuilder;
 import symphony.schema.builder.InputObjectBuilder;
+import symphony.schema.builder.InterfaceBuilder;
 import symphony.schema.builder.ObjectBuilder;
 import symphony.schema.builder.UnionBuilder;
 import symphony.schema.derivation.Utils;
@@ -72,6 +73,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
     protected static final ClassName OBJECT_BUILDER_CLASS = ClassName.get(ObjectBuilder.class);
     protected static final ClassName INPUT_OBJECT_BUILDER_CLASS = ClassName.get(InputObjectBuilder.class);
     protected static final ClassName UNION_BUILDER_CLASS = ClassName.get(UnionBuilder.class);
+    protected static final ClassName INTERFACE_BUILDER_CLASS = ClassName.get(InterfaceBuilder.class);
 
     // function
     protected static final ParameterizedTypeName BUILD_FIELD_FUNCTION_TYPE = ParameterizedTypeName.get(ClassName.get(Function.class),
@@ -86,7 +88,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
 
     protected abstract void generateBody(CodeGeneratorContext context, TypeSpec.Builder builder) throws Exception;
 
-    private static final String unionSchemaMethodTemplate = """
+    private static final String subSchemaMethodTemplate = """
             newObject.subSchema($S, $T.$N);
             """;
 
@@ -187,12 +189,12 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         var returnType = ParameterizedTypeName.get(SCHEMA_CLASS, typeName);
         var builderSchema = objectMethodBuilder(returnType, builderName, typeElement);
         if (builderName.equals(INPUT_OBJECT_BUILDER_CLASS)) {
-            var fieldElements = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
+            var fieldElements = ModelUtils.getRecordComponents(typeElement);
             for (final var elementEntry : fieldElements.entrySet()) {
                 builderSchema.addCode(inputObjectFieldCreator.build(typeElement, elementEntry));
             }
         } else if (builderName.equals(OBJECT_BUILDER_CLASS)) {
-            var fieldElements = ModelUtils.getVariableTypes(typeElement, ModelUtils.createHasFieldPredicate(typeElement));
+            var fieldElements = ModelUtils.getRecordComponents(typeElement);
             for (final var elementEntry : fieldElements.entrySet()) {
                 if (!isExcludedField(elementEntry.getValue())) {
                     builderSchema.addCode(objectFieldCreator.build(typeElement, elementEntry));
@@ -202,6 +204,11 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
             var fieldElements = ModelUtils.getPermittedSubclasses(typeElement);
             for (var elementEntry : fieldElements.entrySet()) {
                 builderSchema.addCode(unionSchemaCreator.build(typeElement, elementEntry));
+            }
+        } else if (builderName.equals(INTERFACE_BUILDER_CLASS)) {
+            var fieldElements = ModelUtils.getPermittedSubclasses(typeElement);
+            for (var elementEntry : fieldElements.entrySet()) {
+                builderSchema.addCode(interfaceSchemaCreator.build(typeElement, elementEntry));
             }
         }
 
@@ -228,6 +235,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
     final Creator<RecordComponentElement> objectFieldCreator = new ObjectFieldCreator();
     final Creator<RecordComponentElement> inputObjectFieldCreator = new InputObjectFieldCreator();
     final Creator<Element> unionSchemaCreator = new UnionSchemaCreator();
+    final Creator<Element> interfaceSchemaCreator = new UnionSchemaCreator();
 
 
     private static class UnionSchemaCreator implements Creator<Element> {
@@ -235,7 +243,7 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         @Override
         public CodeBlock build(TypeElement typeElement, Map.Entry<String, Element> elementEntry) {
             var args = List.of(elementEntry.getKey(), ClassName.get("", Constant.SCHEMA_SUFFIX.apply(elementEntry.getKey())), Constant.SCHEMA_METHOD_NAME);
-            return CodeBlock.builder().add(unionSchemaMethodTemplate, args.toArray()).build();
+            return CodeBlock.builder().add(subSchemaMethodTemplate, args.toArray()).build();
         }
     }
 
@@ -346,12 +354,16 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         var name = objectBuilder.equals(INPUT_OBJECT_BUILDER_CLASS)
                 ? getInputName(typeElement).orElse(Utils.customInputTypeName(TypeUtils.getSimpleName(typeElement)))
                 : getName(typeElement).orElse(TypeUtils.getSimpleName(typeElement));
-        return MethodSpec.methodBuilder(Constant.SCHEMA_METHOD_NAME)
+        var fullTypeName = objectBuilder.equals(UNION_BUILDER_CLASS) || objectBuilder.equals(INTERFACE_BUILDER_CLASS) ? Optional.of(typeElement.toString()) : Optional.<String>empty();
+        var methodBuilder = MethodSpec.methodBuilder(Constant.SCHEMA_METHOD_NAME)
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .returns(returnType)
                 .addStatement("$T<$T> newObject = $T.newObject()", objectBuilder, parameterizedTypeName, objectBuilder)
-                .addStatement("newObject.description($L)", getDescription(typeElement))
-                .addStatement("newObject.name($S)", name);
+                .addStatement("newObject.description($L)", getDescription(typeElement));
+
+        fullTypeName.ifPresent(n -> methodBuilder.addStatement("newObject.origin($L)", getOrigin(typeElement)));
+        methodBuilder.addStatement("newObject.name($S)", name);
+        return methodBuilder;
     }
 
     protected static CodeBlock getIsDeprecated(Element element) {
@@ -378,6 +390,11 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
         var description = TypeUtils.getAnnotation(GQLDescription.class, element);
         return description != null ? CodeBlock.of("$T.ofNullable($S)", ClassName.get(Optional.class), description.value()) :
                 CodeBlock.of("$T.empty()", ClassName.get(Optional.class));
+    }
+
+    protected static CodeBlock getOrigin(Element element) {
+        var typeName = TypeUtils.getTypeName(element);
+        return CodeBlock.of("$T.of($S)",ClassName.get(Optional.class), typeName.toString());
     }
 
     protected static CodeBlock getDeprecatedReason(Element element) {

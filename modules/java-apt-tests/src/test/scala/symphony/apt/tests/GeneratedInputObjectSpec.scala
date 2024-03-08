@@ -4,6 +4,7 @@ import org.scalactic.Explicitly.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
 import symphony.parser.*
+import symphony.schema.derivation.*
 
 class GeneratedInputObjectSpec extends AnyFunSpec with Matchers {
 
@@ -52,7 +53,7 @@ class GeneratedInputObjectSpec extends AnyFunSpec with Matchers {
     }
 
     it("complex input schema") {
-      val document = getDocument(InputObjectInputSchema.schema)
+      val document = getDocument(InputObjectInputSchema.schema, true)
       val str      = DocumentRenderer.render(document).trim
       str shouldEqual
         """scalar BigDecimal
@@ -63,6 +64,27 @@ class GeneratedInputObjectSpec extends AnyFunSpec with Matchers {
           |  EARTH @deprecated(reason: "deprecated")
           |  MARS
           |  BELT
+          |}
+          |
+          |"InputObject"
+          |input InputObjectInput {
+          |  originEnum: GQLOriginEnum!
+          |  org: GQLOriginEnum
+          |  "Optional"
+          |  optionalString: String
+          |  ssOptionalEnum: [[GQLOriginEnum]!]!
+          |  sString: [String]!
+          |  ssString: [[String]!]!
+          |  stringV: String
+          |  intV: Int!
+          |  doubleV: Float!
+          |  floatV: Float!
+          |  shortV: Short!
+          |  bigDecimalV: BigDecimal
+          |  optionalBigDecimal: BigDecimal
+          |  optionalNestedObject: NObjectInput
+          |  sNestedObject: [NObjectInput!]!
+          |  optionalNestedObjects: [NObjectInput!]
           |}
           |
           |"NestedObject"
@@ -81,27 +103,6 @@ class GeneratedInputObjectSpec extends AnyFunSpec with Matchers {
           |  shortV: Short!
           |  bigDecimalV: BigDecimal
           |  optionalBigDecimal: BigDecimal
-          |}
-          |
-          |"InputObject"
-          |type InputObjectInput {
-          |  originEnum: GQLOriginEnum!
-          |  org: GQLOriginEnum
-          |  "Optional"
-          |  optionalString: String @deprecated(reason: "deprecated")
-          |  ssOptionalEnum: [[GQLOriginEnum]!]!
-          |  sString: [String]!
-          |  ssString: [[String]!]!
-          |  stringV: String
-          |  intV: Int!
-          |  doubleV: Float!
-          |  floatV: Float!
-          |  shortV: Short!
-          |  bigDecimalV: BigDecimal
-          |  optionalBigDecimal: BigDecimal
-          |  optionalNestedObject: NObjectInput
-          |  sNestedObject: [NObjectInput!]!
-          |  optionalNestedObjects: [NObjectInput!]
           |}""".stripMargin
     }
 

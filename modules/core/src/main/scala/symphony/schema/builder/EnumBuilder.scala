@@ -4,7 +4,7 @@ import symphony.parser.adt.Directive
 import symphony.parser.adt.introspection.*
 import symphony.schema.*
 
-import scala.annotation.varargs
+import scala.annotation.*
 import scala.jdk.OptionConverters.*
 import scala.jdk.FunctionConverters.*
 
@@ -18,6 +18,7 @@ final class EnumBuilder[A] private {
   private var serialize: JavaFunction[A, String]                        = (t: A) => t.toString
   private var values: List[JavaFunction[EnumValueBuilder, __EnumValue]] = List.empty
   private var directives: List[Directive]                               = List.empty
+  private var origin: Option[String]                                    = None
 
   def name(name: String): this.type = {
     this.name = name
@@ -34,14 +35,8 @@ final class EnumBuilder[A] private {
     this
   }
 
-  @varargs
-  def values(builders: JavaFunction[EnumValueBuilder, __EnumValue]*): this.type = {
-    this.values = builders.toList
-    this
-  }
-
   def value(builder: JavaFunction[EnumValueBuilder, __EnumValue]): this.type = {
-    this.values = values ::: List(builder)
+    this.values = builder :: values
     this
   }
 
@@ -51,11 +46,17 @@ final class EnumBuilder[A] private {
     this
   }
 
+  def origin(origin: java.util.Optional[String]): this.type = {
+    this.origin = origin.toScala
+    this
+  }
+
   def build(): Schema[A] =
     Schema.mkEnum(
       name,
       description,
-      values.map(_.apply(EnumValueBuilder.newEnumValue())),
+      values.reverse.map(_.apply(EnumValueBuilder.newEnumValue())),
+      origin,
       serialize.asScala,
       directives
     )

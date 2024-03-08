@@ -4,9 +4,9 @@ sidebar_label: Defining the Schema - Scala
 custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/schema-scala.md
 ---
 
-In most cases, we can use `Schema.derived[A]` to automatically derive the schema, but if we want to define it manually, We can use the builder class in `symphony.schema.builder.*`.
+In most cases, we can use `Schema.derived[A]` to automatically derive the schema, but if we want to define it manually, we can use the builder class in `symphony.schema.builder.*`.
 
-## Manually Derivation
+## Creating a schema manually
 
 This is a Scala-defined SymphonyQL's API:
 ```scala
@@ -27,7 +27,7 @@ Schema.derived[Queries]
 
 If we want to customize it, we just need to define a new implicit.
 
-### EnumBuilder
+### `EnumBuilder`
 
 Defining SymphonyQL **Enum Type**, for example:
 ```scala
@@ -36,18 +36,16 @@ type JavaFunction[T, R] = java.util.function.Function[T, R]
 implicit val enumSchema: Schema[Origin] = EnumBuilder
   .newEnum[Origin]()
   .name("Origin")
-  .values(
-    builder => builder.name("EARTH").isDeprecated(false).build(),
-    builder => builder.name("MARS").isDeprecated(false).build(),
-    builder => builder.name("BELT").isDeprecated(false).build()
-  )
+  .value(builder => builder.name("EARTH").isDeprecated(false).build())
+  .value(builder => builder.name("MARS").isDeprecated(false).build())
+  .value(builder => builder.name("BELT").isDeprecated(false).build())
   .serialize(new JavaFunction[Origin, String]() {
     override def apply(t: Origin): String = t.toString
   })
   .build()
 ```
 
-### InputObjectBuilder
+### `InputObjectBuilder`
 
 Defining SymphonyQL **Input Object Type**, for example:
 ```scala
@@ -60,7 +58,7 @@ implicit val inputSchema: Schema[FilterArgs] = InputObjectBuilder
 
 `FilterArgs` will be tiled, so the input parameter is `origin` and `Option<Origin>` is the default supported type, no need for anything extra. For more types, please refer to the [Schema Specification](schema.md).
 
-### ObjectBuilder
+### `ObjectBuilder`
 
 Defining simple SymphonyQL **Object Type**, for example:
 ```scala
@@ -97,39 +95,121 @@ implicit val queriesSchema: Schema[Queries] = ObjectBuilder
 Each **resolver** can contain multiple fields, each of which is a Query/Mutation/Subscription API.
 For more types, please refer to the [Schema Specification](schema.md).
 
-## Helper Annotations
+### `InterfaceBuilder`
 
-1. Fields refer to components of the case class.
-2. Type refers to the case class
+Defining SymphonyQL **Interface Type**, for example:
+```scala
+implicit val newInterface = UnionBuilder.newObject[NestedInterface]
+    .description(Optional.ofNullable("NestedInterface"))
+    .origin(Optional.of("symphony.apt.tests.NestedInterface"))
+    .name("NestedInterface")
+    .subSchema("Mid1", summon[Schema[Mid1]])
+    .subSchema("Mid2", summon[Schema[Mid2]])
+    .build()
+```
 
-### @GQLDefault
+`Mid1` and `Mid2` are direct subclasses of the trait.
+
+### `UnionBuilder`
+
+Defining SymphonyQL **Union Type**, for example:
+```scala
+implicit val newUnion = UnionBuilder.newObject[SearchResult]
+    .description(Optional.ofNullable("SearchResult"))
+    .origin(Optional.of("symphony.apt.tests.SearchResult"))
+    .name("SearchResult")
+    .subSchema("Book", summon[Schema[Book]])
+    .subSchema("Author", summon[Schema[Author]])
+    .build()
+```
+
+`Book` and `Author` are direct subclasses of the trait.
+
+## Enums, unions, interfaces
+
+> If you don't want to manually define enumerations, interfaces and union schemas, please read here.
+
+A sealed trait will be converted to a different GraphQL type depending on its content:
+
+- a sealed trait with only case objects will be converted to an `ENUM`
+- a sealed trait with only case classes will be converted to a `UNION`
+
+GraphQL does not support empty objects, so in case a sealed trait mixes case classes and case objects, a union type will be created and the case objects will have a "fake" field named `_` which is not queryable:
+```scala
+sealed trait ORIGIN
+object ORIGIN {
+  case object EARTH extends ORIGIN
+  case object MARS  extends ORIGIN
+  case object BELT  extends ORIGIN
+}
+```
+
+The snippet above will produce the following GraphQL type:
+```graphql
+enum Origin {
+  BELT
+  EARTH
+  MARS
+}
+```
+
+Here's an example of union:
+```scala
+sealed trait Role
+object Role {
+  case class Captain(shipName: String) extends Role
+  case class Engineer(specialty: String) extends Role
+  case object Mechanic extends Role
+}
+```
+
+The snippet above will produce the following GraphQL type:
+```graphql
+union Role = Captain | Engineer | Mechanic
+
+type Captain {
+  shipName: String!
+}
+
+type Engineer {
+  specialty: String!
+}
+
+type Mechanic {
+  _: Boolean!
+}
+```
+
+## Tool annotations
+
+### `@GQLDefault`
 
 Annotation to specify the default value of an input field.
 
-### @GQLDeprecated
+### `@GQLDeprecated`
 
 Annotation used to indicate a type or a field is deprecated.
 
-### @GQLDescription
+### `@GQLDescription`
 
 Annotation used to provide a description to a field or a type.
 
-### @GQLExcluded
+### `@GQLExcluded`
 
 Annotation used to exclude a field from a type.
 
-### @GQLInputName
+### `@GQLInputName`
 
 Annotation used to customize the name of an input type.
 
-### @GQLInterface
+### `@GQLInterface`
 
 Annotation to make a sealed trait an interface instead of a union type or an enum.
 
-### @GQLName
+### `@GQLName`
 
 Annotation used to provide an alternative name to a field or a type.
 
-### @GQLUnion
+### `@GQLUnion`
 
 Annotation to make a sealed trait a union instead of an enum.
