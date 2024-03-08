@@ -2,14 +2,16 @@
 
 > A GraphQL implementation built with Apache Pekko.
 
-[![CI][Badge-CI]][Link-CI] [![CI][Badge-Codecov]][Link-Codecov]
+[![CI][Badge-CI]][Link-CI] 
+[![Badge-Codecov]][Link-Codecov] 
+[![Badge-Snapshots]][Link-Snapshots]
 
 [Badge-CI]: https://github.com/SymphonyQL/SymphonyQL/actions/workflows/ScalaCI.yml/badge.svg
 [Link-CI]: https://github.com/SymphonyQL/SymphonyQL/actions
 [Badge-Codecov]: https://codecov.io/gh/SymphonyQL/SymphonyQL/graph/badge.svg?token=00GZ559DH7
 [Link-Codecov]: https://codecov.io/gh/SymphonyQL/SymphonyQL
-[Badge-Snapshots]: https://img.shields.io/nexus/s/io.github.symphonyql/symphony-core_3?server=https%3A%2F%2Fs01.oss.sonatype.org
-[Link-Snapshots]: https://s01.oss.sonatype.org/content/repositories/snapshots/io/github/symphonyql/symphony-core_3
+[Badge-Snapshots]: https://img.shields.io/nexus/s/io.github.jxnu-liguobin/symphony-core_3?server=https%3A%2F%2Foss.sonatype.org
+[Link-Snapshots]: https://oss.sonatype.org/content/repositories/snapshots/io/github/jxnu-liguobin/symphony-core_3/
 
 
 ## Documentation
