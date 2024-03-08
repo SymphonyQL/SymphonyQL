@@ -147,7 +147,6 @@ class SchemaSpec extends AnyFunSpec with Matchers {
 
     it("enum-like sealed traits annotated with GQLUnion") {
       val doc = getDocument(Schema[EnumLikeUnion])
-      println(DocumentRenderer.render(doc))
       DocumentRenderer.render(doc).trim shouldEqual
         // https://spec.graphql.org/October2021/#sec-Objects
         // An Object type must define one or more fields.
@@ -167,7 +166,6 @@ class SchemaSpec extends AnyFunSpec with Matchers {
 
     it("enum-like sealed traits annotated with GQLInterface") {
       val doc = getDocument(Schema[EnumLikeInterface])
-      println(DocumentRenderer.render(doc))
       // https://spec.graphql.org/October2021/#sec-Interfaces
       // An Interface type must define one or more fields.
       DocumentRenderer.render(doc).trim shouldEqual

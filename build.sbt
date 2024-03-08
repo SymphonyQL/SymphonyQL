@@ -101,7 +101,7 @@ lazy val annotations = (project in file("modules/annotations"))
   )
 
 lazy val `java-apt` = (project in file("modules/java-apt"))
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
   .settings(
     commonSettings,
     name := "symphony-java-apt",
@@ -110,7 +110,7 @@ lazy val `java-apt` = (project in file("modules/java-apt"))
   )
 
 lazy val `java-apt-tests` = (project in file("modules/java-apt-tests"))
-  .dependsOn(core, `java-apt` % "compile->compile;test->test")
+  .dependsOn(core % "compile->compile;test->test", `java-apt` % "compile->compile;test->test")
   .settings(
     commonSettings,
     publish / skip := true,
