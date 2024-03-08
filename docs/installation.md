@@ -11,21 +11,22 @@ SymphonyQL only supports Scala3 and Java21.
 If you are building with sbt, add the following to your `project/plugins.sbt`:
 ```scala
 libraryDependencies ++= Seq(
-  "io.github.symphonyql" %% "symphony-core" % "<version>",
+  "io.github.jxnu-liguobin" %% "symphony-core" % "<version>",
   // a default http-server provided by pekko-http
-  "io.github.symphonyql" %% "symphony-server" % "<version>"
+  "io.github.jxnu-liguobin" %% "symphony-server" % "<version>"
 )
 ```
 
 If you want to develop SymphonyQL application using Java, you also need to add `symphony-java-apt` and some settings.
 
 Here is a complete configuration:
+> Temporary path
 ```scala
 Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed"
 libraryDependencies ++= Seq(
-  "io.github.symphonyql" %% "symphony-core" % "<version>",
-  "io.github.symphonyql" %% "symphony-server" % "<version>",
-  "io.github.symphonyql" %% "symphony-java-apt" % "<version>",
+  "io.github.jxnu-liguobin" %% "symphony-core" % "<version>",
+  "io.github.jxnu-liguobin" %% "symphony-server" % "<version>",
+  "io.github.jxnu-liguobin" %% "symphony-java-apt" % "<version>",
   "javax.annotation" % "javax.annotation-api" % "<version>"
 )
 Compile / javacOptions ++= Seq(
@@ -50,12 +51,12 @@ If you are building with maven, add the following to your `pom.xml`:
 
 <dependencies>
     <dependency>
-        <groupId>io.github.symphonyql</groupId>
+        <groupId>io.github.jxnu-liguobin</groupId>
         <artifactId>symphony-core_3</artifactId>
         <version>${symphonyql.version}</version>
     </dependency>
     <dependency>
-        <groupId>io.github.symphonyql</groupId>
+        <groupId>io.github.jxnu-liguobin</groupId>
         <artifactId>symphony-server_3</artifactId>
         <version>${symphonyql.version}</version>
     </dependency>
@@ -76,7 +77,7 @@ If you are building with maven, add the following to your `pom.xml`:
                 <forceJavacCompilerUse>true</forceJavacCompilerUse>
                 <annotationProcessorPaths>
                     <annotationProcessorPath>
-                        <groupId>io.github.symphonyql</groupId>
+                        <groupId>io.github.jxnu-liguobin</groupId>
                         <artifactId>symphony-java-apt</artifactId>
                         <version>${symphonyql.version}</version>
                     </annotationProcessorPath>
