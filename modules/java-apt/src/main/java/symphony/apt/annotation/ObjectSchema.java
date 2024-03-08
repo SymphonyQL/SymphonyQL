@@ -46,12 +46,19 @@ import java.lang.annotation.Target;
  *
  *     private static Schema<OutputObject> schema() {
  *         ObjectBuilder<OutputObject> newObject = ObjectBuilder.newObject();
+ *         newObject.description(Optional.empty());
  *         newObject.name("OutputObject");
  *         newObject.field(
  *             new Function<FieldBuilder, __Field>() {
  *                 @Override
  *                 public __Field apply(FieldBuilder builder) {
- *                     return builder.name("originEnum").schema(symphony.example.schema.complex.OriginEnumSchema.schema).build();
+ *                     return builder
+ *                     .name("originEnum")
+ *                     .schema(symphony.example.schema.complex.OriginEnumSchema.schema)
+ *                     .description(Optional.empty())
+ *                     .isDeprecated(false)
+ *                     .deprecationReason(Optional.empty())
+ *                     .build();
  *                 }
  *             },
  *             new Function<OutputObject, OriginEnum>() {
@@ -65,7 +72,13 @@ import java.lang.annotation.Target;
  *             new Function<FieldBuilder, __Field>() {
  *                 @Override
  *                 public __Field apply(FieldBuilder builder) {
- *                     return builder.name("optionalString").schema(Schema.createOptional((Schema<String>) Schema.getSchema("java.lang.String"))).build();
+ *                     return builder
+ *                     .name("optionalString")
+ *                     .schema(Schema.createOptional((Schema<String>) Schema.getSchema("java.lang.String")))
+ *                     .description(Optional.empty())
+ *                     .isDeprecated(false)
+ *                     .deprecationReason(Optional.empty())
+ *                     .build();
  *                 }
  *             },
  *             new Function<OutputObject, Optional<String>>() {
@@ -83,7 +96,7 @@ import java.lang.annotation.Target;
  * <p>Example2:<br>
  *
  * <pre>{@code
- * @ObjectSchema(withArgs = true)
+ * @ObjectSchema
  * record QueriesObject(
  *         Function<InputObject, Source<OutputObject, NotUsed>> characters,
  *         Function<InputObject, OutputObject> character,
@@ -115,12 +128,19 @@ import java.lang.annotation.Target;
  *
  *     private static Schema<QueriesObject> schema() {
  *         ObjectBuilder<QueriesObject> newObject = ObjectBuilder.newObject();
+ *         newObject.description(Optional.empty());
  *         newObject.name("QueriesObject");
  *         newObject.fieldWithArg(
  *                 new Function<FieldBuilder, __Field>() {
  *                     @Override
  *                     public __Field apply(FieldBuilder builder) {
- *                         return builder.name("characters").schema(Schema.createFunction(symphony.example.schema.complex.InputObjectInputSchema.schema, symphony.example.schema.complex.InputObjectExtractor.extractor, Schema.createSource(symphony.example.schema.complex.OutputObjectSchema.schema))).build();
+ *                         return builder
+ *                         .name("characters")
+ *                         .schema(Schema.createFunction(symphony.example.schema.complex.InputObjectInputSchema.schema, symphony.example.schema.complex.InputObjectExtractor.extractor, Schema.createSource(symphony.example.schema.complex.OutputObjectSchema.schema)))
+ *                         .description(Optional.empty())
+ *                         .isDeprecated(false)
+ *                         .deprecationReason(Optional.empty())
+ *                         .build();
  *                     }
  *                 },
  *                 new Function<QueriesObject, Function<InputObject, Source<OutputObject, NotUsed>>>() {
@@ -134,7 +154,13 @@ import java.lang.annotation.Target;
  *                 new Function<FieldBuilder, __Field>() {
  *                     @Override
  *                     public __Field apply(FieldBuilder builder) {
- *                         return builder.name("character").schema(Schema.createFunction(symphony.example.schema.complex.InputObjectInputSchema.schema, symphony.example.schema.complex.InputObjectExtractor.extractor, symphony.example.schema.complex.OutputObjectSchema.schema)).build();
+ *                         return builder
+ *                         .name("character")
+ *                         .schema(Schema.createFunction(symphony.example.schema.complex.InputObjectInputSchema.schema, symphony.example.schema.complex.InputObjectExtractor.extractor, symphony.example.schema.complex.OutputObjectSchema.schema))
+ *                         .description(Optional.empty())
+ *                         .isDeprecated(false)
+ *                         .deprecationReason(Optional.empty())
+ *                         .build();
  *                     }
  *                 },
  *                 new Function<QueriesObject, Function<InputObject, OutputObject>>() {
@@ -152,6 +178,4 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE})
-public @interface ObjectSchema {
-  boolean withArgs() default false;
-}
+public @interface ObjectSchema {}

@@ -9,13 +9,6 @@ public final class Constant {
     throw new UnsupportedOperationException();
   }
 
-  public static final String PARSER_PACKAGE = "symphony.parser";
-  public static final String SCHEMA_PACKAGE = "symphony.schema";
-  public static final String ADT_PACKAGE = "symphony.parser.adt.introspection";
-  public static final String BUILDER_PACKAGE = "symphony.schema.javadsl";
-  public static final String OBJECT_BUILDER = "ObjectBuilder";
-  public static final String INPUT_OBJECT_BUILDER = "InputObjectBuilder";
-
   public static final String NOT_USED_CLASS = "org.apache.pekko.NotUsed";
   public static final String JAVA_FUNCTION_CLASS = "java.util.function.Function";
   public static final String JAVA_SUPPLIER_CLASS = "java.util.function.Supplier";
@@ -36,7 +29,7 @@ public final class Constant {
 
   public static final String CREATE_ENUM_ERROR_MSG = "Cannot build enum %s from input";
   public static final String CREATE_ERROR_MSG = "Cannot build %s from input";
-  public static final String NOT_FOUND_ERROR_MSG = "%s was not found in input";
+  public static final String CREATE_NOT_FOUND_ERROR_MSG = "%s not found in input";
 
   public static final List<String> mapList = List.of(JAVA_MAP_CLASS);
 

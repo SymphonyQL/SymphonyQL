@@ -2,10 +2,12 @@
 
 > A GraphQL implementation built with Apache Pekko.
 
-[![CI][Badge-CI]][Link-CI]
+[![CI][Badge-CI]][Link-CI] [![CI][Badge-Codecov]][Link-Codecov]
 
 [Badge-CI]: https://github.com/SymphonyQL/SymphonyQL/actions/workflows/ScalaCI.yml/badge.svg
 [Link-CI]: https://github.com/SymphonyQL/SymphonyQL/actions
+[Badge-Codecov]: https://codecov.io/gh/SymphonyQL/SymphonyQL/graph/badge.svg?token=00GZ559DH7
+[Link-Codecov]: https://codecov.io/gh/SymphonyQL/SymphonyQL
 
 ## Documentation
 
@@ -13,7 +15,8 @@
 
 ## Highlights
 
-- having the least dependency, no adapters.
+- support for Java 21: record classes, sealed interface.
+- minimal dependencies, no adapter required.
 - native support for [Apache Pekko](https://github.com/apache/incubator-pekko), including Java and Scala.
 - minimal amount of boilerplate: no need to manually define a schema for every type in your API.
 

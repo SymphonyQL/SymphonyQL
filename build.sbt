@@ -3,15 +3,15 @@ import Dependencies.Versions.*
 inThisBuild(
   List(
     scalaVersion           := scala3_Version,
-    organization           := "org.symphonyql",
-    sonatypeCredentialHost := "s01.oss.sonatype.org",
+    organization           := "io.github.symphonyql",
+    sonatypeCredentialHost := "oss.sonatype.org",
     sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
     homepage               := Some(url("https://github.com/SymphonyQL")),
     licenses               := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
     developers             := List(
       Developer(
         id = "jxnu-liguobin",
-        name = "正在登陆",
+        name = "jxnu-liguobin",
         email = "dreamylost@outlook.com",
         url = url("https://github.com/jxnu-liguobin")
       )
@@ -21,9 +21,11 @@ inThisBuild(
 
 lazy val commonSettings =
   Seq(
-    Test / fork  := true,
-    run / fork   := true,
-    scalaVersion := scala3_Version,
+    Test / fork      := true,
+    run / fork       := true,
+    publish / skip   := false,
+    scalaVersion     := scala3_Version,
+    javafmtOnCompile := true,
     scalacOptions ++= Seq(
       "-language:dynamics",
       "-explain",
@@ -38,13 +40,15 @@ lazy val commonSettings =
     ) ++ Seq("-Xmax-inlines", "100")
   )
 
-lazy val root = (project in file("."))
+lazy val SymphonyQL = (project in file("."))
   .aggregate(
     core,
     parser,
     server,
     validator,
     `java-apt`,
+    `java-apt-tests`,
+    annotations,
     examples,
     benchmarks
   )
@@ -57,47 +61,71 @@ lazy val root = (project in file("."))
 lazy val validator = (project in file("modules/validator"))
   .dependsOn(parser)
   .settings(
-    publish / skip := false,
     commonSettings,
-    name           := "symphony-validator",
+    name := "symphony-validator",
     commands ++= Commands.value
   )
 
 lazy val parser = (project in file("modules/parser"))
+  .dependsOn(annotations)
   .settings(
-    publish / skip := false,
     commonSettings,
-    name           := "symphony-parser",
+    name := "symphony-parser",
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.parser.value
+    libraryDependencies ++= Dependencies.Deps.parser
   )
 
 lazy val core = (project in file("modules/core"))
-  .dependsOn(parser, validator)
+  .dependsOn(parser, validator, annotations)
   .settings(
-    publish / skip := false,
     commonSettings,
-    name           := "symphony-core",
+    name := "symphony-core",
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.core.value
+    libraryDependencies ++= Dependencies.Deps.core
   )
 
-lazy val server     = (project in file("modules/server"))
+lazy val server = (project in file("modules/server"))
   .dependsOn(core)
   .settings(
-    publish / skip := false,
     commonSettings,
-    name           := "symphony-server",
+    name := "symphony-server",
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.server.value
+    libraryDependencies ++= Dependencies.Deps.server
   )
-lazy val `java-apt` = (project in file("modules/java-apt"))
+
+lazy val annotations = (project in file("modules/annotations"))
   .settings(
-    publish / skip   := false,
-    name             := "symphony-java-apt",
+    commonSettings,
+    name := "symphony-annotations",
+    commands ++= Commands.value
+  )
+
+lazy val `java-apt` = (project in file("modules/java-apt"))
+  .dependsOn(core)
+  .settings(
+    commonSettings,
+    name := "symphony-java-apt",
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.apt.value,
-    javafmtOnCompile := true
+    libraryDependencies ++= Dependencies.Deps.apt
+  )
+
+lazy val `java-apt-tests` = (project in file("modules/java-apt-tests"))
+  .dependsOn(core % "compile->compile;test->test", `java-apt`)
+  .settings(
+    commonSettings,
+    publish / skip := true,
+    name           := "symphony-java-apt-tests",
+    commands ++= Commands.value,
+    Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed",
+    libraryDependencies ++= Dependencies.Deps.`apt-tests`,
+    Compile / javacOptions ++= Seq(
+      "-processor",
+      "symphony.apt.SymphonyQLProcessor",
+      "-s",
+      ((Compile / crossTarget).value / "src_managed").getAbsolutePath,
+      "-XprintRounds",
+      "-Xlint:deprecation"
+    )
   )
 
 lazy val examples = (project in file("examples"))
@@ -105,6 +133,7 @@ lazy val examples = (project in file("examples"))
   .settings(
     publish / skip := true,
     commonSettings,
+    compileOrder   := CompileOrder.JavaThenScala,
     commands ++= Commands.value,
     Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed",
     libraryDependencies ++= Seq(
@@ -126,17 +155,29 @@ lazy val benchmarks = project
   .settings(
     publish / skip := true
   )
-  .dependsOn(core)
+  .dependsOn(core, `java-apt`)
   .enablePlugins(JmhPlugin)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.ghostdogpr" %% "caliban"       % "2.5.1",
-      "org.apache.pekko"      %% "pekko-stream"  % `pekko-core_Version`,
-      "org.parboiled"         %% "parboiled"     % `parboiled_Version`,
-      "org.sangria-graphql"   %% "sangria"       % "4.1.0",
-      "org.sangria-graphql"   %% "sangria-circe" % "1.3.2",
-      "io.circe"              %% "circe-parser"  % "0.14.6",
-      "com.graphql-java"       % "graphql-java"  % "21.3"
+      "com.github.ghostdogpr" %% "caliban"              % "2.5.1",
+      "org.apache.pekko"      %% "pekko-stream"         % `pekko-core_Version`,
+      "org.parboiled"         %% "parboiled"            % `parboiled_Version`,
+      "org.sangria-graphql"   %% "sangria"              % "4.1.0",
+      "org.sangria-graphql"   %% "sangria-circe"        % "1.3.2",
+      "io.circe"              %% "circe-parser"         % "0.14.6",
+      "com.graphql-java"       % "graphql-java"         % "21.3",
+      "javax.annotation"       % "javax.annotation-api" % "1.3.2"
+    ),
+    compileOrder := CompileOrder.JavaThenScala,
+    commands ++= Commands.value,
+    Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed",
+    Compile / javacOptions ++= Seq(
+      "-processor",
+      "symphony.apt.SymphonyQLProcessor",
+      "-s",
+      ((Compile / crossTarget).value / "src_managed").getAbsolutePath,
+      "-XprintRounds",
+      "-Xlint:deprecation"
     )
   )
 

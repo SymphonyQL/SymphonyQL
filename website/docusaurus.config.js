@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
     title: 'SymphonyQL Document',
-    tagline: 'A GraphQL implementation built with Pekko.',
+    tagline: 'A GraphQL implementation built with Apache Pekko.',
     favicon: 'img/favicon.ico',
 
     // Set the production url of your site here

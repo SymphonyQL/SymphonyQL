@@ -5,14 +5,23 @@ import symphony.parser.SymphonyQLError.*
 import symphony.parser.SymphonyQLInputValue
 import symphony.parser.SymphonyQLInputValue.*
 import symphony.parser.SymphonyQLValue.*
-import symphony.schema.scaladsl.ArgExtractorDerivation
+import symphony.schema.derivation.ArgExtractorDerivation
 
+import java.util.Optional
 import scala.annotation.unused
 import scala.jdk.javaapi.CollectionConverters
+import scala.jdk.javaapi.OptionConverters
 
 trait ArgumentExtractor[T] { self =>
 
-  def default(default: Option[String] = None): Either[ArgumentError, T] =
+  /**
+   * Java API
+   * This method is only available for object types.
+   */
+  def defaultValue(default: Optional[String]): Either[ArgumentError, T] =
+    defaultValue(OptionConverters.toScala(default))
+
+  def defaultValue(default: Option[String] = None): Either[ArgumentError, T] =
     default
       .map(
         SymphonyQLParser.parseInputValue(_).flatMap(extract).left.map(e => ArgumentError(e.getMessage()))

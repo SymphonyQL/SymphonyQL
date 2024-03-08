@@ -39,6 +39,8 @@ import java.lang.annotation.Target;
  *
  *     public static Schema<OriginEnum> schema() {
  *         EnumBuilder<OriginEnum> newEnum = EnumBuilder.newEnum();
+ *         newEnum.description(Optional.empty());
+ *         newEnum.origin(Optional.of("symphony.apt.tests.OriginEnum"));
  *         newEnum.name("OriginEnum");
  *         newEnum.serialize(new Function<OriginEnum, String>() {
  *             @Override
@@ -49,19 +51,34 @@ import java.lang.annotation.Target;
  *         newEnum.value(new Function<EnumValueBuilder, __EnumValue>() {
  *             @Override
  *             public __EnumValue apply(EnumValueBuilder builder) {
- *                 return builder.name("EARTH").build();
+ *                 return builder
+ *                 .name("EARTH")
+ *                 .description(Optional.empty())
+ *                 .isDeprecated(false)
+ *                 .deprecationReason(Optional.empty())
+ *                 .build();
  *             }
  *         });
  *         newEnum.value(new Function<EnumValueBuilder, __EnumValue>() {
  *             @Override
  *             public __EnumValue apply(EnumValueBuilder builder) {
- *                 return builder.name("MARS").build();
+ *                 return builder
+ *                 .name("MARS")
+ *                 .description(Optional.empty())
+ *                 .isDeprecated(false)
+ *                 .deprecationReason(Optional.empty())
+ *                 .build();
  *             }
  *         });
  *         newEnum.value(new Function<EnumValueBuilder, __EnumValue>() {
  *             @Override
  *             public __EnumValue apply(EnumValueBuilder builder) {
- *                 return builder.name("BELT").build();
+ *                 return builder
+ *                 .name("BELT")
+ *                 .description(Optional.empty())
+ *                 .isDeprecated(false)
+ *                 .deprecationReason(Optional.empty())
+ *                 .build();
  *             }
  *         });
  *         return newEnum.build();

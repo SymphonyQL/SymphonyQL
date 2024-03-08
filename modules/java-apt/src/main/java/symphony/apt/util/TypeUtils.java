@@ -58,7 +58,7 @@ public final class TypeUtils {
 
         return elements;
     }
-
+    
     public static <T extends Annotation> T getAnnotation(
             final Class<T> annotationClass, final Element... elements
     ) {
@@ -274,6 +274,10 @@ public final class TypeUtils {
         }
     }
 
+    public static boolean noDefaultValue(TypeName typeName) {
+        return getParameterizedTypes(typeName).stream().anyMatch(a -> TypeUtils.isEnumType(a) || TypeUtils.isDefaultOrPrimitiveType(a));
+    }
+    
     public static boolean isEnumType(TypeName typeName) {
         if (typeName instanceof ClassName className) {
             TypeElement typeElement = ProcessorContextHolder.getContext()

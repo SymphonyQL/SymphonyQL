@@ -57,16 +57,18 @@ object GraphQLJava {
   private val schemaGenerator = new SchemaGenerator
   private val graphQLSchema   = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring)
   val build: GraphQL          = GraphQL.newGraphQL(graphQLSchema).build
-//
-//  val simpleQuery: String =
-//    """{
-//          characters {
-//            name
-//            origin
-//          }
-//       }""".stripMargin
-//  val executionResult     = GraphQLJava.build.execute(simpleQuery)
-//  println(executionResult.getErrors)
-//  println(executionResult.getData.toString)
+
+  def main(args: Array[String]): Unit = {
+    val simpleQuery: String =
+      """{
+          characters {
+            name
+            origin
+          }
+       }""".stripMargin
+    val executionResult     = GraphQLJava.build.execute(simpleQuery)
+    println(executionResult.getErrors)
+    println(executionResult.getData.toString)
+  }
 
 }

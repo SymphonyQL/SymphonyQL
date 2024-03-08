@@ -37,10 +37,9 @@ Therefore, you only need to write **record class** to define the schema:
 
 **Defining Resolver**
 
-Resolver Object defined using `@ObjectSchema` and `withArgs = true`.
-
+Resolver Object defined using `@ObjectSchema`:
 ```java
-@ObjectSchema(withArgs = true)
+@ObjectSchema
 record Queries(Function<FilterArgs, Source<CharacterOutput, NotUsed>> characters) {
 }
 ```
@@ -50,8 +49,7 @@ record Queries(Function<FilterArgs, Source<CharacterOutput, NotUsed>> characters
 
 **Defining Object**
 
-Object defined using `@ObjectSchema`.
-
+Object defined using `@ObjectSchema`:
 ```java
 @ObjectSchema
 record CharacterOutput(String name, Origin origin) {
@@ -60,8 +58,7 @@ record CharacterOutput(String name, Origin origin) {
 
 **Defining Input**
 
-Input defined using `@InputSchema` and `@ArgExtractor`.
-
+Input defined using `@InputSchema` and `@ArgExtractor`:
 ```java
 @InputSchema
 @ArgExtractor
@@ -76,8 +73,7 @@ record NestedArg(String id, Optional<String> name) {
 
 **Defining Enum**
 
-Enum defined using `@EnumSchema`, If enumeration is input, you also need `@ArgExtractor`.
-
+Enum defined using `@EnumSchema`, If enumeration is input, you also need `@ArgExtractor`:
 ```java
 @EnumSchema
 @ArgExtractor

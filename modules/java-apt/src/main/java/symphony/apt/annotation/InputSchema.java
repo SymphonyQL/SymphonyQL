@@ -41,17 +41,30 @@ import java.lang.annotation.Target;
  *
  *     public static Schema<InputObject> schema() {
  *         InputObjectBuilder<InputObject> newObject = InputObjectBuilder.newObject();
+ *         newObject.description(Optional.empty());
  *         newObject.name("InputObject");
  *         newObject.field(new Function<FieldBuilder, __Field>() {
  *              @Override
  *              public __Field apply(FieldBuilder builder) {
- *                  return builder.name("optionalEnum").schema(Schema.createOptional(symphony.example.schema.OriginEnumSchema.schema())).build();
+ *                  return builder
+ *                  .name("optionalEnum")
+ *                  .schema(Schema.createOptional(symphony.example.schema.OriginEnumSchema.schema()))
+ *                  .description(Optional.empty())
+ *                  .isDeprecated(true)
+ *                  .deprecationReason(Optional.empty())
+ *                  .build();
  *              }
  *          });
  *         newObject.field(new Function<FieldBuilder, __Field>() {
  *              @Override
  *              public __Field apply(FieldBuilder builder) {
- *                  return builder.name("optionalString").schema(Schema.createOptional(Schema.getSchema("java.lang.String"))).build();
+ *                  return builder
+ *                  .name("optionalString")
+ *                  .schema(Schema.createOptional(Schema.getSchema("java.lang.String")))
+ *                  .description(Optional.empty())
+ *                  .isDeprecated(false)
+ *                  .deprecationReason(Optional.empty())
+ *                  .build();
  *              }
  *          });
  *         return newObject.build();

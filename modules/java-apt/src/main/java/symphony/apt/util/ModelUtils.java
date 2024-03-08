@@ -1,6 +1,5 @@
 package symphony.apt.util;
 
-import com.squareup.javapoet.TypeName;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -9,18 +8,18 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import symphony.apt.Constant;
+import symphony.apt.context.ProcessorContextHolder;
 import symphony.apt.model.MethodInfo;
 
 public final class ModelUtils {
@@ -79,27 +78,32 @@ public final class ModelUtils {
     return result;
   }
 
-  public static Map<String, VariableElement> getVariableTypes(
-      final TypeElement typeElement, final Predicate<Element> predicate) {
-    final List<? extends Element> elements = typeElement.getEnclosedElements();
-    final var variables = ElementFilter.fieldsIn(elements);
-    final var result = new LinkedHashMap<String, VariableElement>();
+  public static Map<String, Element> getPermittedSubclasses(final TypeElement typeElement) {
+    final List<? extends TypeMirror> elements = typeElement.getPermittedSubclasses();
+    final var result = new LinkedHashMap<String, Element>();
+    final var env = ProcessorContextHolder.getProcessingEnvironment();
+    final var typeUtils = env.getTypeUtils();
 
-    for (final var variable : variables) {
-      if (predicate.test(variable)) {
-        final var variableName = TypeUtils.getSimpleName(variable);
-        result.put(variableName, variable);
-      }
+    for (final var element : elements) {
+      final var el = typeUtils.asElement(element);
+      final var simpleName = TypeUtils.getSimpleName(el);
+      result.put(simpleName, el);
     }
 
     return result;
   }
 
-  public static Map<String, TypeName> getVariables(
-      final TypeElement typeElement, final Predicate<Element> predicate) {
-    return getVariableTypes(typeElement, predicate).entrySet().stream()
-        .map(entry -> Map.entry(entry.getKey(), TypeUtils.getTypeName(entry.getValue())))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  public static Map<String, RecordComponentElement> getRecordComponents(
+      final TypeElement typeElement) {
+    final var elements = typeElement.getRecordComponents();
+    final var result = new LinkedHashMap<String, RecordComponentElement>();
+
+    for (final var element : elements) {
+      final var variableName = TypeUtils.getSimpleName(element);
+      result.put(variableName, element);
+    }
+
+    return result;
   }
 
   public static Pair<Collection<MethodInfo>, Collection<MethodInfo>> calculateMethodInfo(

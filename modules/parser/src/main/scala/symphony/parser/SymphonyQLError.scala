@@ -57,12 +57,20 @@ object SymphonyQLError {
   final case class ArgumentError(
     msg: String,
     locationInfo: Option[LocationInfo] = None,
+    innerThrowable: Option[Throwable] = None,
     extensions: Option[ObjectValue] = None
-  ) extends SymphonyQLError {
+  ) extends RuntimeException(msg)
+      with SymphonyQLError {
+
+    override def toString: String = s"ArgumentError Error: $msg ${innerThrowable.fold("")(_.toString)}"
+
+    override def getCause: Throwable = innerThrowable.orNull
 
     def this(msg: String) =
       this(msg, None, None)
-    override def toString: String = s"ArgumentError Error: $msg"
+
+    def this(msg: String, cause: Throwable) =
+      this(msg, None, Option(cause), None)
 
     def toOutputValue: SymphonyQLOutputValue =
       ObjectValue(

@@ -1,7 +1,5 @@
 package symphony.apt.generator;
 
-import static symphony.apt.Constant.INPUT_OBJECT_BUILDER;
-
 import com.squareup.javapoet.TypeSpec;
 import java.util.function.Function;
 import javax.lang.model.element.ElementKind;
@@ -34,7 +32,7 @@ public class InputObjectCodeGenerator extends GeneratedCodeGenerator {
     if (annotation != null
         && !modifiers.contains(Modifier.ABSTRACT)
         && (kind == ElementKind.RECORD)) {
-      generateObject(INPUT_OBJECT_BUILDER, builder, typeElement);
+      generateObject(INPUT_OBJECT_BUILDER_CLASS, builder, typeElement);
     } else {
       MessageUtils.message(
           Diagnostic.Kind.WARNING, "@InputSchema only support on record class: " + typeElement);

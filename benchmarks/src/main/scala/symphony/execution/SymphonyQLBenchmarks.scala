@@ -24,7 +24,8 @@ import scala.jdk.FutureConverters.*
 @Fork(1)
 class SymphonyQLBenchmarks {
 
-  implicit val actorSystem: ActorSystem = ActorSystem("symphonyActorSystem")
+  implicit val actorSystemScala: ActorSystem = ActorSystem("symphonyActorSystemScala")
+  val actorSystemJava: ActorSystem           = ActorSystem("symphonyActorSystemJava")
 
   implicit val executionContext: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global
 
@@ -38,7 +39,8 @@ class SymphonyQLBenchmarks {
 
   @TearDown
   def shutdown(): Unit =
-    Await.result(actorSystem.terminate(), 5.seconds)
+    Await.result(actorSystemScala.terminate(), 5.seconds)
+    Await.result(actorSystemJava.terminate(), 5.seconds)
 
   @Benchmark
   def simpleCaliban(): Unit = {
@@ -48,8 +50,15 @@ class SymphonyQLBenchmarks {
   }
 
   @Benchmark
-  def simpleSymphonyQL(): Unit = {
-    val future = Symphony.graphql.runWith(SymphonyQLRequest(Some(simpleQuery)))
+  def simpleSymphonyQLJava(): Unit = {
+    val future = SymphonyJava.graphql.runWith(SymphonyQLRequest(Some(simpleQuery)))(actorSystemJava)
+    Await.result(future, scala.concurrent.duration.Duration.create(1, TimeUnit.MINUTES))
+    ()
+  }
+
+  @Benchmark
+  def simpleSymphonyQLScala(): Unit = {
+    val future = SymphonyScala.graphql.runWith(SymphonyQLRequest(Some(simpleQuery)))
     Await.result(future, scala.concurrent.duration.Duration.create(1, TimeUnit.MINUTES))
     ()
   }

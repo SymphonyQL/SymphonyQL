@@ -23,6 +23,7 @@ import java.lang.annotation.Target;
  * <p>Generated enum class OriginEnumExtractor:
  *
  * <pre>{@code
+ * import java.util.Arrays;
  * import java.util.function.Function;
  * import javax.annotation.Generated;
  * import scala.util.Either;
@@ -36,33 +37,27 @@ import java.lang.annotation.Target;
  * @Generated("symphony.apt.SymphonyQLProcessor")
  * @SuppressWarnings("all")
  * public final class OriginEnumExtractor {
- *     private static final Function<SymphonyQLValue, OriginEnum> function = new Function<SymphonyQLValue, OriginEnum>() {
+ *     public static final ArgumentExtractor<OriginEnum> extractor = extractor();
+ *
+ *     private static final Function<SymphonyQLValue, Either<SymphonyQLError.ArgumentError, OriginEnum>> function = new Function<SymphonyQLValue, Either<SymphonyQLError.ArgumentError, OriginEnum>>() {
  *         @Override
- *         public OriginEnum apply(SymphonyQLValue obj) {
+ *         public Either<SymphonyQLError.ArgumentError, OriginEnum> apply(SymphonyQLValue obj) {
  *             if (obj instanceof SymphonyQLValue.EnumValue value) {
- *                 var originenumEither = ArgumentExtractor.StringArg().extract(value);
- *                 return switch (originenumEither) {
- *                     case Right<SymphonyQLError.ArgumentError, ?> right -> {
- *                         yield (OriginEnum) OriginEnum.valueOf((String)right.value());
- *                     }
- *                     case Left<SymphonyQLError.ArgumentError, ?> left -> {
- *                         throw new RuntimeException("Cannot build enum OriginEnum from input", left.value());
- *                     }
- *                 };
+ *                 var originenumOptional = Arrays.stream(OriginEnum.values()).filter(o -> o.name().equals(value.value())).findFirst();
+ *                 if (originenumOptional.isEmpty()) {
+ *                     return Left.apply(new SymphonyQLError.ArgumentError("Cannot build enum GQLOriginEnum from input"));
+ *                 }
+ *                 return Right.apply(originenumOptional.get());
  *             }
- *             var originenumEither = ArgumentExtractor.StringArg().extract(obj);
- *             return switch (originenumEither) {
- *                 case Right<SymphonyQLError.ArgumentError, ?> right -> {
- *                     yield (OriginEnum) OriginEnum.valueOf((String)right.value());
- *                 }
- *                 case Left<SymphonyQLError.ArgumentError, ?> left -> {
- *                     throw new RuntimeException("Cannot build enum OriginEnum from input", left.value());
- *                 }
- *             };
+ *
+ *             var originenumStringValue = (SymphonyQLValue.StringValue) obj;
+ *             var originenumOptional = Arrays.stream(OriginEnum.values()).filter(o -> o.name().equals(originenumStringValue.value())).findFirst();
+ *             if (originenumOptional.isEmpty()) {
+ *                 return Left.apply(new SymphonyQLError.ArgumentError("Cannot build enum GQLOriginEnum from input"));
+ *             }
+ *             return Right.apply(originenumOptional.get());
  *         }
  *     };
- *
- *     public static final ArgumentExtractor<OriginEnum> extractor = extractor();
  *
  *     private OriginEnumExtractor() {
  *         throw new UnsupportedOperationException();
@@ -74,11 +69,11 @@ import java.lang.annotation.Target;
  *             public Either<SymphonyQLError.ArgumentError, OriginEnum> extract(
  *                     SymphonyQLInputValue input) {
  *                 return switch (input) {
- *                     case SymphonyQLValue.EnumValue obj -> {
- *                         yield Right.apply(function.apply(obj));
+ *                     case SymphonyQLValue.EnumValue obj ->  {
+ *                         yield function.apply(obj);
  *                     }
  *                     case SymphonyQLValue.StringValue obj -> {
- *                         yield Right.apply(function.apply(obj));
+ *                         yield function.apply(obj);
  *                     }
  *                     default -> Left.apply(new SymphonyQLError.ArgumentError("Expected EnumValue or StringValue"));
  *                 };

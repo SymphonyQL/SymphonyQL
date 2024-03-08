@@ -10,6 +10,7 @@ import symphony.parser.adt.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
 import symphony.parser.adt.Type.*
+import symphony.annotations.scala.*
 
 final case class __Type(
   kind: __TypeKind,
@@ -22,8 +23,8 @@ final case class __Type(
   inputFields: __DeprecatedArgs => Option[List[__InputValue]] = _ => None,
   ofType: Option[__Type] = None,
   specifiedBy: Option[String] = None,
-  directives: Option[List[Directive]] = None,
-  origin: Option[String] = None
+  @GQLExcluded directives: Option[List[Directive]] = None,
+  @GQLExcluded origin: Option[String] = None
 ) { self =>
   override lazy val hashCode: Int = super.hashCode()
 
