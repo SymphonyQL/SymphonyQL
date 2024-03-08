@@ -30,7 +30,6 @@ lazy val commonSettings =
     Test / fork       := true,
     run / fork        := true,
     scalaVersion      := scala3_Version,
-    Compile / sources := Seq(),
     doc / sources     := Seq(),
     javafmtOnCompile  := true,
     scalacOptions ++= Seq(
