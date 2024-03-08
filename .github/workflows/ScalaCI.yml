@@ -21,6 +21,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java-version }}
+          distribution: 'adopt'
           
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
@@ -36,6 +37,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 21
+          distribution: 'adopt'
 
       - name: Run Test
         if: success() || failure()
@@ -58,6 +60,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 21
+          distribution: 'adopt'
           
       - name: Update docs
         run: |
@@ -87,6 +90,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 21
+          distribution: 'adopt'
           
       - name: Release artifacts
         run: sbt ci-release

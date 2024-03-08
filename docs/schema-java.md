@@ -8,15 +8,6 @@ In Java, there is no metaprogramming, we use APT (Java Annotation Processing) to
 
 ## Core annotations
 
-If we want to define it manually, we can use the builder class in `symphony.schema.builder.*` and add the `@IgnoreSchema` annotation on record class.
-
-Then, we should create a class **under the same package**:
-- If record class `A` is **Object** (or *Enum*, *Union*, *Interface*), a class named `ASchema` should be created with the field `public static final Schema<A> schema = ???;`.
-- If record class `A` is **Input Object (or *Enum*)**, a class named `AInputSchema` should be created with the field `public static final Schema<A> schema = ???;`.
-- It is also possible to customize the `ArgumentExtractor<A>`, simply created a class named `AExtractor` with the field `public static final ArgumentExtractor<A> extractor = ???;`.
-
-If these are not provided, an error will be reported by javac on which type has `@IgnoreSchema`, such as `A or schema can't be found.`.
-
 ### `@EnumSchema`
 
 Defining GraphQL **Enum Type**, for example:
@@ -205,6 +196,17 @@ type FooC implements Mid2 {
 ### `@IgnoreSchema`
 
 Annotation to ignore class from SymphonyQL's processing.
+
+## Creating a schema manually
+
+If we want to define it manually, we can use the builder class in `symphony.schema.builder.*` and add the `@IgnoreSchema` annotation on record class.
+
+Then, we should create a class **under the same package**:
+- If record class `A` is **Object** (or *Enum*, *Union*, *Interface*), a class named `ASchema` should be created with the field `public static final Schema<A> schema = ???;`.
+- If record class `A` is **Input Object (or *Enum*)**, a class named `AInputSchema` should be created with the field `public static final Schema<A> schema = ???;`.
+- It is also possible to customize the `ArgumentExtractor<A>`, simply created a class named `AExtractor` with the field `public static final ArgumentExtractor<A> extractor = ???;`.
+
+If these are not provided, an error will be reported by javac on which type has `@IgnoreSchema`, such as `A or schema can't be found.`.
 
 ## Tool Annotations
 

@@ -275,7 +275,6 @@ public final class TypeUtils {
     }
 
     public static boolean noDefaultValue(TypeName typeName) {
-        MessageUtils.note(getParameterizedTypes(typeName).toString());
         return getParameterizedTypes(typeName).stream().anyMatch(a -> TypeUtils.isEnumType(a) || TypeUtils.isDefaultOrPrimitiveType(a));
     }
     
