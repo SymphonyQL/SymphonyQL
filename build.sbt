@@ -5,7 +5,7 @@ inThisBuild(
     scalaVersion           := scala3_Version,
     organization           := "io.github.symphonyql",
     sonatypeCredentialHost := "oss.sonatype.org",
-    sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
+    sonatypeRepository     := "https://oss.sonatype.org/service/local",
     homepage               := Some(url("https://github.com/SymphonyQL")),
     licenses               := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
     developers             := List(
