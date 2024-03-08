@@ -67,8 +67,8 @@ lazy val validator = (project in file("modules/validator"))
   .dependsOn(parser)
   .settings(
     commonSettings,
-    publish / skip   := false,
-    name := "symphony-validator",
+    publish / skip := false,
+    name           := "symphony-validator",
     commands ++= Commands.value
   )
 
@@ -76,8 +76,8 @@ lazy val parser = (project in file("modules/parser"))
   .dependsOn(annotations)
   .settings(
     commonSettings,
-    name := "symphony-parser",
-    publish / skip   := false,
+    name           := "symphony-parser",
+    publish / skip := false,
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.parser
   )
@@ -86,8 +86,8 @@ lazy val core = (project in file("modules/core"))
   .dependsOn(parser, validator, annotations)
   .settings(
     commonSettings,
-    name := "symphony-core",
-    publish / skip   := false,
+    name           := "symphony-core",
+    publish / skip := false,
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.core
   )
@@ -96,8 +96,8 @@ lazy val server = (project in file("modules/server"))
   .dependsOn(core)
   .settings(
     commonSettings,
-    name := "symphony-server",
-    publish / skip   := false,
+    name           := "symphony-server",
+    publish / skip := false,
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.server
   )
@@ -105,8 +105,8 @@ lazy val server = (project in file("modules/server"))
 lazy val annotations = (project in file("modules/annotations"))
   .settings(
     commonSettings,
-    name := "symphony-annotations",
-    publish / skip   := false,
+    name           := "symphony-annotations",
+    publish / skip := false,
     commands ++= Commands.value
   )
 
@@ -114,8 +114,8 @@ lazy val `java-apt` = (project in file("modules/java-apt"))
   .dependsOn(core)
   .settings(
     commonSettings,
-    name := "symphony-java-apt",
-    publish / skip   := false,
+    name           := "symphony-java-apt",
+    publish / skip := false,
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.apt
   )
