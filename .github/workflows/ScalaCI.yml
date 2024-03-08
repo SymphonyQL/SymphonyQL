@@ -46,8 +46,11 @@ jobs:
       - name: Aggregate coverage report
         run: sbt coverageAggregate
 
-      - name: Upload test coverage report
-        run: bash <(curl -s https://codecov.io/bash)
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: SymphonyQL/SymphonyQL
         
   docs:
     runs-on: ubuntu-latest
