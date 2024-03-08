@@ -8,12 +8,13 @@ ThisBuild / resolvers ++= Seq(
 
 inThisBuild(
   List(
-    scalaVersion       := scala3_Version,
-    organization       := "io.github.symphonyql",
-    sonatypeRepository := "https://s01.oss.sonatype.org/service/local",
-    homepage           := Some(url("https://github.com/SymphonyQL")),
-    licenses           := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
-    developers         := List(
+    scalaVersion           := scala3_Version,
+    organization           := "io.github.symphonyql",
+    sonatypeCredentialHost := "s01.oss.sonatype.org",
+    sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
+    homepage               := Some(url("https://github.com/SymphonyQL")),
+    licenses               := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
+    developers             := List(
       Developer(
         id = "jxnu-liguobin",
         name = "jxnu-liguobin",
