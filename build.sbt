@@ -29,7 +29,6 @@ lazy val commonSettings =
   Seq(
     Test / fork      := true,
     run / fork       := true,
-    publish / skip   := false,
     scalaVersion     := scala3_Version,
     javafmtOnCompile := true,
     scalacOptions ++= Seq(
@@ -68,6 +67,7 @@ lazy val validator = (project in file("modules/validator"))
   .dependsOn(parser)
   .settings(
     commonSettings,
+    publish / skip   := false,
     name := "symphony-validator",
     commands ++= Commands.value
   )
@@ -77,6 +77,7 @@ lazy val parser = (project in file("modules/parser"))
   .settings(
     commonSettings,
     name := "symphony-parser",
+    publish / skip   := false,
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.parser
   )
@@ -86,6 +87,7 @@ lazy val core = (project in file("modules/core"))
   .settings(
     commonSettings,
     name := "symphony-core",
+    publish / skip   := false,
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.core
   )
@@ -95,6 +97,7 @@ lazy val server = (project in file("modules/server"))
   .settings(
     commonSettings,
     name := "symphony-server",
+    publish / skip   := false,
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.server
   )
@@ -103,6 +106,7 @@ lazy val annotations = (project in file("modules/annotations"))
   .settings(
     commonSettings,
     name := "symphony-annotations",
+    publish / skip   := false,
     commands ++= Commands.value
   )
 
@@ -111,6 +115,7 @@ lazy val `java-apt` = (project in file("modules/java-apt"))
   .settings(
     commonSettings,
     name := "symphony-java-apt",
+    publish / skip   := false,
     commands ++= Commands.value,
     libraryDependencies ++= Dependencies.Deps.apt
   )
