@@ -8,6 +8,9 @@
 [Link-CI]: https://github.com/SymphonyQL/SymphonyQL/actions
 [Badge-Codecov]: https://codecov.io/gh/SymphonyQL/SymphonyQL/graph/badge.svg?token=00GZ559DH7
 [Link-Codecov]: https://codecov.io/gh/SymphonyQL/SymphonyQL
+[Badge-Snapshots]: https://img.shields.io/nexus/s/io.github.symphonyql/symphony-core_3?server=https%3A%2F%2Fs01.oss.sonatype.org
+[Link-Snapshots]: https://s01.oss.sonatype.org/content/repositories/snapshots/io/github/symphonyql/symphony-core_3
+
 
 ## Documentation
 
