@@ -41,7 +41,7 @@ jobs:
 
       - name: Run Test
         if: success() || failure()
-        run: sbt coverage test
+        run: sbt compile coverage test
 
       - name: Aggregate coverage report
         run: sbt coverageAggregate
