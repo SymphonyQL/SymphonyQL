@@ -27,11 +27,11 @@ inThisBuild(
 
 lazy val commonSettings =
   Seq(
-    Test / fork       := true,
-    run / fork        := true,
-    scalaVersion      := scala3_Version,
-    doc / sources     := Seq(),
-    javafmtOnCompile  := true,
+    Test / fork      := true,
+    run / fork       := true,
+    scalaVersion     := scala3_Version,
+    doc / sources    := Seq(),
+    javafmtOnCompile := true,
     javacOptions ++= Seq("-source", "21", "-encoding", "UTF-8"),
     scalacOptions ++= Seq(
       "-language:dynamics",
