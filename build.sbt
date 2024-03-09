@@ -32,6 +32,7 @@ lazy val commonSettings =
     scalaVersion      := scala3_Version,
     doc / sources     := Seq(),
     javafmtOnCompile  := true,
+    javacOptions ++= Seq("-source", "21", "-encoding", "UTF-8"),
     scalacOptions ++= Seq(
       "-language:dynamics",
       "-explain",
