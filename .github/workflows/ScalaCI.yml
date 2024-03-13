@@ -22,10 +22,10 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'adopt'
-          
+
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
-        
+
       - name: Checking Code style
         run: sbt check
   
@@ -39,16 +39,24 @@ jobs:
           java-version: 21
           distribution: 'adopt'
 
-      - name: Run Test
+      - name: Run Scala Test
         if: success() || failure()
-        run: sbt compile jacocoAggregate
+        run: sbt compile coverage test
+      - name: Aggregate scala coverage report
+        run: sbt coverageAggregate
+        
+      - name: Run Java Test
+        if: success() || failure()
+        run: sbt java-apt-tests/jacoco java-apt/jacoco
+      - name: Aggregate java coverage report
+        run: sbt jacocoAggregateReport
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: SymphonyQL/SymphonyQL
-        
+  
   docs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
@@ -62,7 +70,7 @@ jobs:
         with:
           java-version: 21
           distribution: 'adopt'
-          
+
       - name: Update docs
         run: |
           git config --global user.name "SymphonyQL Docs"
@@ -92,7 +100,7 @@ jobs:
         with:
           java-version: 21
           distribution: 'adopt'
-          
+
       - name: Release artifacts
         run: sbt ci-release
         env:

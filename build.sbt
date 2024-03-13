@@ -29,18 +29,11 @@ inThisBuild(
 
 lazy val commonSettings =
   Seq(
-    Test / fork          := true,
-    run / fork           := true,
-    scalaVersion         := scala3_Version,
-    doc / sources        := Seq(),
-    javafmtOnCompile     := true,
-    jacocoReportSettings := JacocoReportSettings(
-      "Jacoco Coverage Report",
-      None,
-      JacocoThresholds(),
-      Seq(JacocoReportFormats.XML),
-      "utf-8"
-    ),
+    Test / fork      := true,
+    run / fork       := true,
+    scalaVersion     := scala3_Version,
+    doc / sources    := Seq(),
+    javafmtOnCompile := true,
     javacOptions ++= Seq("-source", "21", "-encoding", "UTF-8"),
     scalacOptions ++= Seq(
       "-language:dynamics",
@@ -125,18 +118,25 @@ lazy val `java-apt` = (project in file("modules/java-apt"))
   .dependsOn(core)
   .settings(
     commonSettings,
-    name           := "symphony-java-apt",
-    publish / skip := false,
+    name                 := "symphony-java-apt",
+    publish / skip       := false,
     commands ++= Commands.value,
-    libraryDependencies ++= Dependencies.Deps.apt
+    libraryDependencies ++= Dependencies.Deps.apt,
+    jacocoReportSettings := JacocoReportSettings(
+      "Jacoco Coverage Report",
+      None,
+      JacocoThresholds(),
+      Seq(JacocoReportFormats.XML),
+      "utf-8"
+    )
   )
 
 lazy val `java-apt-tests` = (project in file("modules/java-apt-tests"))
   .dependsOn(core % "compile->compile;test->test", `java-apt`)
   .settings(
     commonSettings,
-    publish / skip := true,
-    name           := "symphony-java-apt-tests",
+    publish / skip       := true,
+    name                 := "symphony-java-apt-tests",
     commands ++= Commands.value,
     Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed",
     libraryDependencies ++= Dependencies.Deps.`apt-tests`,
@@ -147,6 +147,13 @@ lazy val `java-apt-tests` = (project in file("modules/java-apt-tests"))
       ((Compile / crossTarget).value / "src_managed").getAbsolutePath,
       "-XprintRounds",
       "-Xlint:deprecation"
+    ),
+    jacocoReportSettings := JacocoReportSettings(
+      "Jacoco Coverage Report",
+      None,
+      JacocoThresholds(),
+      Seq(JacocoReportFormats.XML),
+      "utf-8"
     )
   )
 
