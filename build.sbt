@@ -6,6 +6,8 @@ ThisBuild / resolvers ++= Seq(
   "Sonatype OSS Releases" at "https://s01.oss.sonatype.org/content/repositories/releases"
 )
 
+ThisBuild / versionScheme := Some("semver-spec")
+
 inThisBuild(
   List(
     scalaVersion           := scala3_Version,
@@ -60,9 +62,16 @@ lazy val SymphonyQL = (project in file("."))
     benchmarks
   )
   .settings(
-    publish / skip := true,
+    publish / skip       := true,
     commonSettings,
-    commands ++= Commands.value
+    commands ++= Commands.value,
+    jacocoReportSettings := JacocoReportSettings(
+      "Jacoco Coverage Report",
+      None,
+      JacocoThresholds(),
+      Seq(JacocoReportFormats.ScalaHTML, JacocoReportFormats.XML),
+      "UTF-8"
+    )
   )
 
 lazy val validator = (project in file("modules/validator"))

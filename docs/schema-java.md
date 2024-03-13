@@ -206,6 +206,8 @@ Then, we should create a class **under the same package**:
 - If record class `A` is **Input Object (or *Enum*)**, a class named `AInputSchema` should be created with the field `public static final Schema<A> schema = ???;`.
 - It is also possible to customize the `ArgumentExtractor<A>`, simply created a class named `AExtractor` with the field `public static final ArgumentExtractor<A> extractor = ???;`.
 
+We can use the builder class in `symphony.schema.builder.*` to create `Schema<A>`.
+
 If these are not provided, an error will be reported by javac on which type has `@IgnoreSchema`, such as `A or schema can't be found.`.
 
 ## Tool Annotations

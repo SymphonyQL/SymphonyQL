@@ -6,6 +6,8 @@ custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/insta
 
 SymphonyQL only supports Scala3 and Java21.
 
+`io.github.jxnu-liguobin` is a temporary groupId used for artifact publishing.
+
 ## Installation using SBT
 
 If you are building with sbt, add the following to your `project/plugins.sbt`:
@@ -20,7 +22,6 @@ libraryDependencies ++= Seq(
 If you want to develop SymphonyQL application using Java, you also need to add `symphony-java-apt` and some settings.
 
 Here is a complete configuration:
-> Temporary path
 ```scala
 Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed"
 libraryDependencies ++= Seq(

@@ -41,10 +41,7 @@ jobs:
 
       - name: Run Test
         if: success() || failure()
-        run: sbt compile coverage test
-
-      - name: Aggregate coverage report
-        run: sbt coverageAggregate
+        run: sbt compile jacocoAggregate
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
