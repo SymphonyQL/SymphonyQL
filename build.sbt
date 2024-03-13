@@ -29,11 +29,18 @@ inThisBuild(
 
 lazy val commonSettings =
   Seq(
-    Test / fork      := true,
-    run / fork       := true,
-    scalaVersion     := scala3_Version,
-    doc / sources    := Seq(),
-    javafmtOnCompile := true,
+    Test / fork          := true,
+    run / fork           := true,
+    scalaVersion         := scala3_Version,
+    doc / sources        := Seq(),
+    javafmtOnCompile     := true,
+    jacocoReportSettings := JacocoReportSettings(
+      "Jacoco Coverage Report",
+      None,
+      JacocoThresholds(),
+      Seq(JacocoReportFormats.XML),
+      "utf-8"
+    ),
     javacOptions ++= Seq("-source", "21", "-encoding", "UTF-8"),
     scalacOptions ++= Seq(
       "-language:dynamics",
@@ -62,16 +69,9 @@ lazy val SymphonyQL = (project in file("."))
     benchmarks
   )
   .settings(
-    publish / skip       := true,
+    publish / skip := true,
     commonSettings,
-    commands ++= Commands.value,
-    jacocoReportSettings := JacocoReportSettings(
-      "Jacoco Coverage Report",
-      None,
-      JacocoThresholds(),
-      Seq(JacocoReportFormats.ScalaHTML, JacocoReportFormats.XML),
-      "UTF-8"
-    )
+    commands ++= Commands.value
   )
 
 lazy val validator = (project in file("modules/validator"))
