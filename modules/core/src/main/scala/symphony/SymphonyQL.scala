@@ -16,7 +16,7 @@ import scala.util.*
 import symphony.parser.adt.Definition.ExecutableDefinition.*
 import symphony.parser.adt.OperationType
 
-final class SymphonyQL private (rootSchema: SymphonyQLSchema) {
+final class SymphonyQL private (rootSchema: RootSchema) {
 
   private lazy val _document: Document = Document(
     SchemaDefinition(
@@ -124,7 +124,7 @@ object SymphonyQL {
     )
 
   final class SymphonyQLBuilder {
-    private var rootSchema                      = SymphonyQLSchema(None, None, None)
+    private var rootSchema                      = RootSchema(None, None, None)
     private var query: Option[Operation]        = None
     private var mutation: Option[Operation]     = None
     private var subscription: Option[Operation] = None
@@ -147,7 +147,7 @@ object SymphonyQL {
     def rootResolver[Q, M, S](
       rootResolver: SymphonyQLResolver[Q, M, S]
     ): this.type = {
-      rootSchema = rootSchema ++ SymphonyQLSchema(
+      rootSchema = rootSchema ++ RootSchema(
         rootResolver.queryResolver.map(r => Operation(r._2.lazyType(), r._2.analyze(r._1))),
         rootResolver.mutationResolver.map(r => Operation(r._2.lazyType(), r._2.analyze(r._1))),
         rootResolver.subscriptionResolver.map(r => Operation(r._2.lazyType(), r._2.analyze(r._1)))
@@ -156,7 +156,7 @@ object SymphonyQL {
     }
 
     def build(): SymphonyQL = {
-      val allSchemas = SymphonyQLSchema(query, mutation, subscription) ++ rootSchema
+      val allSchemas = RootSchema(query, mutation, subscription) ++ rootSchema
       new SymphonyQL(allSchemas)
     }
   }

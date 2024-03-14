@@ -37,11 +37,11 @@ trait ArgumentExtractor[T] { self =>
 
 }
 
-object ArgumentExtractor extends GenericArgExtractor with ArgExtractorJavaAPI {
+object ArgumentExtractor extends GenericArgExtractor with ArgExtractorFactory {
   def apply[T](implicit ae: ArgumentExtractor[T]): ArgumentExtractor[T] = ae
 
 }
-trait ArgExtractorJavaAPI { self: GenericArgExtractor =>
+trait ArgExtractorFactory { self: GenericArgExtractor =>
 
   /**
    * Java API
@@ -107,8 +107,8 @@ trait ArgExtractorJavaAPI { self: GenericArgExtractor =>
       case "java.lang.Double"     => ArgumentExtractor.DoubleArg
       case "java.lang.Float"      => ArgumentExtractor.FloatArg
       case "java.lang.Short"      => ArgumentExtractor.ShortArg
-      case "java.math.BigInteger" => ArgumentExtractor.BigInteger
-      case "java.math.BigDecimal" => ArgumentExtractor.BigDecimal
+      case "java.math.BigInteger" => ArgumentExtractor.BigIntegerArg
+      case "java.math.BigDecimal" => ArgumentExtractor.BigDecimalArg
       case "java.lang.Void"       => ArgumentExtractor.UnitArg
       case "boolean"              => ArgumentExtractor.BooleanArg
       case "int"                  => ArgumentExtractor.IntArg
@@ -156,20 +156,20 @@ trait GenericArgExtractor extends ArgExtractorDerivation {
     case other               => Left(ArgumentError(s"Cannot build a Boolean from input $other"))
   }
 
-  implicit lazy val BigInt: ArgumentExtractor[BigInt] = {
+  implicit lazy val BigIntArg: ArgumentExtractor[BigInt] = {
     case value: IntValue => Right(value.toBigInt)
     case other           => Left(ArgumentError(s"Cannot build a BigInt from input $other"))
   }
 
-  implicit lazy val BigInteger: ArgumentExtractor[java.math.BigInteger] = BigInt.map(_.underlying())
+  implicit lazy val BigIntegerArg: ArgumentExtractor[java.math.BigInteger] = BigIntArg.map(_.underlying())
 
-  implicit lazy val BigDecimal: ArgumentExtractor[BigDecimal] = {
+  implicit lazy val BigDecimalArg: ArgumentExtractor[BigDecimal] = {
     case value: IntValue   => Right(scala.math.BigDecimal(value.toBigInt))
     case value: FloatValue => Right(value.toBigDecimal)
     case other             => Left(ArgumentError(s"Cannot build a BigDecimal from input $other"))
   }
 
-  implicit lazy val JavaBigDecimal: ArgumentExtractor[java.math.BigDecimal] = BigDecimal.map(_.underlying())
+  implicit lazy val JavaBigDecimalArg: ArgumentExtractor[java.math.BigDecimal] = BigDecimalArg.map(_.underlying())
 
   implicit def mkOption[A](implicit ae: ArgumentExtractor[A]): ArgumentExtractor[Option[A]] = {
     case SymphonyQLValue.NullValue => Right(None)

@@ -42,7 +42,7 @@ public class SymphonyQLProcessor extends AbstractProcessor {
 
   @Override
   public final SourceVersion getSupportedSourceVersion() {
-    return SourceVersion.latestSupported();
+    return SourceVersion.RELEASE_21;
   }
 
   @Override

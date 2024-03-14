@@ -1,11 +1,11 @@
-package symphony
-
-import scala.annotation.targetName
+package symphony.schema
 
 import symphony.parser.adt.introspection.*
 import symphony.schema.*
 
-final case class SymphonyQLSchema(
+import scala.annotation.targetName
+
+final case class RootSchema(
   query: Option[Operation],
   mutation: Option[Operation],
   subscription: Option[Operation],
@@ -26,8 +26,8 @@ final case class SymphonyQLSchema(
     ).groupBy(t => (t.name, t.kind, t.origin)).flatMap(_._2.headOption).toList
 
   @targetName("add")
-  def ++(that: SymphonyQLSchema): SymphonyQLSchema =
-    SymphonyQLSchema(
+  def ++(that: RootSchema): RootSchema =
+    RootSchema(
       (query ++ that.query).reduceOption(_ ++ _),
       (mutation ++ that.mutation).reduceOption(_ ++ _),
       (subscription ++ that.subscription).reduceOption(_ ++ _)

@@ -1,7 +1,7 @@
 package symphony.schema
 
 import org.apache.pekko.stream.scaladsl
-import symphony.SymphonyQLSchema
+import symphony.schema.RootSchema
 import symphony.parser.*
 import symphony.parser.adt.*
 import symphony.parser.adt.Definition.ExecutableDefinition.*
@@ -44,7 +44,7 @@ object Introspector extends IntrospectionSchemaDerivation {
   private val tpe  = __introspectionSchema.tpe()
   private val root = RootType(tpe, None, None)
 
-  def introspect(rootType: RootType): SymphonyQLSchema = {
+  def introspect(rootType: RootType): RootSchema = {
     val types    = (rootType.types ++ root.types - "__Introspection").values.toList.sortBy(_.name.getOrElse(""))
     val resolver = __Introspection(
       __Schema(
@@ -58,7 +58,7 @@ object Introspector extends IntrospectionSchemaDerivation {
       args => types.find(_.name.contains(args.name))
     )
 
-    SymphonyQLSchema(
+    RootSchema(
       Some(
         Operation(
           tpe,

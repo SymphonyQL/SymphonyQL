@@ -1,8 +1,9 @@
 package symphony.execution
 
-import symphony.{ SymphonyQL, SymphonyQLResolver }
+import symphony.*
 import symphony.execution.Data.*
 import symphony.schema.builder.ObjectBuilder
+import symphony.schema.RootSchema
 
 import scala.concurrent.Future
 

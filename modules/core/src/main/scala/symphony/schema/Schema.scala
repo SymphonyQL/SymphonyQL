@@ -11,7 +11,7 @@ import symphony.parser.adt.introspection.*
 import symphony.schema.Stage.*
 import symphony.schema.derivation.*
 
-import scala.annotation.{ nowarn, unused }
+import scala.annotation.*
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.*
 import scala.jdk.FunctionConverters.*
@@ -36,7 +36,7 @@ trait Schema[T] { self =>
   }
 }
 
-object Schema extends GenericSchema with SchemaJavaAPI {
+object Schema extends GenericSchema with SchemaFactory {
   def apply[T](implicit schema: Schema[T]): Schema[T] = schema
 }
 
@@ -50,7 +50,7 @@ trait IntrospectionSchemaDerivation {
   val introspection: Schema[__Introspection]                         = Schema.gen
 }
 
-trait SchemaJavaAPI {
+trait SchemaFactory {
   self: GenericSchema =>
 
   /**
@@ -71,7 +71,7 @@ trait SchemaJavaAPI {
   def createFunctionUnit[A](
     schema: Schema[A]
   ): Schema[java.util.function.Supplier[A]] =
-    mkFunctionUnitSchema(schema).contramap(_.asScala)
+    mkFunctionUnit(schema).contramap(_.asScala)
 
   /**
    * Java API
@@ -100,14 +100,14 @@ trait SchemaJavaAPI {
    */
   @unused
   def createMap[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[java.util.Map[A, B]] =
-    mkMapSchema[A, B](keySchema, valueSchema).contramap(kv => kv.asScala.toMap)
+    mkMap[A, B](keySchema, valueSchema).contramap(kv => kv.asScala.toMap)
 
     /**
      * Java API
      */
   @unused
   def createTuple2[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)]           =
-    mkTuple2Schema[A, B](keySchema, valueSchema)
+    mkTuple2[A, B](keySchema, valueSchema)
 
   /**
    * Java API
@@ -380,7 +380,7 @@ trait GenericSchema extends SchemaDerivation {
       override def analyze(value: scaladsl.Source[A, NotUsed]): Stage = ScalaSourceStage(value.map(schema.analyze))
     }
 
-  implicit def mkMapSchema[A, B](implicit keySchema: Schema[A], valueSchema: Schema[B]): Schema[Map[A, B]] =
+  implicit def mkMap[A, B](implicit keySchema: Schema[A], valueSchema: Schema[B]): Schema[Map[A, B]] =
     new Schema[Map[A, B]] {
       private lazy val typeAName: String   = Types.name(keySchema.lazyType())
       private lazy val typeBName: String   = Types.name(valueSchema.lazyType())
@@ -414,7 +414,7 @@ trait GenericSchema extends SchemaDerivation {
       override def analyze(value: Map[A, B]): Stage = ListStage(value.toList.map(kvSchema.analyze))
     }
 
-  implicit def mkTuple2Schema[A, B](implicit keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)] = {
+  implicit def mkTuple2[A, B](implicit keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)] = {
     val typeAName: String   = Types.name(keySchema.lazyType())
     val typeBName: String   = Types.name(valueSchema.lazyType())
     val name: String        = s"Tuple${typeAName}And$typeBName"
@@ -440,14 +440,14 @@ trait GenericSchema extends SchemaDerivation {
     )
   }
 
-  implicit def mkFunctionUnitSchema[A](implicit schema: Schema[A]): Schema[() => A] =
+  implicit def mkFunctionUnit[A](implicit schema: Schema[A]): Schema[() => A] =
     new Schema[() => A] {
       override def optional: Boolean              = schema.optional
       override def tpe(isInput: Boolean): __Type  = schema.lazyType(isInput)
       override def analyze(value: () => A): Stage = FunctionStage(_ => schema.analyze(value()))
     }
 
-  implicit def mkEitherSchema[A, B](implicit
+  implicit def mkEither[A, B](implicit
     leftSchema: Schema[A],
     rightSchema: Schema[B]
   ): Schema[Either[A, B]] = {
