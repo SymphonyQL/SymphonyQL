@@ -51,14 +51,14 @@ class SymphonyQLBenchmarks {
 
   @Benchmark
   def simpleSymphonyQLJava(): Unit = {
-    val future = SymphonyJava.graphql.runWith(SymphonyQLRequest(Some(simpleQuery)))(actorSystemJava)
+    val future = SymphonyJava.graphql.runWith(SymphonyQLRequest(simpleQuery))(actorSystemJava)
     Await.result(future, scala.concurrent.duration.Duration.create(1, TimeUnit.MINUTES))
     ()
   }
 
   @Benchmark
   def simpleSymphonyQLScala(): Unit = {
-    val future = SymphonyScala.graphql.runWith(SymphonyQLRequest(Some(simpleQuery)))
+    val future = SymphonyScala.graphql.runWith(SymphonyQLRequest(simpleQuery))
     Await.result(future, scala.concurrent.duration.Duration.create(1, TimeUnit.MINUTES))
     ()
   }

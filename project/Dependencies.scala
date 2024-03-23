@@ -24,13 +24,15 @@ object Dependencies {
         "org.parboiled"    %% "parboiled"    % `parboiled_Version`  % Provided,
         "org.scalatest"    %% "scalatest"    % `scalatest_Version`  % Test
       )
+
     // prepare, analyzer, run, tracing
-    lazy val core   =
+    lazy val core =
       Seq(
         "com.softwaremill.magnolia1_3" %% "magnolia"      % `magnolia_Version`,
-        "org.apache.pekko"             %% "pekko-stream"  % `pekko-core_Version` % Provided,
+        "org.apache.pekko"             %% "pekko-stream"  % `pekko-core_Version`,
         "org.apache.pekko"             %% "pekko-testkit" % `pekko-core_Version` % Test,
-        "org.scalatest"                %% "scalatest"     % `scalatest_Version`  % Test
+        "org.scalatest"                %% "scalatest"     % `scalatest_Version`  % Test,
+        "org.parboiled"                %% "parboiled"     % `parboiled_Version`  % Test
       )
 
     // default http server

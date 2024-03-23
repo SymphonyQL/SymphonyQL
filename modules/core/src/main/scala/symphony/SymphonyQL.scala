@@ -29,6 +29,18 @@ final class SymphonyQL private (rootSchema: RootSchema) {
     SourceMapper.empty
   )
 
+  private lazy val rootType: Either[SymphonyQLError.ExecutionError, RootType] = rootSchema.query.fold(
+    Left(SymphonyQLError.ExecutionError("The query root operation is missing."))
+  )(query =>
+    Right(
+      RootType(
+        query.opType,
+        rootSchema.mutation.map(_.opType),
+        rootSchema.subscription.map(_.opType)
+      )
+    )
+  )
+
   def document: Document = _document
 
   def render: String = DocumentRenderer.render(_document)
@@ -43,7 +55,7 @@ final class SymphonyQL private (rootSchema: RootSchema) {
   ): Future[SymphonyQLResponse[SymphonyQLError]] =
     import actorSystem.dispatcher
     for {
-      doc  <- Future(SymphonyQLParser.parseQuery(request.query.getOrElse("")))
+      doc  <- Future(SymphonyQLParser.parseQuery(request.query))
       resp <- doc match
                 case Left(ex)        => Future.failed(ex)
                 case Right(document) =>
@@ -52,10 +64,14 @@ final class SymphonyQL private (rootSchema: RootSchema) {
                     .runWith[Future[SymphonyQLResponse[SymphonyQLError]]](Sink.head)
     } yield resp
 
-  private def getOperation(
+  private def resolveOperation(
     operationName: Option[String] = None,
     document: Document
   ): Either[SymphonyQLError, (OperationDefinition, Operation)] = {
+    lazy val introspectionRootSchema = rootType.map(Introspector.introspect)
+    lazy val rootSchemaToValidate    =
+      if (Introspector.isIntrospection(document)) introspectionRootSchema else Right(rootSchema)
+
     val op = operationName match {
       case Some(name) =>
         document.definitions.collectFirst { case op: OperationDefinition if op.name.contains(name) => op }
@@ -72,17 +88,17 @@ final class SymphonyQL private (rootSchema: RootSchema) {
       case Right(operationDefinition) =>
         operationDefinition.operationType match {
           case OperationType.Query        =>
-            rootSchema.query.toRight(SymphonyQLError.ExecutionError("Queries are not supported on this schema"))
+            rootSchemaToValidate.flatMap(
+              _.query.toRight(SymphonyQLError.ExecutionError("Queries are not supported on this schema"))
+            )
           case OperationType.Mutation     =>
-            rootSchema.mutation match {
-              case Some(m) => Right(m)
-              case None    => Left(SymphonyQLError.ExecutionError("Mutations are not supported on this schema"))
-            }
+            rootSchemaToValidate.flatMap(
+              _.mutation.toRight(SymphonyQLError.ExecutionError("Mutations are not supported on this schema"))
+            )
           case OperationType.Subscription =>
-            rootSchema.subscription match {
-              case Some(m) => Right(m)
-              case None    => Left(SymphonyQLError.ExecutionError("Subscriptions are not supported on this schema"))
-            }
+            rootSchemaToValidate.flatMap(
+              _.subscription.toRight(SymphonyQLError.ExecutionError("Subscriptions are not supported on this schema"))
+            )
         }
     }
 
@@ -96,7 +112,7 @@ final class SymphonyQL private (rootSchema: RootSchema) {
     val fragments = doc.definitions.collect { case fragment: FragmentDefinition =>
       fragment.name -> fragment
     }.toMap
-    getOperation(request.operationName, doc) match
+    resolveOperation(request.operationName, doc) match
       case Left(ex)            => Source.failed(ex)
       case Right((define, op)) =>
         Executor.executeRequest(

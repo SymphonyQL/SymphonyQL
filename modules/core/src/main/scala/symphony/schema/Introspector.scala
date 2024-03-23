@@ -62,7 +62,7 @@ object Introspector extends IntrospectionSchemaDerivation {
       Some(
         Operation(
           tpe,
-          Stage.ScalaSourceStage(scaladsl.Source.single(introspection.analyze(resolver)))
+          introspection.analyze(resolver)
         )
       ),
       None,

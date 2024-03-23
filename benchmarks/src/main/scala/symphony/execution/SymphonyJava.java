@@ -77,13 +77,13 @@ public class SymphonyJava {
 
     public static void main(String[] args) {
         var getRes = SymphonyJava.graphql.run(
-                SymphonyQLRequest.newRequest().query(Optional.of("""
+                SymphonyQLRequest.newRequest().query("""
                         {
                            characters {
                              name
                              origin
                            }
-                        }""")).build(),
+                        }""").build(),
                 actorSystem);
         getRes.whenComplete((resp, throwable) -> System.out.println(resp.toOutputValue()));
         getRes.thenRun(() -> actorSystem.terminate());

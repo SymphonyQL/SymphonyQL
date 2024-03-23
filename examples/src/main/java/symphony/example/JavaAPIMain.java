@@ -35,7 +35,7 @@ public class JavaAPIMain {
         final var actorSystem = ActorSystem.create("symphonyActorSystem");
 
         var getRes = graphql.run(
-                SymphonyQLRequest.newRequest().query(Optional.of(characters)).build(),
+                SymphonyQLRequest.newRequest().query(characters).build(),
                 actorSystem
         );
 
