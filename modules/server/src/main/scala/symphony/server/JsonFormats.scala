@@ -35,14 +35,15 @@ trait InputFormats extends DefaultJsonProtocol {
 
   def jsonToInputValue(json: JsValue): SymphonyQLInputValue =
     json match
+      case JsNull             => SymphonyQLValue.NullValue
+      case JsArray(elements)  => SymphonyQLInputValue.ListValue(elements.map(jsonToInputValue).toList)
       case JsObject(fields)   =>
         SymphonyQLInputValue.ObjectValue(fields.map(kv => kv._1 -> jsonToInputValue(kv._2)))
-      case JsArray(elements)  => SymphonyQLInputValue.ListValue(elements.map(jsonToInputValue).toList)
-      case JsString(str)      => SymphonyQLValue.StringValue(str)
       case JsNumber(number)   =>
-        Try(IntValue(number.toBigInt)).orElse(Try(FloatValue(number))).getOrElse(FloatValue(number.toDouble))
+        if (number.isValidInt) IntValue(number.toBigInt)
+        else Try(FloatValue(number)).getOrElse(FloatValue(number.toDouble))
       case boolean: JsBoolean => SymphonyQLValue.BooleanValue(boolean.value)
-      case JsNull             => SymphonyQLValue.NullValue
+      case JsString(str)      => SymphonyQLValue.StringValue(str)
 
 }
 
@@ -88,7 +89,9 @@ trait OutputFormats extends DefaultJsonProtocol {
       case JsArray(elements)  => SymphonyQLOutputValue.ListValue(elements.map(jsonToOutputValue).toList)
       case JsString(str)      => SymphonyQLValue.StringValue(str)
       case JsNumber(number)   =>
-        Try(IntValue(number.toBigInt)).orElse(Try(FloatValue(number))).getOrElse(FloatValue(number.toDouble))
+        if (number.isValidInt) IntValue(number.toBigInt)
+        else
+          Try(FloatValue(number)).getOrElse(FloatValue(number.toDouble))
       case boolean: JsBoolean => SymphonyQLValue.BooleanValue(boolean.value)
       case JsNull             => SymphonyQLValue.NullValue
 
@@ -116,8 +119,8 @@ trait JsonFormats extends InputFormats with OutputFormats {
     override def read(json: JsValue): LocationInfo = json match {
       case JsObject(fields) =>
         LocationInfo(
-          fields.get("column").map(_.convertTo[Int]).getOrElse(0),
-          fields.get("line").map(_.convertTo[Int]).getOrElse(0)
+          fields.get("column").flatMap(_.convertTo[Option[Int]]).getOrElse(0),
+          fields.get("line").flatMap(_.convertTo[Option[Int]]).getOrElse(0)
         )
       case _                => throw DeserializationException("failed to decode as int")
     }
@@ -133,10 +136,10 @@ trait JsonFormats extends InputFormats with OutputFormats {
         case JsObject(fields) =>
           SymphonyQLError.ExecutionError(
             fields.getOrElse("message", JsNull).convertTo[String],
-            fields.get("path").map(_.convertTo[List[SymphonyQLPathValue]]).getOrElse(List.empty),
-            fields.get("locations").map(_.convertTo[LocationInfo]),
+            fields.get("path").flatMap(_.convertTo[Option[List[SymphonyQLPathValue]]]).getOrElse(List.empty),
+            fields.get("locations").flatMap(_.convertTo[Option[LocationInfo]]),
             None,
-            fields.get("extensions").map(_.convertTo[SymphonyQLOutputValue.ObjectValue])
+            fields.get("extensions").flatMap(_.convertTo[Option[SymphonyQLOutputValue.ObjectValue]])
           )
         case _                =>
           throw DeserializationException(s"Invalid json format: $json")
@@ -156,9 +159,9 @@ trait JsonFormats extends InputFormats with OutputFormats {
         case JsObject(fields) =>
           SymphonyQLRequest(
             fields.getOrElse("query", JsNull).convertTo[String],
-            fields.get("operationName").map(_.convertTo[String]),
-            fields.get("variables").map(_.convertTo[Map[String, SymphonyQLInputValue]]),
-            fields.get("extensions").map(_.convertTo[Map[String, SymphonyQLInputValue]])
+            fields.get("operationName").flatMap(_.convertTo[Option[String]]),
+            fields.get("variables").flatMap(_.convertTo[Option[Map[String, SymphonyQLInputValue]]]),
+            fields.get("extensions").flatMap(_.convertTo[Option[Map[String, SymphonyQLInputValue]]])
           )
         case _                =>
           throw DeserializationException(s"Invalid json format: $json")
@@ -174,8 +177,11 @@ trait JsonFormats extends InputFormats with OutputFormats {
         json match
           case JsObject(fields) =>
             SymphonyQLResponse(
-              fields.get("data").map(_.convertTo[SymphonyQLOutputValue]).getOrElse(SymphonyQLValue.NullValue),
-              fields.get("errors").map(_.convertTo[List[SymphonyQLError]]).getOrElse(List.empty)
+              fields
+                .get("data")
+                .flatMap(_.convertTo[Option[SymphonyQLOutputValue]])
+                .getOrElse(SymphonyQLValue.NullValue),
+              fields.get("errors").flatMap(_.convertTo[Option[List[SymphonyQLError]]]).getOrElse(List.empty)
             )
           case _                =>
             throw DeserializationException(s"Invalid json format: $json")

@@ -1,18 +1,14 @@
 package symphony.parser
 
-import org.scalactic.Explicitly.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
-
 import symphony.parser.*
 import symphony.parser.SymphonyQLInputValue.*
 import symphony.parser.SymphonyQLValue.*
 import symphony.parser.adt.*
 import symphony.parser.adt.Definition.ExecutableDefinition.*
-import symphony.parser.adt.Definition.ExecutableDefinition.OperationDefinition
-import symphony.parser.adt.OperationType.{ Mutation, Query }
+import symphony.parser.adt.OperationType.Mutation
 import symphony.parser.adt.Selection.*
-import symphony.parser.adt.Selection.Field
 import symphony.parser.adt.Type.*
 
 class ParserSpec extends AnyFunSpec with Matchers {
