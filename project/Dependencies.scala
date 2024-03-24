@@ -38,8 +38,9 @@ object Dependencies {
     // default http server
     lazy val server =
       Seq(
-        "org.apache.pekko" %% "pekko-http"   % `pekko-http_Version`,
-        "org.apache.pekko" %% "pekko-stream" % `pekko-core_Version`
+        "org.apache.pekko" %% "pekko-http"            % `pekko-http_Version`,
+        "org.apache.pekko" %% "pekko-stream"          % `pekko-core_Version`,
+        "org.apache.pekko" %% "pekko-http-spray-json" % `pekko-http_Version`
       )
 
     // java annotation processor tools
