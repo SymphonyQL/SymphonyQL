@@ -6,13 +6,12 @@ import org.apache.pekko.http.scaladsl.marshalling.*
 import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
-import org.apache.pekko.http.scaladsl.server.util.Tuple
 import org.apache.pekko.http.scaladsl.unmarshalling.*
 import spray.json.*
 import symphony.*
 import symphony.parser.*
 
-trait DefaultRoute[L: Tuple](symphonyQL: SymphonyQL) extends JsonFormats with SprayJsonSupport {
+trait DefaultRoute(symphonyQL: SymphonyQL) extends JsonFormats with SprayJsonSupport {
 
   implicit val actorSystem: ActorSystem
 
