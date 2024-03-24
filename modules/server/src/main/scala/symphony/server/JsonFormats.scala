@@ -129,16 +129,17 @@ trait JsonFormats extends InputFormats with OutputFormats {
     override def write(obj: SymphonyQLError): JsValue = obj.toOutputValue.toJson
 
     override def read(json: JsValue): SymphonyQLError =
-      json.asJsObject.getFields("message", "path", "locations", "extensions") match
-        case Seq(message, path, locations, extensions) =>
+      json match
+        case JsObject(fields) =>
           SymphonyQLError.ExecutionError(
-            message.convertTo[String],
-            path.convertTo[Option[List[SymphonyQLPathValue]]].getOrElse(Nil),
-            locations.convertTo[Option[LocationInfo]],
+            fields.getOrElse("message", JsNull).convertTo[String],
+            fields.get("path").map(_.convertTo[List[SymphonyQLPathValue]]).getOrElse(List.empty),
+            fields.get("locations").map(_.convertTo[LocationInfo]),
             None,
-            extensions.convertTo[Option[SymphonyQLOutputValue.ObjectValue]]
+            fields.get("extensions").map(_.convertTo[SymphonyQLOutputValue.ObjectValue])
           )
-        case _                                         => throw new RuntimeException(s"Invalid json format: $json")
+        case _                =>
+          throw DeserializationException(s"Invalid json format: $json")
   }
 
   implicit lazy val symphonyQLRequestJsonFormat: JsonFormat[SymphonyQLRequest] = new JsonFormat[SymphonyQLRequest] {
@@ -151,15 +152,16 @@ trait JsonFormats extends InputFormats with OutputFormats {
     )
 
     override def read(json: JsValue): SymphonyQLRequest =
-      json.asJsObject.getFields("query", "operationName", "variables", "extensions") match
-        case Seq(query, operationName, variables, extensions) =>
+      json match
+        case JsObject(fields) =>
           SymphonyQLRequest(
-            query.convertTo[String],
-            operationName.convertTo[Option[String]],
-            variables.convertTo[Option[Map[String, SymphonyQLInputValue]]],
-            extensions.convertTo[Option[Map[String, SymphonyQLInputValue]]]
+            fields.getOrElse("query", JsNull).convertTo[String],
+            fields.get("operationName").map(_.convertTo[String]),
+            fields.get("variables").map(_.convertTo[Map[String, SymphonyQLInputValue]]),
+            fields.get("extensions").map(_.convertTo[Map[String, SymphonyQLInputValue]])
           )
-        case _                                                => throw new RuntimeException(s"Invalid json format: $json")
+        case _                =>
+          throw DeserializationException(s"Invalid json format: $json")
 
   }
 
@@ -169,14 +171,14 @@ trait JsonFormats extends InputFormats with OutputFormats {
       override def write(obj: SymphonyQLResponse[SymphonyQLError]): JsValue = obj.toOutputValue.toJson
 
       override def read(json: JsValue): SymphonyQLResponse[SymphonyQLError] =
-        json.asJsObject.getFields("data", "errors") match
-          case Seq(data, errors) =>
+        json match
+          case JsObject(fields) =>
             SymphonyQLResponse(
-              data.convertTo[SymphonyQLOutputValue],
-              errors.convertTo[Option[List[SymphonyQLError]]].getOrElse(List.empty)
+              fields.get("data").map(_.convertTo[SymphonyQLOutputValue]).getOrElse(SymphonyQLValue.NullValue),
+              fields.get("errors").map(_.convertTo[List[SymphonyQLError]]).getOrElse(List.empty)
             )
-          case _                 => throw new RuntimeException(s"Invalid json format: $json")
-
+          case _                =>
+            throw DeserializationException(s"Invalid json format: $json")
     }
 
 }
