@@ -14,13 +14,12 @@ object DerivedScalaAPIMain {
 
   val graphql: SymphonyQL = SymphonyQL
     .newSymphonyQL()
-    .addQuery(
+    .query(
       Queries(args =>
         Source.single(
           Character("hello-" + args.origin.map(_.toString).getOrElse(""), args.origin.getOrElse(Origin.BELT))
         )
-      ),
-      Schema.derived[Queries]
+      )
     )
     .build()
 

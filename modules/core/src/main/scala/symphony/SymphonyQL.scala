@@ -145,6 +145,21 @@ object SymphonyQL {
     private var mutation: Option[Operation]     = None
     private var subscription: Option[Operation] = None
 
+    def query[Q: Schema](query: Q): this.type = {
+      this.query = mergeOperation(this.query, query, summon[Schema[Q]])
+      this
+    }
+
+    def mutation[M: Schema](mutation: M): this.type = {
+      this.mutation = mergeOperation(this.mutation, mutation, summon[Schema[M]])
+      this
+    }
+
+    def subscription[S: Schema](subscription: S): this.type = {
+      this.subscription = mergeOperation(this.subscription, subscription, summon[Schema[S]])
+      this
+    }
+
     def addQuery[Q](query: Q, schema: Schema[Q]): this.type = {
       this.query = mergeOperation(this.query, query, schema)
       this

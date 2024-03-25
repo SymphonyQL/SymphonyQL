@@ -19,12 +19,11 @@ object SymphonyScala {
 
   val graphql: SymphonyQL = SymphonyQL
     .newSymphonyQL()
-    .addQuery(
+    .query(
       Query(
         args => Future.successful(Data.characters.filter(c => args.origin.forall(c.origin == _))),
         args => Future.successful(Data.characters.find(c => c.name == args.name))
-      ),
-      Schema.derived[Query]
+      )
     )
     .build()
 }
