@@ -129,6 +129,15 @@ class JsonFormatsSpec extends AnyFunSpec with Matchers with JsonFormats with Spr
       print(obj.toString)
       json -> obj.toInputString shouldEqual jsonValue -> value.toInputString
     }
+
+    it("Deserialize SymphonyQLValue") {
+      val value     = SymphonyQLValue.StringValue("string")
+      val jsonValue = JsString("string")
+      val json      = symphonyQLInputValueJsonFormat.write(value)
+      val obj       = symphonyQLInputValueJsonFormat.read(jsonValue)
+
+      json -> obj.toString shouldEqual jsonValue -> value.toString
+    }
   }
 
 }

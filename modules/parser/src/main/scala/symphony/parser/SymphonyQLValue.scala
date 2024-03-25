@@ -48,7 +48,7 @@ object SymphonyQLInputValue {
   final case class ObjectValue(fields: Map[String, SymphonyQLInputValue]) extends SymphonyQLInputValue {
 
     override def toString: String =
-      fields.map { case (name, value) => s""""$name:${value.toString}"""" }.mkString("{", ",", "}")
+      fields.map { case (name, value) => s""""$name":${value.toString}""" }.mkString("{", ",", "}")
 
     override def toInputString: String = ValueRenderer.inputObjectValueRenderer.render(this)
   }
