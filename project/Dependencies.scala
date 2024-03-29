@@ -39,6 +39,7 @@ object Dependencies {
     lazy val server =
       Seq(
         "org.apache.pekko" %% "pekko-http"            % `pekko-http_Version`,
+        "org.apache.pekko" %% "pekko-actor-typed"     % `pekko-core_Version`,
         "org.apache.pekko" %% "pekko-stream"          % `pekko-core_Version`,
         "org.apache.pekko" %% "pekko-http-spray-json" % `pekko-http_Version`,
         "org.scalatest"    %% "scalatest"             % `scalatest_Version` % Test

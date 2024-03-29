@@ -160,16 +160,25 @@ object SymphonyQL {
       this
     }
 
+    /**
+     * Java API
+     */
     def addQuery[Q](query: Q, schema: Schema[Q]): this.type = {
       this.query = mergeOperation(this.query, query, schema)
       this
     }
 
+    /**
+     * Java API
+     */
     def addMutation[M](mutation: M, schema: Schema[M]): this.type = {
       this.mutation = mergeOperation(this.mutation, mutation, schema)
       this
     }
 
+    /**
+     * Java API
+     */
     def addSubscription[S](subscription: S, schema: Schema[S]): this.type = {
       this.subscription = mergeOperation(this.subscription, subscription, schema)
       this

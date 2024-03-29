@@ -166,7 +166,8 @@ lazy val examples = (project in file("examples"))
     commands ++= Commands.value,
     Compile / unmanagedSourceDirectories += (Compile / crossTarget).value / "src_managed",
     libraryDependencies ++= Seq(
-      "javax.annotation" % "javax.annotation-api" % "1.3.2"
+      "javax.annotation" % "javax.annotation-api" % "1.3.2",
+      "ch.qos.logback"   % "logback-classic"      % "1.5.3"
     ),
     Compile / javacOptions ++= Seq(
       "-processor",
