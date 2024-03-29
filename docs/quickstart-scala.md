@@ -67,7 +67,7 @@ def main(args: Array[String]): Unit = {
       |}""".stripMargin
       
     implicit val actorSystem: ActorSystem                   = ActorSystem("symphonyActorSystem")
-    val getRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(Some(characters)))
+    val getRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(characters))
 }
 ```
 
