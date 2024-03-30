@@ -57,7 +57,7 @@ Input defined using `@InputSchema` and `@ArgExtractor`:
 ```java
 @InputSchema
 @ArgExtractor
-record FilterArgs(Optional<Origin> origin, Optional<NestedArg> nestedArg) {
+record FilterArgs(Optional<Origin> origin) {
 }
 ```
 
