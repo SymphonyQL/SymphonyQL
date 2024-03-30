@@ -1,7 +1,7 @@
 # SymphonyQL
 
-> A GraphQL implementation built with Apache Pekko.
-
+> A GraphQL implementation built with Apache Pekko. 
+ 
 [![CI][Badge-CI]][Link-CI] 
 [![Badge-Codecov]][Link-Codecov] 
 [![Badge-Snapshots]][Link-Snapshots]

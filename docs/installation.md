@@ -4,9 +4,9 @@ sidebar_label: Installing
 custom_edit_url: https://github.com/SymphonyQL/SymphonyQL/edit/master/docs/installation.md
 ---
 
-SymphonyQL only supports Scala3 and Java21.
+SymphonyQL currently only supports **Scala3** and **Java21**, but can be extended to other versions.
 
-`io.github.jxnu-liguobin` is a temporary groupId used for artifact publishing.
+`io.github.jxnu-liguobin` is a temporary location used for artifact publishing.
 
 ## Installation using SBT
 
