@@ -15,7 +15,6 @@ import symphony.server.DefaultRoute
 import org.apache.pekko.actor.ActorSystem as ClassicActorSystem
 
 import scala.concurrent.ExecutionContextExecutor
-import scala.io.StdIn
 
 object SimpleHttpServer
     extends DefaultRoute(

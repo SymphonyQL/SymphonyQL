@@ -17,18 +17,13 @@ enum Origin {
   BELT
 }
 
-input NestedArgInput {
-  id: String!
-  name: String
-}
-
-type CharacterOutput {
+type Character {
   name: String!
   origin: Origin!
 }
 
 type Queries {
-  characters(origin: Origin, nestedArg: NestedArgInput): [CharacterOutput!]
+  characters(origin: Origin): [Character!]
 }
 ```
 
@@ -46,8 +41,7 @@ case class Queries(characters: FilterArgs => Source[Character, NotUsed])
 
 SymphonyQL automatically generates schemas during compilation:
 ```scala
-def main(args: Array[String]): Unit = {
-    val graphql: SymphonyQL = SymphonyQL
+val graphql: SymphonyQL = SymphonyQL
     .newSymphonyQL()
     .query(
       Queries(args =>
@@ -57,18 +51,51 @@ def main(args: Array[String]): Unit = {
       )
     )
     .build()
-    
-    val characters =
-    """{
-      |  characters(origin: "MARS") {
-      |    name
-      |    origin
-      |  }
-      |}""".stripMargin
-      
-    implicit val actorSystem: ActorSystem                   = ActorSystem("symphonyActorSystem")
-    val getRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(characters))
-}
+
+val characters =
+"""{
+  |  characters(origin: "MARS") {
+  |    name
+  |    origin
+  |  }
+  |}""".stripMargin
+  
+implicit val actorSystem: ActorSystem                   = ActorSystem("symphonyActorSystem")
+val getRes: Future[SymphonyQLResponse[SymphonyQLError]] = graphql.runWith(SymphonyQLRequest(characters))
 ```
 
 `Schema.derived[Queries]` is an inline call by metaprogramming.
+
+## Fast integration into pekko-http applications
+
+Inherit `DefaultRoute` to get a default `routes`, which is a POST `/api/graphql`:
+```scala
+object SimpleHttpServer
+    extends DefaultRoute(graphql) {
+
+  override implicit val actorSystem: ClassicActorSystem =
+    ActorSystem[Nothing](serverBehavior, "SimpleHttpServer").classicSystem
+
+  def serverBehavior: Behavior[Nothing] = Behaviors.setup[Nothing] { context =>
+    implicit val system                                     = context.system
+    implicit val executionContext: ExecutionContextExecutor = context.executionContext
+
+    val bindingFuture = Http().newServerAt("localhost", 8080).bind(routes)
+    context.log.info("Server online at http://localhost:8080/")
+
+    Behaviors.receiveMessage { _ =>
+      bindingFuture
+        .flatMap(_.unbind())
+        .onComplete(_ => system.terminate())
+      Behaviors.stopped
+    }
+  }
+
+  def main(args: Array[String]): Unit =
+    serverBehavior
+}
+```
+
+## Altair support
+
+![](altair.jpg)
