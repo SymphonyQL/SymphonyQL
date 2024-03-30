@@ -22,8 +22,8 @@ final class UnionBuilder[A] private {
     this
   }
 
-  def description(description: java.util.Optional[String]): this.type = {
-    this.description = description.toScala
+  def description(description: String): this.type = {
+    this.description = Option(description)
     this
   }
 
@@ -41,8 +41,8 @@ final class UnionBuilder[A] private {
     this
   }
 
-  def origin(origin: java.util.Optional[String]): this.type = {
-    this.origin = origin.toScala
+  def origin(origin: String): this.type = {
+    this.origin = Option(origin)
     this
   }
 

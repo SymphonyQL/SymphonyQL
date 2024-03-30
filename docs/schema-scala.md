@@ -100,8 +100,8 @@ For more types, please refer to the [Schema Specification](schema.md).
 Defining SymphonyQL **Interface Type**, for example:
 ```scala
 implicit val newInterface = UnionBuilder.newObject[NestedInterface]
-    .description(Optional.ofNullable("NestedInterface"))
-    .origin(Optional.of("symphony.apt.tests.NestedInterface"))
+    .description("NestedInterface")
+    .origin("symphony.apt.tests.NestedInterface")
     .name("NestedInterface")
     .subSchema("Mid1", summon[Schema[Mid1]])
     .subSchema("Mid2", summon[Schema[Mid2]])
@@ -115,8 +115,8 @@ implicit val newInterface = UnionBuilder.newObject[NestedInterface]
 Defining SymphonyQL **Union Type**, for example:
 ```scala
 implicit val newUnion = UnionBuilder.newObject[SearchResult]
-    .description(Optional.ofNullable("SearchResult"))
-    .origin(Optional.of("symphony.apt.tests.SearchResult"))
+    .description("SearchResult")
+    .origin("symphony.apt.tests.SearchResult")
     .name("SearchResult")
     .subSchema("Book", summon[Schema[Book]])
     .subSchema("Author", summon[Schema[Author]])

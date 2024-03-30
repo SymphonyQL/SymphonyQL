@@ -27,8 +27,8 @@ final class FieldBuilder private {
     this
   }
 
-  def description(description: java.util.Optional[String]): this.type = {
-    this.description = description.toScala
+  def description(description: String): this.type = {
+    this.description = Option(description)
     this
   }
 
@@ -50,8 +50,8 @@ final class FieldBuilder private {
     this
   }
 
-  def deprecationReason(deprecationReason: java.util.Optional[String]): this.type = {
-    this.deprecationReason = deprecationReason.toScala
+  def deprecationReason(deprecationReason: String): this.type = {
+    this.deprecationReason = Option(deprecationReason)
     this
   }
 

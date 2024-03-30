@@ -25,8 +25,8 @@ final class ObjectBuilder[A] private {
     this
   }
 
-  def description(description: java.util.Optional[String]): this.type = {
-    this.description = description.toScala
+  def description(description: String): this.type = {
+    this.description = Option(description)
     this
   }
 

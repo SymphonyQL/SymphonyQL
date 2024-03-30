@@ -388,19 +388,17 @@ public abstract class GeneratedCodeGenerator implements CodeGenerator {
 
     protected static CodeBlock getDescription(Element element) {
         var description = TypeUtils.getAnnotation(GQLDescription.class, element);
-        return description != null ? CodeBlock.of("$T.ofNullable($S)", ClassName.get(Optional.class), description.value()) :
-                CodeBlock.of("$T.empty()", ClassName.get(Optional.class));
+        return description != null ? CodeBlock.of("$S", description.value()) : CodeBlock.of("null");
     }
 
     protected static CodeBlock getOrigin(Element element) {
         var typeName = TypeUtils.getTypeName(element);
-        return CodeBlock.of("$T.of($S)",ClassName.get(Optional.class), typeName.toString());
+        return CodeBlock.of("$S", typeName.toString());
     }
 
     protected static CodeBlock getDeprecatedReason(Element element) {
         var deprecated = TypeUtils.getAnnotation(GQLDeprecated.class, element);
-        return deprecated != null ? CodeBlock.of("$T.ofNullable($S)", ClassName.get(Optional.class), deprecated.reason()) :
-                CodeBlock.of("$T.empty()", ClassName.get(Optional.class));
+        return deprecated != null ? CodeBlock.of("$S", deprecated.reason()) : CodeBlock.of("null");
     }
 
     protected FieldSpec assignFieldSpec(TypeName returnType, String methodName) {
