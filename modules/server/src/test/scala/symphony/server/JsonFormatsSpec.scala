@@ -45,7 +45,7 @@ class JsonFormatsSpec extends AnyFunSpec with Matchers with JsonFormats with Spr
 
     it("Deserialize LocationInfo Index") {
       val value     = LocationInfo(1, 2)
-      val jsonValue = JsObject("column" -> JsNumber(1), "line" -> JsNumber(2))
+      val jsonValue = JsObject("column" -> JsNumber(2), "line" -> JsNumber(1))
       val json      = locationInfoJsonFormat.write(value)
       val obj       = locationInfoJsonFormat.read(jsonValue)
 

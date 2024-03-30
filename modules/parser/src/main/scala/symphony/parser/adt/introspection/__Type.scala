@@ -65,7 +65,7 @@ final case class __Type(
             directives
               .getOrElse(Nil) ++
               specifiedBy
-                .map(url => Directive("specifiedBy", Map("url" -> StringValue(url)), directives.size))
+                .map(url => Directive("specifiedBy", Map("url" -> StringValue(url))))
                 .toList
           )
         )

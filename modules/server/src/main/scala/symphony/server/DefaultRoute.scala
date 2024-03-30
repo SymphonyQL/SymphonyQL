@@ -7,6 +7,7 @@ import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.unmarshalling.*
+import org.apache.pekko.http.scaladsl.server.*
 import spray.json.*
 import symphony.*
 import symphony.parser.*
@@ -14,6 +15,16 @@ import symphony.parser.*
 trait DefaultRoute(symphonyQL: SymphonyQL) extends JsonFormats with SprayJsonSupport {
 
   implicit val actorSystem: ActorSystem
+
+  def defaultExceptionHandler: ExceptionHandler =
+    ExceptionHandler { case e: SymphonyQLError =>
+      complete(
+        HttpResponse(
+          StatusCodes.OK,
+          entity = HttpEntity(ContentTypes.`application/json`, e.toJson.toString)
+        )
+      )
+    }
 
   final implicit val symphonyQLRequestUnMarshaller: Unmarshaller[HttpEntity, SymphonyQLRequest] =
     sprayJsValueUnmarshaller.map(json => symphonyQLRequestJsonFormat.read(json))
@@ -25,10 +36,12 @@ trait DefaultRoute(symphonyQL: SymphonyQL) extends JsonFormats with SprayJsonSup
     )
 
   val routes: Route = path("api" / "graphql") {
-    post {
-      entity(as[SymphonyQLRequest]) { symphonyQLRequest =>
-        complete {
-          symphonyQL.runWith(symphonyQLRequest)
+    handleExceptions(defaultExceptionHandler) {
+      post {
+        entity(as[SymphonyQLRequest]) { symphonyQLRequest =>
+          complete {
+            symphonyQL.runWith(symphonyQLRequest)
+          }
         }
       }
     }

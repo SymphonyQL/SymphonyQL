@@ -20,8 +20,8 @@ object Dependencies {
     // parser schema and query, convert to ADTs, types definition
     lazy val parser =
       Seq(
+        "org.parboiled"    %% "parboiled"    % `parboiled_Version`,
         "org.apache.pekko" %% "pekko-stream" % `pekko-core_Version` % Provided, // StreamValue
-        "org.parboiled"    %% "parboiled"    % `parboiled_Version`  % Provided,
         "org.scalatest"    %% "scalatest"    % `scalatest_Version`  % Test
       )
 
@@ -31,8 +31,7 @@ object Dependencies {
         "com.softwaremill.magnolia1_3" %% "magnolia"      % `magnolia_Version`,
         "org.apache.pekko"             %% "pekko-stream"  % `pekko-core_Version`,
         "org.apache.pekko"             %% "pekko-testkit" % `pekko-core_Version` % Test,
-        "org.scalatest"                %% "scalatest"     % `scalatest_Version`  % Test,
-        "org.parboiled"                %% "parboiled"     % `parboiled_Version`  % Test
+        "org.scalatest"                %% "scalatest"     % `scalatest_Version`  % Test
       )
 
     // default http server
