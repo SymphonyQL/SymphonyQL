@@ -8,7 +8,6 @@ import symphony.parser.*
 import symphony.parser.SymphonyQLValue.NullValue
 
 import java.util
-import scala.jdk.FunctionConverters.*
 import scala.jdk.CollectionConverters.*
 import scala.jdk.FutureConverters.*
 

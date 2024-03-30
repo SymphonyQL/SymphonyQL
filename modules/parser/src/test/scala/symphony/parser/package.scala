@@ -2,7 +2,7 @@ package symphony.parser
 
 import symphony.parser.*
 import symphony.parser.adt.*
-import symphony.parser.adt.Definition.ExecutableDefinition.{ FragmentDefinition, OperationDefinition }
+import symphony.parser.adt.Definition.ExecutableDefinition.*
 import symphony.parser.adt.OperationType.Query
 import symphony.parser.adt.Selection.Field
 

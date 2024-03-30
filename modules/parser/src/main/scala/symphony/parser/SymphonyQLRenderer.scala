@@ -1,6 +1,6 @@
 package symphony.parser
 
-import scala.annotation.{ switch, targetName }
+import scala.annotation.*
 
 /**
  * The inverse of a `Parser` over some type A. A renderer can be used to render a value of type A to a string in either

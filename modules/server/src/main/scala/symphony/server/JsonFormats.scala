@@ -33,7 +33,7 @@ trait InputFormats extends DefaultJsonProtocol {
           case SymphonyQLInputValue.VariableValue(name) => JsString(name)
     }
 
-  def jsonToInputValue(json: JsValue): SymphonyQLInputValue =
+  private def jsonToInputValue(json: JsValue): SymphonyQLInputValue =
     json match
       case JsNull             => SymphonyQLValue.NullValue
       case JsArray(elements)  => SymphonyQLInputValue.ListValue(elements.map(jsonToInputValue).toList)
@@ -58,7 +58,7 @@ trait OutputFormats extends DefaultJsonProtocol {
         case _                => SymphonyQLOutputValue.ObjectValue.apply(List.empty)
 
       override def write(obj: SymphonyQLOutputValue.ObjectValue): JsValue =
-        JsObject(obj.fields.map(kv => kv._1 -> symphonyQLOutputValueJsonFormat.write(kv._2)).toList: _*)
+        JsObject(obj.fields.map(kv => kv._1 -> symphonyQLOutputValueJsonFormat.write(kv._2)): _*)
     }
 
   implicit lazy val symphonyQLOutputValueJsonFormat: JsonFormat[SymphonyQLOutputValue] =
@@ -82,7 +82,7 @@ trait OutputFormats extends DefaultJsonProtocol {
       }
     }
 
-  def jsonToOutputValue(json: JsValue): SymphonyQLOutputValue =
+  private def jsonToOutputValue(json: JsValue): SymphonyQLOutputValue =
     json match
       case JsObject(fields)   =>
         SymphonyQLOutputValue.ObjectValue(fields.toList.map(kv => kv._1 -> jsonToOutputValue(kv._2)))
@@ -105,7 +105,8 @@ trait JsonFormats extends InputFormats with OutputFormats {
       override def read(json: JsValue): SymphonyQLPathValue = json match {
         case JsString(value) => SymphonyQLPathValue.Key(value)
         case JsNumber(value) => SymphonyQLPathValue.Index(value.toInt)
-        case _               => throw DeserializationException("failed to decode as string or int")
+        case _               =>
+          throw SymphonyQLError.ArgumentError(s"Invalid json format: $json")
       }
 
       override def write(obj: SymphonyQLPathValue): JsValue =
@@ -122,7 +123,8 @@ trait JsonFormats extends InputFormats with OutputFormats {
           fields.get("line").flatMap(_.convertTo[Option[Int]]).getOrElse(0),
           fields.get("column").flatMap(_.convertTo[Option[Int]]).getOrElse(0)
         )
-      case _                => throw DeserializationException("failed to decode as int")
+      case _                =>
+        throw SymphonyQLError.ArgumentError(s"Invalid json format: $json")
     }
 
     override def write(obj: LocationInfo): JsValue = obj.toOutputValue.toJson
@@ -142,7 +144,7 @@ trait JsonFormats extends InputFormats with OutputFormats {
             fields.get("extensions").flatMap(_.convertTo[Option[SymphonyQLOutputValue.ObjectValue]])
           )
         case _                =>
-          throw DeserializationException(s"Invalid json format: $json")
+          throw SymphonyQLError.ArgumentError(s"Invalid json format: $json")
   }
 
   implicit lazy val symphonyQLRequestJsonFormat: JsonFormat[SymphonyQLRequest] = new JsonFormat[SymphonyQLRequest] {
@@ -164,7 +166,7 @@ trait JsonFormats extends InputFormats with OutputFormats {
             fields.get("extensions").flatMap(_.convertTo[Option[Map[String, SymphonyQLInputValue]]])
           )
         case _                =>
-          throw DeserializationException(s"Invalid json format: $json")
+          throw SymphonyQLError.ArgumentError(s"Invalid json format: $json")
 
   }
 
@@ -184,7 +186,7 @@ trait JsonFormats extends InputFormats with OutputFormats {
               fields.get("errors").flatMap(_.convertTo[Option[List[SymphonyQLError]]]).getOrElse(List.empty)
             )
           case _                =>
-            throw DeserializationException(s"Invalid json format: $json")
+            throw SymphonyQLError.ArgumentError(s"Invalid json format: $json")
     }
 
 }

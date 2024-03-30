@@ -7,7 +7,6 @@ import org.parboiled2.support.hlist.HNil
 import symphony.parser.*
 import symphony.parser.SymphonyQLValue.*
 import symphony.parser.adt.*
-import symphony.parser.adt.Type.*
 
 abstract class CommonParser extends Parser {
 

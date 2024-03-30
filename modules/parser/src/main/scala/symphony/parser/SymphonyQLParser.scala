@@ -11,7 +11,7 @@ import symphony.parser.parsers.*
 
 object SymphonyQLParser {
 
-  def documentParser(input: ParserInput): DefinitionParser = new DefinitionParser(input)
+  private def documentParser(input: ParserInput): DefinitionParser = new DefinitionParser(input)
 
   // ========================================Parser API===================================================================
   def parseQuery(query: String): Either[ParsingError, Document] = {
@@ -31,8 +31,9 @@ object SymphonyQLParser {
     val input  = ParserInput(query)
     val parser = SymphonyQLParser.documentParser(input)
     parser.document.run() match
-      case Failure(exception) => Some(exception.getMessage)
-      case Success(_)         => None
+      case Failure(parseError: ParseError) => Some(parseError.format(parser))
+      case Failure(exception)              => Some(exception.getMessage)
+      case Success(_)                      => None
   }
 
   def parseInputValue(query: String): Either[ParsingError, SymphonyQLInputValue] = {

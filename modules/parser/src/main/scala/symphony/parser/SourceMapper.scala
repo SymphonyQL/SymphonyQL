@@ -1,6 +1,5 @@
 package symphony.parser
 
-import scala.collection.mutable.ArrayBuffer
 import adt.LocationInfo
 import org.parboiled2.Position
 

@@ -1,12 +1,9 @@
 package symphony.schema.builder
 
-import symphony.parser.SymphonyQLValue
 import symphony.parser.adt.Directive
-import symphony.parser.adt.introspection.*
 import symphony.schema.*
 
 import scala.annotation.*
-import scala.jdk.FunctionConverters.*
 import scala.jdk.OptionConverters.*
 
 object UnionBuilder {

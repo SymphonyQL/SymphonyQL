@@ -2,13 +2,10 @@ package symphony
 package schema
 package builder
 
-import symphony.parser.SymphonyQLValue
 import symphony.parser.adt.Directive
 import symphony.parser.adt.introspection.*
-import symphony.schema.Stage
 
 import scala.annotation.varargs
-import scala.jdk.FunctionConverters.*
 import scala.jdk.OptionConverters.*
 
 object ObjectBuilder {

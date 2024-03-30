@@ -157,7 +157,6 @@ public class ArgumentExtractorCodeGenerator extends GeneratedCodeGenerator {
         generateObjectBody(builder, typeName, applyCode, fieldSpec);
     }
 
-    // TODO support interface
     protected void generateObject(final TypeSpec.Builder builder, final TypeElement typeElement) {
         var fieldElements = ModelUtils.getRecordComponents(typeElement);
         var fieldCodes = new LinkedHashMap<String, CodeBlock>();

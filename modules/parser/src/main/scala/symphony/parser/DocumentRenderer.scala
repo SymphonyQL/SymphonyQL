@@ -9,7 +9,7 @@ import adt.Definition.TypeSystemDefinition.*
 import introspection.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.DirectiveLocation.*
 import symphony.parser.adt.Definition.TypeSystemDefinition.TypeDefinition.*
-import symphony.parser.adt.Type.{ innerType, NamedType }
+import symphony.parser.adt.Type.*
 
 object DocumentRenderer extends SymphonyQLRenderer[Document] {
 
