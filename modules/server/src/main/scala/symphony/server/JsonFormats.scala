@@ -119,8 +119,8 @@ trait JsonFormats extends InputFormats with OutputFormats {
     override def read(json: JsValue): LocationInfo = json match {
       case JsObject(fields) =>
         LocationInfo(
-          fields.get("column").flatMap(_.convertTo[Option[Int]]).getOrElse(0),
-          fields.get("line").flatMap(_.convertTo[Option[Int]]).getOrElse(0)
+          fields.get("line").flatMap(_.convertTo[Option[Int]]).getOrElse(0),
+          fields.get("column").flatMap(_.convertTo[Option[Int]]).getOrElse(0)
         )
       case _                => throw DeserializationException("failed to decode as int")
     }

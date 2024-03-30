@@ -87,7 +87,7 @@ lazy val parser = (project in file("modules/parser"))
   )
 
 lazy val core = (project in file("modules/core"))
-  .dependsOn(parser, validator, annotations)
+  .dependsOn(parser % "compile->compile;test->test", validator, annotations)
   .settings(
     commonSettings,
     name           := "symphony-core",
@@ -97,7 +97,7 @@ lazy val core = (project in file("modules/core"))
   )
 
 lazy val server = (project in file("modules/server"))
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
   .settings(
     commonSettings,
     name           := "symphony-server",

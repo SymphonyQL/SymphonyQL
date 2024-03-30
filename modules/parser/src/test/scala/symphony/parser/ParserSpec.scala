@@ -3,6 +3,7 @@ package symphony.parser
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
 import symphony.parser.*
+import symphony.parser.SymphonyQLError.ParsingError
 import symphony.parser.SymphonyQLInputValue.*
 import symphony.parser.SymphonyQLValue.*
 import symphony.parser.adt.*
@@ -149,6 +150,20 @@ class ParserSpec extends AnyFunSpec with Matchers {
   }
 
   describe("Simple Query") {
+    it("invalid syntax") {
+      val query =
+        """{
+          |  hero {
+          |    name(
+          |  }
+          |}""".stripMargin
+      val doc   = SymphonyQLParser.parseQuery(query)
+      doc.swap.toOption.orNull shouldEqual ParsingError(
+        "Invalid input '}', expected unicodeBOM, whiteSpace, lineTerminator, comment, comma, argument, ignored or ')' (line 4, column 3):\n  }\n  ^",
+        Some(LocationInfo(4, 3))
+      )
+    }
+
     it("simple query with fields") {
       val query =
         """{

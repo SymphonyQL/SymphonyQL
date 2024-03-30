@@ -2,7 +2,7 @@ package symphony
 package parser
 package adt
 
-final case class Directive(name: String, arguments: Map[String, SymphonyQLInputValue] = Map.empty, index: Int = 0)
+final case class Directive(name: String, arguments: Map[String, SymphonyQLInputValue] = Map.empty)
 
 object Directive {
 
