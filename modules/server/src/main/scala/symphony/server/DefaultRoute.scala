@@ -20,7 +20,7 @@ trait DefaultRoute(symphonyQL: SymphonyQL) extends JsonFormats with SprayJsonSup
     ExceptionHandler { case e: SymphonyQLError =>
       complete(
         HttpResponse(
-          StatusCodes.InternalServerError,
+          StatusCodes.OK,
           entity = HttpEntity(ContentTypes.`application/json`, e.toJson.toString)
         )
       )
