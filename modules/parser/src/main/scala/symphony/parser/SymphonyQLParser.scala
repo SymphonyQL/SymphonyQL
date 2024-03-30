@@ -2,7 +2,7 @@ package symphony
 package parser
 
 import scala.util.*
-import org.parboiled2.{ ErrorFormatter, * }
+import org.parboiled2.*
 import org.parboiled2.Rule.*
 import symphony.parser.*
 import symphony.parser.SymphonyQLError.ParsingError
