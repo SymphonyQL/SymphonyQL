@@ -48,8 +48,8 @@ object Executor {
             PureStage(SymphonyQLOutputValue.ListValue(stages.asInstanceOf[List[PureStage]].map(_.value)))
           else ExecutionStage.ListStage(stages.map(loopExecuteStage(_, currentField, arguments)))
         case Stage.ObjectStage(name, _fields) =>
-          val mergedFields = mergeFields(currentField, name)
-          val fields       = mergedFields.map {
+          val filteredFields = filterFields(currentField, name)
+          val fields         = filteredFields.map {
             case ExecutionField(name @ "__typename", _, _, alias, _, _, _, _) =>
               alias.getOrElse(name) -> PureStage(StringValue(name))
             case f @ ExecutionField(name, _, _, alias, _, _, args, _)         =>
@@ -68,10 +68,10 @@ object Executor {
           else ExecutionStage.ObjectStage(fields)
         case p @ PureStage(value)             =>
           value match {
-            case EnumValue(v) if mergeFields(currentField, v).collectFirst {
+            case EnumValue(v) if filterFields(currentField, v).collectFirst {
                   case ExecutionField("__typename", _, _, _, _, _, _, _) => true
                 }.nonEmpty =>
-              val obj = mergeFields(currentField, v).collectFirst {
+              val obj = filterFields(currentField, v).collectFirst {
                 case ExecutionField(name @ "__typename", _, _, alias, _, _, _, _) =>
                   SymphonyQLOutputValue.ObjectValue(List(alias.getOrElse(name) -> StringValue(v)))
               }
@@ -122,24 +122,6 @@ object Executor {
     arguments.map { case (k, v) => k -> extractVariable(v) }
   }
 
-  private def mergeFields(field: ExecutionField, typeName: String): List[ExecutionField] = {
-    val array = mutable.ArrayBuffer.empty[ExecutionField]
-    val map   = mutable.Map.empty[String, Int]
-    field.fields.foreach { field =>
-      if (field.condition.forall(_ == typeName)) {
-        val name = field.alias.getOrElse(field.name)
-        map.get(name) match {
-          case None        =>
-            // first time we see this field, add it to the array
-            array += field
-          case Some(index) =>
-            // field already existed, merge it
-            val f = array(index)
-            array(index) = f.copy(fields = f.fields ::: field.fields)
-        }
-      }
-    }
-
-    array.toList
-  }
+  private def filterFields(field: ExecutionField, typeName: String): List[ExecutionField] =
+    field.fields.filter(_.condition.forall(_.contains(typeName)))
 }

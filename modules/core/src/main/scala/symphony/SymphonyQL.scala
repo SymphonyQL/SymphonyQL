@@ -67,12 +67,12 @@ final class SymphonyQL private (rootSchema: RootSchema) {
   private def resolveOperation(
     operationName: Option[String] = None,
     document: Document
-  ): Either[SymphonyQLError, (OperationDefinition, Operation)] = {
+  ): Either[SymphonyQLError, (OperationDefinition, Operation, RootType)] = {
     lazy val introspectionRootSchema = rootType.map(Introspector.introspect)
     lazy val rootSchemaToValidate    =
       if (Introspector.isIntrospection(document)) introspectionRootSchema else Right(rootSchema)
 
-    val op = operationName match {
+    val operationDefinition = operationName match {
       case Some(name) =>
         document.definitions.collectFirst { case op: OperationDefinition if op.name.contains(name) => op }
           .toRight(SymphonyQLError.ArgumentError(s"Unknown operation $name."))
@@ -83,7 +83,7 @@ final class SymphonyQL private (rootSchema: RootSchema) {
         }
     }
 
-    val operation = op match {
+    val operation = operationDefinition match {
       case Left(error)                => Left(error)
       case Right(operationDefinition) =>
         operationDefinition.operationType match {
@@ -102,7 +102,12 @@ final class SymphonyQL private (rootSchema: RootSchema) {
         }
     }
 
-    op.flatMap(d => operation.map(o => d -> o))
+    for {
+      root         <- rootType
+      opDefinition <- operationDefinition
+      op           <- operation
+    } yield (opDefinition, op, root)
+
   }
 
   private def compileRequest(doc: Document, request: SymphonyQLRequest)(implicit
@@ -113,9 +118,10 @@ final class SymphonyQL private (rootSchema: RootSchema) {
       fragment.name -> fragment
     }.toMap
     resolveOperation(request.operationName, doc) match
-      case Left(ex)            => Source.failed(ex)
-      case Right((define, op)) =>
-        val field = ExecutionField(define.selectionSet, fragments, request.variables.getOrElse(Map.empty), op.opType)
+      case Left(ex)                  => Source.failed(ex)
+      case Right((define, op, root)) =>
+        val field =
+          ExecutionField(define.selectionSet, fragments, request.variables.getOrElse(Map.empty), op.opType, root)
         Executor.executeRequest(
           ExecutionRequest(
             op.stage,
