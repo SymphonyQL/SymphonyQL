@@ -29,9 +29,9 @@ object Executor {
       stage match
         case Stage.FutureStage(future)        =>
           ExecutionStage.FutureStage(future.map(loopExecuteStage(_, currentField, arguments)))
-        case Stage.ScalaSourceStage(source)   =>
+        case Stage.SourceStage(source)   =>
           if (request.operationType == OperationType.Subscription) {
-            ExecutionStage.ScalaSourceStage(source.map(loopExecuteStage(_, currentField, arguments)))
+            ExecutionStage.SourceStage(source.map(loopExecuteStage(_, currentField, arguments)))
           } else {
             val future = source.runWith(Sink.seq[Stage]).map(s => Stage.ListStage(s.toList))
             loopExecuteStage(
@@ -40,8 +40,6 @@ object Executor {
               arguments
             )
           }
-        case Stage.JavaSourceStage(source)    =>
-          loopExecuteStage(Stage.ScalaSourceStage(source.asScala), currentField, arguments)
         case Stage.FunctionStage(stage)       => loopExecuteStage(stage(arguments), currentField, Map())
         case Stage.ListStage(stages)          =>
           if (stages.forall(_.isInstanceOf[PureStage]))
@@ -68,12 +66,12 @@ object Executor {
           else ExecutionStage.ObjectStage(fields)
         case p @ PureStage(value)             =>
           value match {
-            case EnumValue(v) if filterFields(currentField, v).collectFirst {
-                  case ExecutionField("__typename", _, _, _, _, _, _, _) => true
-                }.nonEmpty =>
+            case EnumValue(v) =>
               val obj = filterFields(currentField, v).collectFirst {
                 case ExecutionField(name @ "__typename", _, _, alias, _, _, _, _) =>
                   SymphonyQLOutputValue.ObjectValue(List(alias.getOrElse(name) -> StringValue(v)))
+                case f: ExecutionField if f.name == "_" =>
+                  NullValue  
               }
               obj.fold(p)(PureStage(_))
             case _ => p
@@ -87,11 +85,9 @@ object Executor {
     stage match
       case ExecutionStage.FutureStage(future)                                 =>
         Source.future(future).flatMapConcat(drainExecutionStages)
-      case ExecutionStage.ScalaSourceStage(source)                            =>
+      case ExecutionStage.SourceStage(source)                            =>
         val sourceStage = source.flatMapConcat(drainExecutionStages)
         Source.single(SymphonyQLOutputValue.StreamValue(sourceStage))
-      case ExecutionStage.JavaSourceStage(source)                             =>
-        drainExecutionStages(ExecutionStage.ScalaSourceStage(source.asScala))
       case ExecutionStage.ListStage(stages)                                   =>
         val sourceList = stages.map(drainExecutionStages)
         Source.zipN(sourceList).map(s => SymphonyQLOutputValue.ListValue(s.toList))
