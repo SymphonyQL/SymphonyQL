@@ -42,12 +42,12 @@ class SymphonyQLBenchmarks {
     Await.result(actorSystemScala.terminate(), 5.seconds)
     Await.result(actorSystemJava.terminate(), 5.seconds)
 
-//  @Benchmark
-//  def simpleCaliban(): Unit = {
-//    val io = Caliban.interpreter.execute(simpleQuery)
-//    Caliban.run(io)
-//    ()
-//  }
+  @Benchmark
+  def simpleCaliban(): Unit = {
+    val io = Caliban.interpreter.execute(simpleQuery)
+    Caliban.run(io)
+    ()
+  }
 
   @Benchmark
   def simpleSymphonyQLJava(): Unit = {
@@ -62,26 +62,26 @@ class SymphonyQLBenchmarks {
     Await.result(future, scala.concurrent.duration.Duration.create(1, TimeUnit.MINUTES))
     ()
   }
-//
-//  @Benchmark
-//  def simpleGraphQLJava(): Unit = {
-//    val executionResult = GraphQLJava.build
-//      .executeAsync(
-//        ExecutionInput
-//          .newExecutionInput()
-//          .query(simpleQuery)
-//          .build()
-//      )
-//      .asScala
-//    Await.result(executionResult, scala.concurrent.duration.Duration.create(1, TimeUnit.MINUTES))
-//    ()
-//  }
-//
-//  @Benchmark
-//  def simpleSangria(): Unit = {
-//    val future: Future[Json] =
-//      Future.fromTry(QueryParser.parse(simpleQuery)).flatMap(queryAst => Executor.execute(Sangria.schema, queryAst))
-//    Await.result(future, 1.minute)
-//    ()
-//  }
+
+  @Benchmark
+  def simpleGraphQLJava(): Unit = {
+    val executionResult = GraphQLJava.build
+      .executeAsync(
+        ExecutionInput
+          .newExecutionInput()
+          .query(simpleQuery)
+          .build()
+      )
+      .asScala
+    Await.result(executionResult, scala.concurrent.duration.Duration.create(1, TimeUnit.MINUTES))
+    ()
+  }
+
+  @Benchmark
+  def simpleSangria(): Unit = {
+    val future: Future[Json] =
+      Future.fromTry(QueryParser.parse(simpleQuery)).flatMap(queryAst => Executor.execute(Sangria.schema, queryAst))
+    Await.result(future, 1.minute)
+    ()
+  }
 }
