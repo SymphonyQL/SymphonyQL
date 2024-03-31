@@ -33,10 +33,10 @@ object Executor {
     ): ExecutionStage =
       stage match
         case s: Stage.SourceStage       =>
-          makeSourceStage(s, currentField, arguments, path)
-        case s: Stage.ObjectStage       => makeObjectStage(s, currentField, arguments, path)
+          reduceSourceStage(s, currentField, arguments, path)
+        case s: Stage.ObjectStage       => reduceObjectStage(s, currentField, arguments, path)
         case Stage.ListStage(stages)    =>
-          makeListStage(
+          reduceListStage(
             stages.zipWithIndex.map { (stage, i) =>
               loopExecuteStage(stage, currentField, arguments, SymphonyQLPathValue.Index(i) :: path)
             },
@@ -60,12 +60,12 @@ object Executor {
 
     end loopExecuteStage
 
-    def makeListStage(list: List[ExecutionStage], areItemsNullable: Boolean): ExecutionStage =
+    def reduceListStage(list: List[ExecutionStage], areItemsNullable: Boolean): ExecutionStage =
       if (list.forall(_.isInstanceOf[PureStage]))
         PureStage(SymphonyQLOutputValue.ListValue(list.asInstanceOf[List[PureStage]].map(_.value)))
       else ExecutionStage.ListStage(list, areItemsNullable)
 
-    def makeSourceStage(
+    def reduceSourceStage(
       stage: Stage.SourceStage,
       currentField: ExecutionField,
       arguments: Map[String, SymphonyQLInputValue],
@@ -83,9 +83,9 @@ object Executor {
           path
         )
       }
-    end makeSourceStage
+    end reduceSourceStage
 
-    def makeObjectStage(
+    def reduceObjectStage(
       stage: Stage.ObjectStage,
       currentField: ExecutionField,
       arguments: Map[String, SymphonyQLInputValue],
@@ -115,7 +115,7 @@ object Executor {
           )
         )
       else ExecutionStage.ObjectStage(fields)
-    end makeObjectStage
+    end reduceObjectStage
 
     val executionStage = loopExecuteStage(request.stage, request.currentField, Map(), List.empty)
     ExecutionOutputValue(drainExecutionStages(executionStage, errors), errors)
