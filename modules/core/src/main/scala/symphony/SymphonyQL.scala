@@ -12,6 +12,7 @@ import symphony.schema.*
 import scala.jdk.FutureConverters.*
 import java.util.concurrent.CompletionStage
 import scala.concurrent.*
+import scala.collection.mutable.ListBuffer
 import scala.util.*
 import symphony.parser.adt.Definition.ExecutableDefinition.*
 import symphony.parser.adt.OperationType
@@ -59,9 +60,9 @@ final class SymphonyQL private (rootSchema: RootSchema) {
       resp <- doc match
                 case Left(ex)        => Future.failed(ex)
                 case Right(document) =>
-                  compileRequest(document, request)
-                    .map(SymphonyQLResponse(_, List.empty))
-                    .runWith[Future[SymphonyQLResponse[SymphonyQLError]]](Sink.head)
+                  val out  = compileRequest(document, request)
+                  val data = out.data.map(SymphonyQLResponse(_, out.errors.toList))
+                  data.runWith[Future[SymphonyQLResponse[SymphonyQLError]]](Sink.head)
     } yield resp
 
   private def resolveOperation(
@@ -113,12 +114,12 @@ final class SymphonyQL private (rootSchema: RootSchema) {
   private def compileRequest(doc: Document, request: SymphonyQLRequest)(implicit
     actorSystem: ActorSystem,
     ec: ExecutionContext
-  ): Source[SymphonyQLOutputValue, NotUsed] = {
+  ): ExecutionOutputValue = {
     val fragments = doc.definitions.collect { case fragment: FragmentDefinition =>
       fragment.name -> fragment
     }.toMap
     resolveOperation(request.operationName, doc) match
-      case Left(ex)                  => Source.failed(ex)
+      case Left(ex)                  => ExecutionOutputValue(Source.empty, ListBuffer(ex))
       case Right((define, op, root)) =>
         val field =
           ExecutionField(define.selectionSet, fragments, request.variables.getOrElse(Map.empty), op.opType, root)
