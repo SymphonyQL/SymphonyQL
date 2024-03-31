@@ -22,7 +22,7 @@ object SimpleHttpServer
         .newSymphonyQL()
         .query(
           Queries(args =>
-            Source.failed(
+            Source.single(
               Character("hello-" + args.origin.map(_.toString).getOrElse(""), args.origin.getOrElse(Origin.BELT))
             )
           )
