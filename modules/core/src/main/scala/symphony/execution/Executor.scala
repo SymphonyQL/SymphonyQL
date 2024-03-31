@@ -12,6 +12,7 @@ import symphony.parser.adt.Selection.*
 import symphony.schema.*
 
 import scala.collection.immutable.ListMap
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 
 object Executor {
@@ -19,47 +20,43 @@ object Executor {
   def executeRequest(
     request: ExecutionRequest
   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Source[SymphonyQLOutputValue, NotUsed] = {
-    val fragments           = request.fragments
-    val variableDefinitions = request.variableDefinitions
-    val variableValues      = request.variableValues
-    val operationType       = request.operationType
 
     def loopExecuteStage(
       stage: Stage,
-      selections: List[Selection],
+      currentField: ExecutionField,
       arguments: Map[String, SymphonyQLInputValue]
     ): ExecutionStage =
       stage match
         case Stage.FutureStage(future)        =>
-          ExecutionStage.FutureStage(future.map(loopExecuteStage(_, selections, arguments)))
+          ExecutionStage.FutureStage(future.map(loopExecuteStage(_, currentField, arguments)))
         case Stage.ScalaSourceStage(source)   =>
-          if (operationType == OperationType.Subscription) {
-            ExecutionStage.ScalaSourceStage(source.map(loopExecuteStage(_, selections, arguments)))
+          if (request.operationType == OperationType.Subscription) {
+            ExecutionStage.ScalaSourceStage(source.map(loopExecuteStage(_, currentField, arguments)))
           } else {
             val future = source.runWith(Sink.seq[Stage]).map(s => Stage.ListStage(s.toList))
             loopExecuteStage(
               Stage.FutureStage(future),
-              selections,
+              currentField,
               arguments
             )
           }
         case Stage.JavaSourceStage(source)    =>
-          loopExecuteStage(Stage.ScalaSourceStage(source.asScala), selections, arguments)
-        case Stage.FunctionStage(stage)       => loopExecuteStage(stage(arguments), selections, Map())
+          loopExecuteStage(Stage.ScalaSourceStage(source.asScala), currentField, arguments)
+        case Stage.FunctionStage(stage)       => loopExecuteStage(stage(arguments), currentField, Map())
         case Stage.ListStage(stages)          =>
           if (stages.forall(_.isInstanceOf[PureStage]))
             PureStage(SymphonyQLOutputValue.ListValue(stages.asInstanceOf[List[PureStage]].map(_.value)))
-          else ExecutionStage.ListStage(stages.map(loopExecuteStage(_, selections, arguments)))
+          else ExecutionStage.ListStage(stages.map(loopExecuteStage(_, currentField, arguments)))
         case Stage.ObjectStage(name, _fields) =>
-          val mergedSelections = mergeSelections(selections, name, fragments, variableValues)
-          val fields           = mergedSelections.map {
-            case Selection.Field(alias, name @ "__typename", _, _, _) =>
+          val mergedFields = mergeFields(currentField, name)
+          val fields       = mergedFields.map {
+            case ExecutionField(name @ "__typename", _, _, alias, _, _, _, _) =>
               alias.getOrElse(name) -> PureStage(StringValue(name))
-            case Selection.Field(alias, name, args, _, selectionSet)  =>
-              val arguments = extractVariables(args, variableDefinitions, variableValues)
+            case f @ ExecutionField(name, _, _, alias, _, _, args, _)         =>
+              val arguments = extractVariables(args, request.variableDefinitions, request.variableValues)
               alias.getOrElse(name) -> _fields
                 .get(name)
-                .map(loopExecuteStage(_, selectionSet, arguments))
+                .map(loopExecuteStage(_, f, arguments))
                 .getOrElse(Stage.NullStage)
           }
           if (fields.map(_._2).forall(_.isInstanceOf[PureStage]))
@@ -71,18 +68,18 @@ object Executor {
           else ExecutionStage.ObjectStage(fields)
         case p @ PureStage(value)             =>
           value match {
-            case EnumValue(v) if selections.collectFirst { case Selection.Field(_, "__typename", _, _, _) =>
-                  true
+            case EnumValue(v) if mergeFields(currentField, v).collectFirst {
+                  case ExecutionField("__typename", _, _, _, _, _, _, _) => true
                 }.nonEmpty =>
-              val mergedSelections = mergeSelections(selections, v, fragments, variableValues)
-              val obj              = mergedSelections.collectFirst { case Selection.Field(alias, name @ "__typename", _, _, _) =>
-                SymphonyQLOutputValue.ObjectValue(List(alias.getOrElse(name) -> StringValue(v)))
+              val obj = mergeFields(currentField, v).collectFirst {
+                case ExecutionField(name @ "__typename", _, _, alias, _, _, _, _) =>
+                  SymphonyQLOutputValue.ObjectValue(List(alias.getOrElse(name) -> StringValue(v)))
               }
               obj.fold(p)(PureStage(_))
             case _ => p
           }
 
-    val executionStage = loopExecuteStage(request.stage, request.selectionSet, Map())
+    val executionStage = loopExecuteStage(request.stage, request.currentField, Map())
     drainExecutionStages(executionStage)
   }
 
@@ -107,43 +104,42 @@ object Executor {
     arguments: Map[String, SymphonyQLInputValue],
     variableDefinitions: List[VariableDefinition],
     variableValues: Map[String, SymphonyQLInputValue]
-  ): Map[String, SymphonyQLInputValue] =
-    arguments.map { (k, v) =>
-      k -> (v match {
+  ): Map[String, SymphonyQLInputValue] = {
+    def extractVariable(value: SymphonyQLInputValue): SymphonyQLInputValue =
+      value match {
+        case SymphonyQLInputValue.ListValue(values)   => SymphonyQLInputValue.ListValue(values.map(extractVariable))
+        case SymphonyQLInputValue.ObjectValue(fields) =>
+          SymphonyQLInputValue.ObjectValue(fields.map { case (k, v) => k -> extractVariable(v) })
         case SymphonyQLInputValue.VariableValue(name) =>
-          variableValues.get(name) orElse variableDefinitions.find(_.name == name).flatMap(_.defaultValue) getOrElse v
-        case value                                    => value
-      })
+          lazy val defaultInputValue = (for {
+            definition <- variableDefinitions.find(_.name == name)
+            inputValue <- definition.defaultValue
+          } yield inputValue).getOrElse(NullValue)
+          variableValues.getOrElse(name, defaultInputValue)
+        case value: SymphonyQLValue                   => value
+      }
+
+    arguments.map { case (k, v) => k -> extractVariable(v) }
+  }
+
+  private def mergeFields(field: ExecutionField, typeName: String): List[ExecutionField] = {
+    val array = mutable.ArrayBuffer.empty[ExecutionField]
+    val map   = mutable.Map.empty[String, Int]
+    field.fields.foreach { field =>
+      if (field.condition.forall(_ == typeName)) {
+        val name = field.alias.getOrElse(field.name)
+        map.get(name) match {
+          case None        =>
+            // first time we see this field, add it to the array
+            array += field
+          case Some(index) =>
+            // field already existed, merge it
+            val f = array(index)
+            array(index) = f.copy(fields = f.fields ::: field.fields)
+        }
+      }
     }
 
-  private def mergeSelections(
-    selections: List[Selection],
-    name: String,
-    fragments: Map[String, FragmentDefinition],
-    variableValues: Map[String, SymphonyQLInputValue]
-  ): List[Field] = {
-    val fields = selections.flatMap {
-      case field: Field                   => List(field)
-      case InlineFragment(tpc, _, select) =>
-        val isAvailableType = tpc.fold(true)(_.name == name)
-        if (isAvailableType) mergeSelections(select, name, fragments, variableValues) else List.empty
-      case FragmentSpread(spreadName, _)  =>
-        fragments.get(spreadName) match {
-          case Some(fragment) if fragment.typeCondition.name == name =>
-            mergeSelections(fragment.selectionSet, name, fragments, variableValues)
-          case _                                                     => List.empty
-        }
-    }
-    fields
-      .foldLeft(ListMap.empty[String, Field]) { (result, field) =>
-        result.updated(
-          field.name,
-          result
-            .get(field.name)
-            .fold(field)(f => f.copy(selectionSet = f.selectionSet ++ field.selectionSet))
-        )
-      }
-      .values
-      .toList
+    array.toList
   }
 }

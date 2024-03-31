@@ -115,11 +115,11 @@ final class SymphonyQL private (rootSchema: RootSchema) {
     resolveOperation(request.operationName, doc) match
       case Left(ex)            => Source.failed(ex)
       case Right((define, op)) =>
+        val field = ExecutionField(define.selectionSet, fragments, request.variables.getOrElse(Map.empty), op.opType)
         Executor.executeRequest(
           ExecutionRequest(
             op.stage,
-            define.selectionSet,
-            fragments,
+            field,
             define.variableDefinitions,
             request.variables.getOrElse(Map.empty),
             define.operationType
