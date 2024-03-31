@@ -23,7 +23,7 @@ object SimpleHttpServer
         .query(
           Queries(args =>
             Source.failed(
-              new Exception("")
+              Character("hello-" + args.origin.map(_.toString).getOrElse(""), args.origin.getOrElse(Origin.BELT))
             )
           )
         )
