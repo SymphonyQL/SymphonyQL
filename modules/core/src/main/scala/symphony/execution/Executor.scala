@@ -24,8 +24,8 @@ object Executor {
 
     val errors = mutable.ListBuffer.empty[SymphonyQLError]
 
-    def handleError(step: => Stage): Stage =
-      try step
+    def handleError(stage: => Stage): Stage =
+      try stage
       catch {
         case NonFatal(e) => Stage.SourceStage(Source.failed(e))
       }
