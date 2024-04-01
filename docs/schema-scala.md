@@ -19,13 +19,13 @@ case class FilterArgs(origin: Option[Origin])
 case class Queries(characters: FilterArgs => Source[Character, NotUsed])
 ```
 
-Automatically derive a schema:
+Fully automatic derivation is used by default:
 ```scala
 Schema.derived[Queries]
 // summon[Schema[Queries]]
 ```
 
-If we want to customize it, we just need to define a new implicit.
+But if we want to customize it, we just need to define a new implicit, this can be a definition of `Schema[Queries]` or its sub-schemas.
 
 ### `EnumBuilder`
 
@@ -99,7 +99,7 @@ For more types, please refer to the [Schema Specification](schema.md).
 
 Defining SymphonyQL **Interface Type**, for example:
 ```scala
-implicit val newInterface = UnionBuilder.newObject[NestedInterface]
+implicit val nestedInterface: Schema[NestedInterface] = UnionBuilder.newObject[NestedInterface]
     .description("NestedInterface")
     .origin("symphony.apt.tests.NestedInterface")
     .name("NestedInterface")
@@ -114,7 +114,7 @@ implicit val newInterface = UnionBuilder.newObject[NestedInterface]
 
 Defining SymphonyQL **Union Type**, for example:
 ```scala
-implicit val newUnion = UnionBuilder.newObject[SearchResult]
+implicit val searchResultUnion: Schema[SearchResult] = UnionBuilder.newObject[SearchResult]
     .description("SearchResult")
     .origin("symphony.apt.tests.SearchResult")
     .name("SearchResult")
