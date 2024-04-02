@@ -189,13 +189,13 @@ lazy val benchmarks = project
   .enablePlugins(JmhPlugin)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.ghostdogpr" %% "caliban"              % "2.5.1",
+      "com.github.ghostdogpr" %% "caliban"              % "2.5.3",
       "org.apache.pekko"      %% "pekko-stream"         % `pekko-core_Version`,
       "org.parboiled"         %% "parboiled"            % `parboiled_Version`,
       "org.sangria-graphql"   %% "sangria"              % "4.1.0",
       "org.sangria-graphql"   %% "sangria-circe"        % "1.3.2",
       "io.circe"              %% "circe-parser"         % "0.14.6",
-      "com.graphql-java"       % "graphql-java"         % "21.3",
+      "com.graphql-java"       % "graphql-java"         % "21.5",
       "javax.annotation"       % "javax.annotation-api" % "1.3.2"
     ),
     compileOrder := CompileOrder.JavaThenScala,
