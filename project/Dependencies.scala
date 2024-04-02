@@ -9,7 +9,7 @@ object Dependencies {
     val `parboiled_Version`            = "2.5.1"
     val `scalatest_Version`            = "3.2.18"
     val `magnolia_Version`             = "1.3.4"
-    val `javapoet_Version`             = "1.11.1"
+    val `javapoet_Version`             = "1.13.0"
     val `commons-lang3_Version`        = "3.7"
     val `javax.annotation-api_Version` = "1.3.2"
   }
