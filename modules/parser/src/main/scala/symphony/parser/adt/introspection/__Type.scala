@@ -128,4 +128,10 @@ final case class __Type(
 
   lazy val allInputFields: List[__InputValue] =
     inputFields(__DeprecatedArgs(Some(true))).getOrElse(Nil)
+
+  def isNullable: Boolean =
+    kind match {
+      case __TypeKind.NON_NULL => false
+      case _                   => true
+    }
 }
