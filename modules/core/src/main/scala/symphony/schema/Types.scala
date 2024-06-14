@@ -198,11 +198,11 @@ object Types {
     }).getOrElse("")
 
   def unify(l: List[__Type]): Option[__Type]        =
-    l.headOption.flatMap(first => l.drop(1).foldLeft(Option(first))((acc, t) => acc.flatMap(unify(_, t))))
+  l.headOption.flatMap(first => l.drop(1).foldLeft(Option(first))((acc, t) => acc.flatMap(unify(_, t))))
 
-    /**
-     * Tries to unify two types by widening them to a common supertype.
-     */
+  /**
+   * Tries to unify two types by widening them to a common supertype.
+   */
   def unify(t1: __Type, t2: __Type): Option[__Type] =
     if (same(t1, t2)) Option(t1)
     else
