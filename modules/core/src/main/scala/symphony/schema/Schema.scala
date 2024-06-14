@@ -100,11 +100,11 @@ trait SchemaFactory {
    */
   @unused
   def createMap[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[java.util.Map[A, B]] =
-    mkMap[A, B](keySchema, valueSchema).contramap(kv => kv.asScala.toMap)
+  mkMap[A, B](keySchema, valueSchema).contramap(kv => kv.asScala.toMap)
 
-    /**
-     * Java API
-     */
+  /**
+   * Java API
+   */
   @unused
   def createTuple2[A, B](keySchema: Schema[A], valueSchema: Schema[B]): Schema[(A, B)]           =
     mkTuple2[A, B](keySchema, valueSchema)
@@ -139,11 +139,11 @@ trait SchemaFactory {
    */
   @unused
   def createList[A](schema: Schema[A]): Schema[java.util.List[A]]                                  =
-    mkList[A](schema).contramap(_.asScala.toList)
+  mkList[A](schema).contramap(_.asScala.toList)
 
-    /**
-     * Java API
-     */
+  /**
+   * Java API
+   */
   @unused
   def createCompletionStage[A](schema: Schema[A]): Schema[java.util.concurrent.CompletionStage[A]] =
     mkFuture[A](schema).contramap(_.asScala)
