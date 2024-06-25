@@ -7,7 +7,7 @@ object Dependencies {
     val `pekko-core_Version`           = "1.0.2"
     val `pekko-http_Version`           = "1.0.1"
     val `parboiled_Version`            = "2.5.1"
-    val `scalatest_Version`            = "3.2.18"
+    val `scalatest_Version`            = "3.2.19"
     val `magnolia_Version`             = "1.3.6"
     val `javapoet_Version`             = "1.13.0"
     val `commons-lang3_Version`        = "3.14.0"
