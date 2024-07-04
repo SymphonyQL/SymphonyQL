@@ -189,7 +189,7 @@ lazy val benchmarks = project
   .enablePlugins(JmhPlugin)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.ghostdogpr" %% "caliban"              % "2.5.3",
+      "com.github.ghostdogpr" %% "caliban"              % "2.8.1",
       "org.apache.pekko"      %% "pekko-stream"         % `pekko-core_Version`,
       "org.parboiled"         %% "parboiled"            % `parboiled_Version`,
       "org.sangria-graphql"   %% "sangria"              % "4.1.0",
