@@ -192,7 +192,7 @@ lazy val benchmarks = project
       "com.github.ghostdogpr" %% "caliban"              % "2.5.3",
       "org.apache.pekko"      %% "pekko-stream"         % `pekko-core_Version`,
       "org.parboiled"         %% "parboiled"            % `parboiled_Version`,
-      "org.sangria-graphql"   %% "sangria"              % "4.1.0",
+      "org.sangria-graphql"   %% "sangria"              % "4.1.1",
       "org.sangria-graphql"   %% "sangria-circe"        % "1.3.2",
       "io.circe"              %% "circe-parser"         % "0.14.7",
       "com.graphql-java"       % "graphql-java"         % "21.5",
