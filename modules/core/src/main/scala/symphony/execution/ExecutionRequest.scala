@@ -7,8 +7,7 @@ import symphony.schema.Stage
 
 final case class ExecutionRequest(
   stage: Stage,
-  selectionSet: List[Selection],
-  fragments: Map[String, FragmentDefinition],
+  currentField: ExecutionField,
   variableDefinitions: List[VariableDefinition],
   variableValues: Map[String, SymphonyQLInputValue],
   operationType: OperationType
