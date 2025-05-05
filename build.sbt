@@ -1,29 +1,22 @@
 import Dependencies.Versions.*
-
-ThisBuild / resolvers ++= Seq(
-  Resolver.mavenLocal,
-  "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots/",
-  "Sonatype OSS Releases" at "https://s01.oss.sonatype.org/content/repositories/releases"
-)
-
-ThisBuild / versionScheme := Some("semver-spec")
+import xerial.sbt.Sonatype.sonatypeCentralHost
 
 inThisBuild(
   List(
-    scalaVersion           := scala3_Version,
-    organization           := "io.github.jxnu-liguobin", // TODO using io.github.symphonyql
-    sonatypeCredentialHost := "oss.sonatype.org",
-    sonatypeRepository     := "https://oss.sonatype.org/service/local",
-    homepage               := Some(url("https://github.com/SymphonyQL")),
-    licenses               := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
-    developers             := List(
+    scalaVersion                       := scala3_Version,
+    organization                       := "io.github.jxnu-liguobin", // TODO using io.github.symphonyql
+    homepage                           := Some(url("https://github.com/SymphonyQL")),
+    licenses                           := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0")),
+    developers                         := List(
       Developer(
         id = "jxnu-liguobin",
         name = "jxnu-liguobin",
         email = "dreamylost@outlook.com",
         url = url("https://github.com/jxnu-liguobin")
       )
-    )
+    ),
+    ThisBuild / sonatypeProfileName    := "io.github.jxnu-liguobin",
+    ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
   )
 )
 
