@@ -1,18 +1,15 @@
 package symphony.example
 
 import org.apache.pekko.actor
+import org.apache.pekko.actor.ActorSystem as ClassicActorSystem
 import org.apache.pekko.actor.typed.*
 import org.apache.pekko.actor.typed.scaladsl.*
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.Route
-import org.apache.pekko.stream.SystemMaterializer
 import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.ByteString
 import symphony.SymphonyQL
 import symphony.example.schema.Users.*
 import symphony.server.DefaultRoute
-import org.apache.pekko.actor.ActorSystem as ClassicActorSystem
 
 import scala.concurrent.ExecutionContextExecutor
 

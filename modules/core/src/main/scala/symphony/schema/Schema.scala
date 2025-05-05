@@ -365,7 +365,7 @@ trait GenericSchema extends SchemaDerivation {
             case _                                                     => builder
           }
           fixBuilder.fold(
-            error => ScalaSourceStage(scaladsl.Source.failed(error)),
+            error => SourceStage(scaladsl.Source.failed(error)),
             input => outputSchema.analyze(value(input))
           )
         }
@@ -377,7 +377,7 @@ trait GenericSchema extends SchemaDerivation {
       override def tpe(isInput: Boolean): __Type                      =
         val t = schema.lazyType(isInput)
         (if (schema.optional) t else t.nonNull).list
-      override def analyze(value: scaladsl.Source[A, NotUsed]): Stage = ScalaSourceStage(value.map(schema.analyze))
+      override def analyze(value: scaladsl.Source[A, NotUsed]): Stage = SourceStage(value.map(schema.analyze))
     }
 
   implicit def mkMap[A, B](implicit keySchema: Schema[A], valueSchema: Schema[B]): Schema[Map[A, B]] =

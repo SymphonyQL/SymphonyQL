@@ -12,6 +12,7 @@ import symphony.schema.*
 import scala.jdk.FutureConverters.*
 import java.util.concurrent.CompletionStage
 import scala.concurrent.*
+import scala.collection.mutable.ListBuffer
 import scala.util.*
 import symphony.parser.adt.Definition.ExecutableDefinition.*
 import symphony.parser.adt.OperationType
@@ -59,20 +60,20 @@ final class SymphonyQL private (rootSchema: RootSchema) {
       resp <- doc match
                 case Left(ex)        => Future.failed(ex)
                 case Right(document) =>
-                  compileRequest(document, request)
-                    .map(SymphonyQLResponse(_, List.empty))
-                    .runWith[Future[SymphonyQLResponse[SymphonyQLError]]](Sink.head)
+                  val out  = compileRequest(document, request)
+                  val data = out.data.map(SymphonyQLResponse(_, out.errors.toList))
+                  data.runWith[Future[SymphonyQLResponse[SymphonyQLError]]](Sink.head)
     } yield resp
 
   private def resolveOperation(
     operationName: Option[String] = None,
     document: Document
-  ): Either[SymphonyQLError, (OperationDefinition, Operation)] = {
+  ): Either[SymphonyQLError, (OperationDefinition, Operation, RootType)] = {
     lazy val introspectionRootSchema = rootType.map(Introspector.introspect)
     lazy val rootSchemaToValidate    =
       if (Introspector.isIntrospection(document)) introspectionRootSchema else Right(rootSchema)
 
-    val op = operationName match {
+    val operationDefinition = operationName match {
       case Some(name) =>
         document.definitions.collectFirst { case op: OperationDefinition if op.name.contains(name) => op }
           .toRight(SymphonyQLError.ArgumentError(s"Unknown operation $name."))
@@ -83,7 +84,7 @@ final class SymphonyQL private (rootSchema: RootSchema) {
         }
     }
 
-    val operation = op match {
+    val operation = operationDefinition match {
       case Left(error)                => Left(error)
       case Right(operationDefinition) =>
         operationDefinition.operationType match {
@@ -102,24 +103,30 @@ final class SymphonyQL private (rootSchema: RootSchema) {
         }
     }
 
-    op.flatMap(d => operation.map(o => d -> o))
+    for {
+      root         <- rootType
+      opDefinition <- operationDefinition
+      op           <- operation
+    } yield (opDefinition, op, root)
+
   }
 
   private def compileRequest(doc: Document, request: SymphonyQLRequest)(implicit
     actorSystem: ActorSystem,
     ec: ExecutionContext
-  ): Source[SymphonyQLOutputValue, NotUsed] = {
+  ): ExecutionOutputValue = {
     val fragments = doc.definitions.collect { case fragment: FragmentDefinition =>
       fragment.name -> fragment
     }.toMap
     resolveOperation(request.operationName, doc) match
-      case Left(ex)            => Source.failed(ex)
-      case Right((define, op)) =>
+      case Left(ex)                  => ExecutionOutputValue(Source.empty, ListBuffer(ex))
+      case Right((define, op, root)) =>
+        val field =
+          ExecutionField(define.selectionSet, fragments, request.variables.getOrElse(Map.empty), op.opType, root)
         Executor.executeRequest(
           ExecutionRequest(
             op.stage,
-            define.selectionSet,
-            fragments,
+            field,
             define.variableDefinitions,
             request.variables.getOrElse(Map.empty),
             define.operationType
