@@ -12,19 +12,16 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [ 21 ]
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'adopt'
-
-      - name: Cache scala dependencies
-        uses: coursier/cache-action@v6
+          distribution: adopt
+          java-version: 21
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - uses: coursier/cache-action@v6
 
       - name: Checking Code style
         run: sbt check
@@ -36,8 +33,11 @@ jobs:
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
+          distribution: adopt
           java-version: 21
-          distribution: 'adopt'
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - uses: coursier/cache-action@v6
 
       - name: Run Scala Test
         if: success() || failure()
@@ -61,15 +61,14 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
-      - name: Checkout current branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with: 
+          fetch-depth: '0'
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
+          distribution: adopt
           java-version: 21
-          distribution: 'adopt'
 
       - name: Update docs
         run: |
@@ -91,15 +90,15 @@ jobs:
     needs: [ check, test ]
     if: github.event_name != 'pull_request'
     steps:
-      - name: Checkout current branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
+          distribution: adopt
           java-version: 21
-          distribution: 'adopt'
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - uses: coursier/cache-action@v6
 
       - name: Release artifacts
         run: sbt ci-release
