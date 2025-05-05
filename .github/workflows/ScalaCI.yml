@@ -62,13 +62,14 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
       - uses: actions/checkout@v4
-        with: 
-          fetch-depth: '0'
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: adopt
           java-version: 21
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - uses: coursier/cache-action@v6
 
       - name: Update docs
         run: |
